@@ -13,7 +13,9 @@ const COLLECTIONS = [
   { name: "New In", slug: "new", image: "/banners/top-floral-garden.jpg", href: "/shop?filter=new" },
 ]
 
-const CATEGORY_IMAGES: Record<string, string> = {}
+const CATEGORY_IMAGES: Record<string, string> = {
+  "women-watches": "/categories/women-watches.jpeg",
+}
 
 export function CategoriesSection() {
   const { data: categories = [] } = useSWR<Category[]>("/api/categories", fetcher)
