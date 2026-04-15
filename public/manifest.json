@@ -1,0 +1,25 @@
+{
+  "name": "Elani Beauty Hub",
+  "short_name": "Elani",
+  "description": "Best thrift and new women's fashion in Nairobi. Shop quality tops, dresses, bodysuits, and jackets at affordable prices. Order online at Elani Beauty Hub.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "orientation": "portrait-primary",
+  "categories": ["shopping", "fashion", "lifestyle"],
+  "lang": "en",
+  "icons": [
+    {
+      "src": "/logo-kf.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.jpg",
+      "sizes": "64x64",
+      "type": "image/jpeg"
+    }
+  ]
+}
