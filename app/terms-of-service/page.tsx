@@ -25,7 +25,7 @@ export async function generateMetadata(): Promise<Metadata> {
     description: p?.meta_description || PAGE_SEO.termsOfService.description,
     robots: { index: PAGE_SEO.termsOfService.noindex ? false : true, follow: true },
     alternates: { canonical: `${SITE_SEO.siteUrl}/terms-of-service` },
-    keywords: p?.meta_keywords?.split(",").map((k: string) => k.trim()) || ["terms of service", "terms and conditions", "Elani Beauty Hub", "Elani Beauty Hub terms", "fashion store terms Kenya"],
+    keywords: p?.meta_keywords?.split(",").map((k: string) => k.trim()) || ["terms of service", "terms and conditions", "Her Kingdom", "Her Kingdom terms", "jewelry store terms Kenya"],
     authors: [{ name: SITE_SEO.siteName, url: SITE_SEO.siteUrl }],
     creator: SITE_SEO.siteName,
     openGraph: {

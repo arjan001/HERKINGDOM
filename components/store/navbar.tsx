@@ -97,7 +97,7 @@ export function Navbar() {
             <SheetContent side="left" className="w-80 bg-background text-foreground p-0">
               <div className="p-6">
                 <Link href="/" className="font-serif text-2xl font-bold tracking-tight">
-                  Elani Beauty Hub
+                  Her Kingdom
                 </Link>
               </div>
               <nav className="flex flex-col px-6 gap-1">
@@ -109,14 +109,14 @@ export function Navbar() {
                 <Link href="/track-order" className="py-3 text-sm font-medium border-b border-border">Track My Order</Link>
               </nav>
               <div className="px-6 py-4 mt-4 space-y-3">
-                <a href="https://www.instagram.com/_classycollections/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">Instagram</a>
-                <a href="https://www.tiktok.com/@_classycollections" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">TikTok</a>
-                <a href="tel:+254702642324" className="flex items-center gap-2 text-sm font-medium"><Phone className="h-4 w-4" />0702 642 324</a>
+                <a href="https://www.instagram.com/herkingdom_jewelry/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">Instagram</a>
+                <a href="https://www.tiktok.com/@herkingdom_jewelry" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">TikTok</a>
+                <a href="tel:+254717264422" className="flex items-center gap-2 text-sm font-medium"><Phone className="h-4 w-4" />0717 264 422</a>
               </div>
             </SheetContent>
           </Sheet>
 
-          <Link href="/" className="font-serif text-xl lg:text-2xl font-bold tracking-tight">Elani Beauty Hub</Link>
+          <Link href="/" className="font-serif text-xl lg:text-2xl font-bold tracking-tight">Her Kingdom</Link>
 
           <div className="hidden lg:flex items-center flex-1 max-w-xl mx-8" ref={searchRef}>
             <form onSubmit={handleSearch} className="relative flex items-center w-full">
@@ -134,7 +134,7 @@ export function Navbar() {
                   </div>
                 )}
               </div>
-              <input type="text" placeholder="Search bodysuits, dresses, tops..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="flex-1 h-10 px-4 bg-secondary text-sm text-foreground placeholder:text-muted-foreground outline-none" />
+              <input type="text" placeholder="Search necklaces, earrings, bracelets..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="flex-1 h-10 px-4 bg-secondary text-sm text-foreground placeholder:text-muted-foreground outline-none" />
               <button type="submit" className="h-10 px-4 bg-foreground text-background rounded-r-sm"><Search className="h-4 w-4" /></button>
 
               {showSuggestions && (
@@ -190,7 +190,7 @@ export function Navbar() {
           <div className="lg:hidden pb-3 animate-fade-in-up" ref={mobileSearchRef}>
             <form onSubmit={handleSearch} className="relative">
               <div className="flex items-center border border-border rounded-sm">
-                <input type="text" placeholder="Search jeans, jackets..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="flex-1 h-10 px-4 bg-background text-sm outline-none" autoFocus />
+                <input type="text" placeholder="Search jewelry, watches..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="flex-1 h-10 px-4 bg-background text-sm outline-none" autoFocus />
                 <button type="submit" className="px-3"><Search className="h-4 w-4" /></button>
               </div>
               {showSuggestions && (

@@ -22,60 +22,58 @@ const siteUrl = SITE_SEO.siteUrl
 
 export const metadata: Metadata = {
   title: {
-    default: "Elani Beauty Hub | Best Thrift & New Tops, Dresses, Bodysuits & Jackets in Nairobi",
-    template: "%s | Elani Beauty Hub",
+    default: "Her Kingdom | Curated Jewelry & Accessories for Women in Nairobi, Kenya",
+    template: "%s | Her Kingdom",
   },
   description:
-    "Shop the best thrift and new women's tops, dresses, bodysuits, and jackets at Elani Beauty Hub Nairobi. Quality preloved and brand-new fashion at unbeatable prices. Best thrift shop in Kenya. Call 0702642324.",
+    "Shop curated jewelry, necklaces, bracelets, earrings, watches & accessories at Her Kingdom Nairobi. Hypoallergenic, long-lasting pieces that complement your personal style. #HerkingdomBabe",
   icons: {
     icon: [
-      { url: "/favicon.jpg", type: "image/jpeg" },
-      { url: "/logo-kf.png", type: "image/png", sizes: "512x512" },
+      { url: "/logo.png", type: "image/png", sizes: "512x512" },
     ],
     apple: [
-      { url: "/logo-kf.png", sizes: "512x512", type: "image/png" },
+      { url: "/logo.png", sizes: "512x512", type: "image/png" },
     ],
-    shortcut: "/favicon.jpg",
+    shortcut: "/logo.png",
   },
   manifest: "/manifest.json",
   keywords: SITE_SEO.allKeywords,
   authors: [
-    { name: "Elani Beauty Hub", url: siteUrl },
-    { name: "OnePlus Africa Tech Solutions", url: "http://oneplusafrica.com/" },
+    { name: "Her Kingdom", url: siteUrl },
   ],
-  creator: "Elani Beauty Hub",
-  publisher: "Elani Beauty Hub",
+  creator: "Her Kingdom",
+  publisher: "Her Kingdom",
   metadataBase: new URL(siteUrl),
   alternates: { canonical: siteUrl },
   openGraph: {
     type: "website",
     locale: "en_KE",
     url: siteUrl,
-    siteName: "Elani Beauty Hub",
-    title: "Elani Beauty Hub | Best Thrift & New Tops, Dresses, Bodysuits & Jackets in Nairobi",
+    siteName: "Her Kingdom",
+    title: "Her Kingdom | Curated Jewelry & Accessories for Women in Nairobi, Kenya",
     description:
-      "Shop the best thrift and new women's tops, dresses, bodysuits, and jackets at Elani Beauty Hub. Quality preloved and brand-new fashion. Best thrift shop in Nairobi, Kenya.",
+      "Shop curated jewelry, necklaces, bracelets, earrings, watches & accessories at Her Kingdom. Hypoallergenic, long-lasting pieces. Delivery across Kenya.",
     images: [
       {
-        url: `${siteUrl}/logo-kf.png`,
+        url: `${siteUrl}/logo.png`,
         width: 512,
         height: 512,
-        alt: "Elani Beauty Hub - Best Thrift & New Fashion in Nairobi",
+        alt: "Her Kingdom - Curated Jewelry & Accessories Nairobi",
         type: "image/png",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    site: "@_classycollections",
-    creator: "@_classycollections",
-    title: "Elani Beauty Hub | Best Thrift & New Fashion in Nairobi",
+    site: "@herkingdom_jewelry",
+    creator: "@herkingdom_jewelry",
+    title: "Her Kingdom | Curated Jewelry & Accessories in Nairobi",
     description:
-      "Shop quality thrift and new tops, dresses, bodysuits, and jackets. Affordable women's fashion delivered across Kenya. Call 0702642324.",
+      "Shop curated necklaces, bracelets, earrings, watches & accessories. Hypoallergenic jewelry delivered across Kenya. WhatsApp +254717264422.",
     images: [
       {
-        url: `${siteUrl}/logo-kf.png`,
-        alt: "Elani Beauty Hub Logo",
+        url: `${siteUrl}/logo.png`,
+        alt: "Her Kingdom Logo",
         width: 512,
         height: 512,
       },
@@ -93,21 +91,17 @@ export const metadata: Metadata = {
     },
   },
   other: {
-    "instagram:creator": "@_classycollections",
-    "tiktok:creator": "@_classycollections",
-    "developer": "OnePlus Africa Tech Solutions",
-    "developer-website": "http://oneplusafrica.com/",
-    "google-site-verification": "2db8ce1a2a14fac0",
-    "msvalidate.01": "",
+    "instagram:creator": "@herkingdom_jewelry",
+    "tiktok:creator": "@herkingdom_jewelry",
     "pinterest-rich-pin": "true",
   },
-  category: "Fashion",
-  classification: "Thrift Fashion Store",
+  category: "Jewelry & Accessories",
+  classification: "Jewelry Store",
   referrer: "origin-when-cross-origin",
 }
 
 export const viewport: Viewport = {
-  themeColor: "#ffffff",
+  themeColor: "#f4a4c0",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
@@ -121,19 +115,18 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
       <head>
-        <link rel="icon" href="/favicon.jpg" type="image/jpeg" />
-        <link rel="icon" href="/logo-kf.png" type="image/png" sizes="512x512" />
-        <link rel="apple-touch-icon" href="/logo-kf.png" sizes="512x512" />
-        <link rel="shortcut icon" href="/favicon.jpg" />
+        <link rel="icon" href="/logo.png" type="image/png" sizes="512x512" />
+        <link rel="apple-touch-icon" href="/logo.png" sizes="512x512" />
+        <link rel="shortcut icon" href="/logo.png" />
         <meta name="format-detection" content="telephone=no" />
-        <meta name="theme-color" content="#ffffff" />
-        <meta name="application-name" content="Elani Beauty Hub" />
-        <meta name="apple-mobile-web-app-title" content="Elani Beauty Hub" />
+        <meta name="theme-color" content="#f4a4c0" />
+        <meta name="application-name" content="Her Kingdom" />
+        <meta name="apple-mobile-web-app-title" content="Her Kingdom" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="msapplication-TileImage" content="/logo-kf.png" />
-        <meta name="msapplication-TileColor" content="#0a0a0a" />
+        <meta name="msapplication-TileImage" content="/logo.png" />
+        <meta name="msapplication-TileColor" content="#f4a4c0" />
         <meta name="msapplication-config" content="none" />
         <link rel="dns-prefetch" href="//fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.googleapis.com" crossOrigin="anonymous" />
@@ -146,8 +139,9 @@ export default function RootLayout({
               itemListElement: [
                 { "@type": "ListItem", position: 1, name: "Home", item: siteUrl },
                 { "@type": "ListItem", position: 2, name: "Shop", item: `${siteUrl}/shop` },
-                { "@type": "ListItem", position: 3, name: "Women's Collection", item: `${siteUrl}/shop/women` },
-                { "@type": "ListItem", position: 4, name: "Men's Collection", item: `${siteUrl}/shop/men` },
+                { "@type": "ListItem", position: 3, name: "Necklaces", item: `${siteUrl}/shop?category=necklaces` },
+                { "@type": "ListItem", position: 4, name: "Bracelets", item: `${siteUrl}/shop?category=bracelets` },
+                { "@type": "ListItem", position: 5, name: "Earrings", item: `${siteUrl}/shop?category=earrings` },
               ],
             }),
           }}
@@ -158,28 +152,28 @@ export default function RootLayout({
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "Organization",
-              name: "Elani Beauty Hub",
-              legalName: "Elani Beauty Hub Kenya",
+              name: "Her Kingdom",
+              legalName: "Her Kingdom Kenya",
               url: siteUrl,
               logo: {
                 "@type": "ImageObject",
-                url: `${siteUrl}/logo-kf.png`,
+                url: `${siteUrl}/logo.png`,
                 width: 512,
                 height: 512,
               },
-              foundingDate: "2025",
-              description: "Best thrift and new women's fashion store in Nairobi. Shop quality tops, dresses, bodysuits, and jackets at affordable prices.",
+              foundingDate: "2024",
+              description: "Her Kingdom is a jewelry brand based in Nairobi, Kenya. We offer curated jewelry pieces that complement your personal style and embody individuality.",
               contactPoint: {
                 "@type": "ContactPoint",
                 contactType: "Customer Service",
-                telephone: "+254702642324",
-                email: "info@classycollections.com",
-                url: "https://wa.me/254702642324",
+                telephone: "+254717264422",
+                email: "herkingdomlive@gmail.com",
+                url: "https://wa.me/254717264422",
                 availableLanguage: ["English", "Swahili"],
               },
               sameAs: [
-                "https://www.instagram.com/_classycollections/",
-                "https://www.tiktok.com/@_classycollections",
+                "https://www.instagram.com/herkingdom_jewelry/",
+                "https://www.tiktok.com/@herkingdom_jewelry",
               ],
               address: {
                 "@type": "PostalAddress",
@@ -197,13 +191,13 @@ export default function RootLayout({
               "@context": "https://schema.org",
               "@type": "LocalBusiness",
               "@id": `${siteUrl}/#business`,
-              name: "Elani Beauty Hub",
-              description: "Best thrift and new women's fashion in Nairobi. Quality tops, dresses, bodysuits, jackets and more at affordable prices. New arrivals and preloved fashion delivered across Kenya.",
+              name: "Her Kingdom",
+              description: "Her Kingdom is a jewelry brand based in Nairobi, Kenya offering curated necklaces, bracelets, earrings, watches, handbags & accessories. Hypoallergenic, long-lasting pieces delivered across Kenya.",
               url: siteUrl,
-              telephone: "+254702642324",
-              email: "info@classycollections.com",
-              image: `${siteUrl}/logo-kf.png`,
-              logo: `${siteUrl}/logo-kf.png`,
+              telephone: "+254717264422",
+              email: "herkingdomlive@gmail.com",
+              image: `${siteUrl}/logo.png`,
+              logo: `${siteUrl}/logo.png`,
               address: {
                 "@type": "PostalAddress",
                 addressLocality: "Nairobi",
@@ -216,26 +210,26 @@ export default function RootLayout({
                 longitude: 36.8219,
               },
               sameAs: [
-                "https://www.instagram.com/_classycollections/",
-                "https://www.tiktok.com/@_classycollections",
+                "https://www.instagram.com/herkingdom_jewelry/",
+                "https://www.tiktok.com/@herkingdom_jewelry",
               ],
-              priceRange: "KES 500 - KES 15,000",
+              priceRange: "KES 200 - KES 15,000",
               brand: {
                 "@type": "Brand",
-                name: "Elani Beauty Hub",
+                name: "Her Kingdom",
               },
-              paymentAccepted: "M-PESA, Card, Cash on Delivery",
+              paymentAccepted: "M-PESA, Cash on Delivery",
               currenciesAccepted: "KES",
               openingHours: "Mo-Su 08:00-20:00",
               hasOfferCatalog: {
                 "@type": "OfferCatalog",
-                name: "Elani Beauty Hub Fashion",
+                name: "Her Kingdom Jewelry & Accessories",
                 itemListElement: [
-                  { "@type": "OfferCatalog", name: "Thrift Tops" },
-                  { "@type": "OfferCatalog", name: "Thrift Dresses" },
-                  { "@type": "OfferCatalog", name: "Thrift Bodysuits" },
-                  { "@type": "OfferCatalog", name: "Thrift Jackets" },
-                  { "@type": "OfferCatalog", name: "New Arrivals" },
+                  { "@type": "OfferCatalog", name: "Necklaces" },
+                  { "@type": "OfferCatalog", name: "Bracelets" },
+                  { "@type": "OfferCatalog", name: "Earrings" },
+                  { "@type": "OfferCatalog", name: "Watches" },
+                  { "@type": "OfferCatalog", name: "Handbags & Accessories" },
                 ],
               },
             }),
@@ -247,16 +241,16 @@ export default function RootLayout({
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "WebSite",
-              name: "Elani Beauty Hub",
-              alternateName: "Elani Beauty Hub Nairobi",
+              name: "Her Kingdom",
+              alternateName: "Her Kingdom Jewelry Nairobi",
               url: siteUrl,
-              description: "Best thrift and new women's fashion — tops, dresses, bodysuits, and jackets delivered across Kenya.",
+              description: "Curated jewelry & accessories — necklaces, bracelets, earrings, watches & more delivered across Kenya.",
               publisher: {
                 "@type": "Organization",
-                name: "Elani Beauty Hub",
+                name: "Her Kingdom",
                 logo: {
                   "@type": "ImageObject",
-                  url: `${siteUrl}/logo-kf.png`,
+                  url: `${siteUrl}/logo.png`,
                 },
               },
               potentialAction: {
@@ -277,19 +271,17 @@ export default function RootLayout({
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "ItemList",
-              name: "Elani Beauty Hub Site Pages",
+              name: "Her Kingdom Site Pages",
               itemListElement: [
                 { "@type": "SiteNavigationElement", position: 1, name: "Home", url: siteUrl },
                 { "@type": "SiteNavigationElement", position: 2, name: "Shop All", url: `${siteUrl}/shop` },
-                { "@type": "SiteNavigationElement", position: 3, name: "Women's Collection", url: `${siteUrl}/shop/women` },
-                { "@type": "SiteNavigationElement", position: 4, name: "Men's Collection", url: `${siteUrl}/shop/men` },
-                { "@type": "SiteNavigationElement", position: 5, name: "New Arrivals", url: `${siteUrl}/shop?filter=new` },
-                { "@type": "SiteNavigationElement", position: 6, name: "Track My Order", url: `${siteUrl}/track-order` },
-                { "@type": "SiteNavigationElement", position: 7, name: "Delivery Locations", url: `${siteUrl}/delivery` },
-                { "@type": "SiteNavigationElement", position: 8, name: "Wishlist", url: `${siteUrl}/wishlist` },
-                { "@type": "SiteNavigationElement", position: 9, name: "Privacy Policy", url: `${siteUrl}/privacy-policy` },
-                { "@type": "SiteNavigationElement", position: 10, name: "Terms of Service", url: `${siteUrl}/terms-of-service` },
-                { "@type": "SiteNavigationElement", position: 11, name: "Refund Policy", url: `${siteUrl}/refund-policy` },
+                { "@type": "SiteNavigationElement", position: 3, name: "New Arrivals", url: `${siteUrl}/shop?filter=new` },
+                { "@type": "SiteNavigationElement", position: 4, name: "Track My Order", url: `${siteUrl}/track-order` },
+                { "@type": "SiteNavigationElement", position: 5, name: "Delivery Locations", url: `${siteUrl}/delivery` },
+                { "@type": "SiteNavigationElement", position: 6, name: "Wishlist", url: `${siteUrl}/wishlist` },
+                { "@type": "SiteNavigationElement", position: 7, name: "Privacy Policy", url: `${siteUrl}/privacy-policy` },
+                { "@type": "SiteNavigationElement", position: 8, name: "Terms of Service", url: `${siteUrl}/terms-of-service` },
+                { "@type": "SiteNavigationElement", position: 9, name: "Refund Policy", url: `${siteUrl}/refund-policy` },
               ],
             }),
           }}

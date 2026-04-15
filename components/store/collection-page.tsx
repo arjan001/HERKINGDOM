@@ -2,7 +2,8 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react"
 import Image from "next/image"
-import { SlidersHorizontal, Grid3X3, LayoutList, X, Search, ChevronLeft, ChevronRight } from "lucide-react"
+import Link from "next/link"
+import { SlidersHorizontal, Grid3X3, LayoutList, X, Search, ChevronLeft, ChevronRight, ChevronRight as ChevronRightBreadcrumb } from "lucide-react"
 import { usePagination } from "@/hooks/use-pagination"
 import { PaginationControls } from "@/components/pagination-controls"
 import { TopBar } from "./top-bar"
@@ -25,12 +26,12 @@ function formatPrice(price: number): string {
 const COLLECTION_INFO: Record<string, { label: string; tagline: string; banners: string[] }> = {
   men: {
     label: "Men's Collection",
-    tagline: "Premium fashion for the modern gentleman",
+    tagline: "Stylish watches, necklaces & accessories for the modern man",
     banners: ["/banners/men-page-banner.jpg", "/banners/men-collection.jpg"],
   },
   women: {
     label: "Women's Collection",
-    tagline: "Elegant bodysuits, dresses, tops, and more for every occasion",
+    tagline: "Curated necklaces, bracelets, earrings & accessories for every occasion",
     banners: ["/banners/women-page-banner.jpg", "/banners/women-collection.jpg"],
   },
 }
@@ -234,6 +235,20 @@ export function CollectionPage({ collection }: { collection: string }) {
       <Navbar />
       <main className="flex-1">
         <div className="mx-auto max-w-7xl px-4 py-6">
+          {/* Breadcrumb */}
+          <nav aria-label="Breadcrumb" className="mb-4">
+            <ol className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              <li>
+                <Link href="/" className="hover:text-foreground transition-colors">Home</Link>
+              </li>
+              <li><ChevronRightBreadcrumb className="h-3.5 w-3.5" /></li>
+              <li>
+                <Link href="/shop" className="hover:text-foreground transition-colors">Shop</Link>
+              </li>
+              <li><ChevronRightBreadcrumb className="h-3.5 w-3.5" /></li>
+              <li className="text-foreground font-medium">{info?.label || "Collection"}</li>
+            </ol>
+          </nav>
           {/* Collection Banner */}
           <CollectionBanner collection={collection} />
 

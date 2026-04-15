@@ -173,9 +173,9 @@ function buildOrderEmailHtml(data: OrderEmailData): string {
           <td style="padding:24px 32px;text-align:center;">
             <p style="margin:0 0 8px;font-size:13px;color:#888;">Questions about your order?</p>
             <p style="margin:0;font-size:13px;color:#666;">
-              WhatsApp: <a href="https://wa.me/254713809695" style="color:#1a1a1a;text-decoration:none;font-weight:600;">0713 809 695</a>
+              WhatsApp: <a href="https://wa.me/254717264422" style="color:#1a1a1a;text-decoration:none;font-weight:600;">0717 264 422</a>
               &nbsp;&bull;&nbsp;
-              Email: <a href="mailto:info@classycollections.com" style="color:#1a1a1a;text-decoration:none;font-weight:600;">info@classycollections.com</a>
+              Email: <a href="mailto:herkingdomlive@gmail.com" style="color:#1a1a1a;text-decoration:none;font-weight:600;">herkingdomlive@gmail.com</a>
             </p>
           </td>
         </tr>
@@ -205,13 +205,13 @@ export async function sendOrderConfirmationEmail(data: OrderEmailData): Promise<
   }
 
   try {
-    const fromName = process.env.SMTP_FROM_NAME || "Elani Beauty Hub"
+    const fromName = process.env.SMTP_FROM_NAME || "Her Kingdom"
     const fromEmail = process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER
 
     await transporter.sendMail({
       from: `"${fromName}" <${fromEmail}>`,
       to: data.customerEmail,
-      subject: `Order Confirmed - ${data.orderNumber} | Elani Beauty Hub`,
+      subject: `Order Confirmed - ${data.orderNumber} | Her Kingdom`,
       html: buildOrderEmailHtml(data),
     })
 

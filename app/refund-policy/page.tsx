@@ -25,7 +25,7 @@ export async function generateMetadata(): Promise<Metadata> {
     description: p?.meta_description || PAGE_SEO.refundPolicy.description,
     robots: { index: PAGE_SEO.refundPolicy.noindex ? false : true, follow: true },
     alternates: { canonical: `${SITE_SEO.siteUrl}/refund-policy` },
-    keywords: p?.meta_keywords?.split(",").map((k: string) => k.trim()) || ["refund policy", "returns", "Elani Beauty Hub", "Elani Beauty Hub refund", "fashion store refund Kenya"],
+    keywords: p?.meta_keywords?.split(",").map((k: string) => k.trim()) || ["refund policy", "returns", "Her Kingdom", "Her Kingdom refund", "jewelry store refund Kenya"],
     authors: [{ name: SITE_SEO.siteName, url: SITE_SEO.siteUrl }],
     creator: SITE_SEO.siteName,
     openGraph: {

@@ -16,18 +16,18 @@ export const metadata: Metadata = {
     title: PAGE_SEO.wishlist.title,
     description: PAGE_SEO.wishlist.description,
     url: `${siteUrl}/wishlist`,
-    siteName: "Elani Beauty Hub",
+    siteName: "Her Kingdom",
     type: "website",
     locale: "en_KE",
-    images: [{ url: `${siteUrl}/logo-kf.png`, width: 512, height: 512, alt: "Elani Beauty Hub Wishlist" }],
+    images: [{ url: `${siteUrl}/logo.png`, width: 512, height: 512, alt: "Her Kingdom Wishlist" }],
   },
   twitter: {
     card: "summary",
-    site: "@_classycollections",
-    creator: "@_classycollections",
+    site: "@herkingdom_jewelry",
+    creator: "@herkingdom_jewelry",
     title: PAGE_SEO.wishlist.title,
     description: PAGE_SEO.wishlist.description,
-    images: [{ url: `${siteUrl}/logo-kf.png`, alt: "Elani Beauty Hub" }],
+    images: [{ url: `${siteUrl}/logo.png`, alt: "Her Kingdom" }],
   },
 }
 

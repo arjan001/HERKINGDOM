@@ -154,7 +154,7 @@ export function AdminOrders() {
     ).join("")
 
     const html = `
-      <html><head><title>${title} - Elani Beauty Hub</title>
+      <html><head><title>${title} - Her Kingdom</title>
       <style>
         body { font-family: Arial, sans-serif; padding: 30px; color: #111; }
         h1 { font-size: 22px; margin-bottom: 4px; }
@@ -168,7 +168,7 @@ export function AdminOrders() {
       </style></head>
       <body>
         <h1>${title}</h1>
-        <p class="meta">Elani Beauty Hub - Generated on ${date}</p>
+        <p class="meta">Her Kingdom - Generated on ${date}</p>
         <table>
           <thead>
             <tr>
@@ -391,7 +391,7 @@ export function AdminOrders() {
                     {selectedOrder.notes && <p className="text-xs text-muted-foreground italic mt-2">Note: {selectedOrder.notes}</p>}
                   </div>
                   <a
-                    href={`https://wa.me/${selectedOrder.phone.replace(/\D/g, "").replace(/^0/, "254")}?text=${encodeURIComponent(`Hi ${selectedOrder.customer.split(" ")[0]}, regarding your order ${selectedOrder.orderNo} at Elani Beauty Hub.`)}`}
+                    href={`https://wa.me/${selectedOrder.phone.replace(/\D/g, "").replace(/^0/, "254")}?text=${encodeURIComponent(`Hi ${selectedOrder.customer.split(" ")[0]}, regarding your order ${selectedOrder.orderNo} at Her Kingdom.`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex-shrink-0 inline-flex items-center gap-1.5 bg-[#25D366] hover:bg-[#20BD5A] text-white text-xs font-medium px-3 py-2 rounded-sm transition-colors"
