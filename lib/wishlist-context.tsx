@@ -13,7 +13,7 @@ interface WishlistContextType {
   clearWishlist: () => void
 }
 
-const WISHLIST_KEY = "classy-collections-wishlist"
+const WISHLIST_KEY = "herkingdom-wishlist"
 
 function loadWishlist(): Product[] {
   if (typeof window === "undefined") return []

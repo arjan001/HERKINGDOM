@@ -11,39 +11,37 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params
   try {
     const product = await getProductBySlug(slug)
-    if (!product) return { title: "Product Not Found | Elani Beauty Hub" }
+    if (!product) return { title: "Product Not Found | Her Kingdom" }
     const desc = product.description.slice(0, 130) + (product.description.length > 130 ? "..." : "")
-    const isThrift = product.condition === "thrift"
-    const conditionLabel = isThrift ? "Thrift" : "New"
     return {
-      title: `${product.name} | ${conditionLabel} Fashion at Elani Beauty Hub`,
-      description: `${desc} Shop ${isThrift ? "quality thrift" : "brand new"} women's fashion at Elani Beauty Hub Nairobi. Tops, dresses, bodysuits & jackets. Fast delivery Kenya. Call 0702642324.`,
+      title: `${product.name} | Her Kingdom Jewelry`,
+      description: `${desc} Shop curated jewelry & accessories at Her Kingdom Nairobi. Necklaces, bracelets, earrings & more. Delivery across Kenya. WhatsApp +254717264422.`,
       keywords: generateProductKeywords(product.name, product.category, product.tags || []),
       alternates: {
         canonical: `${siteUrl}/product/${slug}`,
       },
-      authors: [{ name: "Elani Beauty Hub", url: siteUrl }],
-      creator: "Elani Beauty Hub",
+      authors: [{ name: "Her Kingdom", url: siteUrl }],
+      creator: "Her Kingdom",
       openGraph: {
-        title: `${product.name} | ${conditionLabel} Fashion - Elani Beauty Hub`,
-        description: `${desc} ${isThrift ? "Quality thrift" : "Brand new"} women's fashion. Tops, dresses, bodysuits & more. Order now at Elani Beauty Hub Kenya.`,
+        title: `${product.name} | Her Kingdom Jewelry`,
+        description: `${desc} Curated jewelry & accessories. Order now at Her Kingdom Kenya.`,
         url: `${siteUrl}/product/${slug}`,
-        images: product.images[0] ? [{ url: product.images[0], width: 600, height: 800, alt: `${product.name} - Elani Beauty Hub ${conditionLabel} Fashion` }] : [],
+        images: product.images[0] ? [{ url: product.images[0], width: 600, height: 800, alt: `${product.name} - Her Kingdom Jewelry` }] : [],
         type: "website",
-        siteName: "Elani Beauty Hub",
+        siteName: "Her Kingdom",
         locale: "en_KE",
       },
       twitter: {
         card: "summary_large_image",
-        site: "@_classycollections",
-        creator: "@_classycollections",
-        title: `${product.name} | Elani Beauty Hub Nairobi`,
-        description: `${desc} Shop ${isThrift ? "thrift" : "new"} fashion at Elani Beauty Hub Kenya.`,
-        images: product.images[0] ? [{ url: product.images[0], alt: `${product.name} - Elani Beauty Hub` }] : [],
+        site: "@herkingdom_jewelry",
+        creator: "@herkingdom_jewelry",
+        title: `${product.name} | Her Kingdom`,
+        description: `${desc} Shop jewelry & accessories at Her Kingdom Kenya.`,
+        images: product.images[0] ? [{ url: product.images[0], alt: `${product.name} - Her Kingdom` }] : [],
       },
     }
   } catch {
-    return { title: "Product Not Found | Elani Beauty Hub" }
+    return { title: "Product Not Found | Her Kingdom" }
   }
 }
 
@@ -61,7 +59,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
         description: product.description,
         url: `${siteUrl}/product/${slug}`,
         image: product.images,
-        brand: { "@type": "Brand", name: "Elani Beauty Hub" },
+        brand: { "@type": "Brand", name: "Her Kingdom" },
         offers: {
           "@type": "Offer",
           price: product.price,
@@ -71,13 +69,11 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
             : "https://schema.org/OutOfStock",
           seller: {
             "@type": "Organization",
-            name: "Elani Beauty Hub",
+            name: "Her Kingdom",
             url: siteUrl,
-            telephone: "+254702642324",
+            telephone: "+254717264422",
           },
-          itemCondition: product.condition === "thrift"
-            ? "https://schema.org/UsedCondition"
-            : "https://schema.org/NewCondition",
+          itemCondition: "https://schema.org/NewCondition",
         },
         category: product.category,
       }

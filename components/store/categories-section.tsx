@@ -13,14 +13,7 @@ const COLLECTIONS = [
   { name: "New In", slug: "new", image: "/banners/top-floral-garden.jpg", href: "/shop?filter=new" },
 ]
 
-const CATEGORY_IMAGES: Record<string, string> = {
-  "women-bodysuits": "/banners/bodysuit-teal-cami.jpg",
-  "women-tops": "/banners/top-tropical-ruffle.jpg",
-  "women-dresses": "/banners/dress-beige-wrap.jpg",
-  "women-jackets": "/banners/bodysuit-grey-turtleneck-long.jpg",
-  "women-corsets": "/banners/corset-floral-cream.jpg",
-  "women-blouses": "/banners/blouse-green-polkadot.jpg",
-}
+const CATEGORY_IMAGES: Record<string, string> = {}
 
 export function CategoriesSection() {
   const { data: categories = [] } = useSWR<Category[]>("/api/categories", fetcher)

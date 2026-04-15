@@ -15,7 +15,7 @@ interface CartContextType {
   setIsCartOpen: (open: boolean) => void
 }
 
-const CART_KEY = "classy-collections-cart"
+const CART_KEY = "herkingdom-cart"
 
 function loadCart(): CartItem[] {
   if (typeof window === "undefined") return []

@@ -25,7 +25,7 @@ export async function generateMetadata(): Promise<Metadata> {
     description: p?.meta_description || PAGE_SEO.privacyPolicy.description,
     robots: { index: PAGE_SEO.privacyPolicy.noindex ? false : true, follow: true },
     alternates: { canonical: `${SITE_SEO.siteUrl}/privacy-policy` },
-    keywords: p?.meta_keywords?.split(",").map((k: string) => k.trim()) || ["privacy policy", "data protection", "Elani Beauty Hub", "Elani Beauty Hub privacy", "fashion store privacy Kenya"],
+    keywords: p?.meta_keywords?.split(",").map((k: string) => k.trim()) || ["privacy policy", "data protection", "Her Kingdom", "Her Kingdom privacy", "jewelry store privacy Kenya"],
     authors: [{ name: SITE_SEO.siteName, url: SITE_SEO.siteUrl }],
     creator: SITE_SEO.siteName,
     openGraph: {

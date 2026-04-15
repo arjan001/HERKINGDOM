@@ -108,7 +108,7 @@ export function AdminShell({ children, title }: { children: ReactNode; title: st
           <span className="sr-only">Open menu</span>
         </button>
         <Link href="/admin" className="font-serif text-lg font-bold">
-          Elani Beauty Hub Admin
+          Her Kingdom Admin
         </Link>
         <Link href="/" className="text-xs text-muted-foreground hover:text-foreground">
           View Store
@@ -120,9 +120,9 @@ export function AdminShell({ children, title }: { children: ReactNode; title: st
         <aside className="hidden lg:flex flex-col w-60 min-h-screen border-r border-border bg-background fixed">
           <div className="p-6 border-b border-border">
             <Link href="/admin" className="font-serif text-xl font-bold">
-              Elani Beauty Hub Admin
+              Her Kingdom Admin
             </Link>
-            <p className="text-xs text-muted-foreground mt-1">Manage Elani Beauty Hub Store</p>
+            <p className="text-xs text-muted-foreground mt-1">Manage Her Kingdom Store</p>
           </div>
           <nav className="flex-1 py-4">
             {navItems.map((item) => {
@@ -197,7 +197,7 @@ export function AdminShell({ children, title }: { children: ReactNode; title: st
             <aside className="fixed inset-y-0 left-0 w-72 bg-background z-50 lg:hidden flex flex-col">
               <div className="flex items-center justify-between p-4 border-b border-border">
                 <Link href="/admin" className="font-serif text-lg font-bold">
-                  Elani Beauty Hub Admin
+                  Her Kingdom Admin
                 </Link>
                 <button type="button" onClick={() => setSidebarOpen(false)}>
                   <X className="h-5 w-5" />

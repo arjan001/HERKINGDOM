@@ -154,7 +154,7 @@ export default function RegisterPage() {
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
             <Link href="/" className="font-serif text-3xl font-bold tracking-tight">
-              Elani Beauty Hub
+              Her Kingdom
             </Link>
           <p className="text-sm text-muted-foreground mt-2">Create the Super Admin account</p>
           <p className="text-xs text-muted-foreground mt-1">This is a one-time setup. You can add more team members later from the admin panel.</p>
@@ -175,7 +175,7 @@ export default function RegisterPage() {
 
           <div>
             <Label htmlFor="email" className="text-sm font-medium mb-1.5 block">Email</Label>
-            <Input id="email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="admin@classycollections.com" className="h-11" required />
+            <Input id="email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="admin@herkingdom.co.ke" className="h-11" required />
             </div>
 
             {/* Role selector - hidden on first registration */}

@@ -2,7 +2,8 @@
 
 import { useState, useMemo, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
-import { SlidersHorizontal, Grid3X3, LayoutList, X, Search } from "lucide-react"
+import Link from "next/link"
+import { SlidersHorizontal, Grid3X3, LayoutList, X, Search, ChevronRight } from "lucide-react"
 import { usePagination } from "@/hooks/use-pagination"
 import { PaginationControls } from "@/components/pagination-controls"
 import { TopBar } from "./top-bar"
@@ -140,6 +141,18 @@ export function ShopPage() {
       <Navbar />
       <main className="flex-1">
         <div className="mx-auto max-w-7xl px-4 py-8">
+          {/* Breadcrumb */}
+          <nav aria-label="Breadcrumb" className="mb-4">
+            <ol className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              <li>
+                <Link href="/" className="hover:text-foreground transition-colors">Home</Link>
+              </li>
+              <li><ChevronRight className="h-3.5 w-3.5" /></li>
+              <li className="text-foreground font-medium">
+                {queryParam ? `Search: "${queryParam}"` : selectedCategory ? categories.find((c) => c.slug === selectedCategory)?.name || "Shop" : "Shop"}
+              </li>
+            </ol>
+          </nav>
           <div className="flex items-end justify-between mb-8">
             <div>
               <h1 className="text-3xl font-serif font-bold">{queryParam ? `Results for "${queryParam}"` : "Shop"}</h1>

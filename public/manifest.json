@@ -1,25 +1,20 @@
 {
-  "name": "Elani Beauty Hub",
-  "short_name": "Elani",
-  "description": "Best thrift and new women's fashion in Nairobi. Shop quality tops, dresses, bodysuits, and jackets at affordable prices. Order online at Elani Beauty Hub.",
+  "name": "Her Kingdom",
+  "short_name": "Her Kingdom",
+  "description": "Curated jewelry & accessories in Nairobi, Kenya. Shop necklaces, bracelets, earrings, watches & more at Her Kingdom.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0a0a0a",
-  "theme_color": "#0a0a0a",
+  "background_color": "#ffffff",
+  "theme_color": "#f4a4c0",
   "orientation": "portrait-primary",
-  "categories": ["shopping", "fashion", "lifestyle"],
+  "categories": ["shopping", "jewelry", "accessories", "lifestyle"],
   "lang": "en",
   "icons": [
     {
-      "src": "/logo-kf.png",
+      "src": "/logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
-    },
-    {
-      "src": "/favicon.jpg",
-      "sizes": "64x64",
-      "type": "image/jpeg"
     }
   ]
 }

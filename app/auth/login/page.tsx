@@ -51,7 +51,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <Link href="/" className="font-serif text-3xl font-bold tracking-tight">
-            Elani Beauty Hub
+            Her Kingdom
           </Link>
           <p className="text-sm text-muted-foreground mt-2">Sign in to admin dashboard</p>
         </div>
@@ -71,7 +71,7 @@ export default function LoginPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@classycollections.com"
+              placeholder="admin@herkingdom.co.ke"
               className="h-11"
               required
               autoFocus

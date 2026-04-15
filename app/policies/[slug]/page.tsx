@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     const policy: Policy = await res.json()
 
     return {
-      title: `${policy.meta_title || policy.title} | Elani Beauty Hub`,
+      title: `${policy.meta_title || policy.title} | Her Kingdom`,
       description: policy.meta_description || `Read our ${policy.title.toLowerCase()}`,
       keywords: policy.meta_keywords,
       alternates: {
@@ -43,7 +43,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
         description: policy.meta_description,
         url: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/policies/${slug}`,
         type: "website",
-        siteName: "Elani Beauty Hub",
+        siteName: "Her Kingdom",
       },
     }
   } catch {
@@ -107,12 +107,12 @@ export default async function PolicyPage({ params }: { params: Promise<{ slug: s
             <h2 className="text-lg font-semibold mb-2">Questions or concerns?</h2>
             <p className="text-sm text-muted-foreground mb-4">
               Contact us at{" "}
-              <a href="mailto:info@classycollections.com" className="text-foreground font-medium hover:underline">
-                info@classycollections.com
+              <a href="mailto:herkingdomlive@gmail.com" className="text-foreground font-medium hover:underline">
+                herkingdomlive@gmail.com
               </a>
               {" "}or call{" "}
-              <a href="tel:+254702642324" className="text-foreground font-medium hover:underline">
-                0702 642 324
+              <a href="tel:+254717264422" className="text-foreground font-medium hover:underline">
+                0717 264 422
               </a>
             </p>
             <Link href="/">
