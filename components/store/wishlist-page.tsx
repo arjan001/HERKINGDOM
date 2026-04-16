@@ -121,7 +121,7 @@ export function WishlistPage() {
                               size="sm"
                               onClick={() => handleAddToCart(product)}
                               disabled={!product.inStock}
-                              className="bg-foreground text-background hover:bg-foreground/90 text-xs h-9 px-4 disabled:opacity-40"
+                              className="bg-pink-200 text-foreground hover:bg-pink-300 text-xs h-9 px-4 disabled:opacity-40"
                             >
                               <ShoppingBag className="h-3.5 w-3.5 mr-1.5" />
                               Add to Cart
