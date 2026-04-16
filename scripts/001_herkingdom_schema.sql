@@ -511,7 +511,7 @@ ON CONFLICT DO NOTHING;
 -- ============================================================
 INSERT INTO public.categories (name, slug, description, sort_order, is_active) VALUES
   ('Necklaces', 'necklaces', 'Curated chain necklaces, pendants, layered necklaces & chokers', 1, true),
-  ('Necklace Sets', 'necklace-sets', 'Matching necklace and earring sets for a complete look', 2, true),
+  ('Jewelry Sets', 'necklace-sets', 'Matching necklace and earring sets for a complete look', 2, true),
   ('Bracelets', 'bracelets', 'Charm bracelets, bangles, cuffs & beaded bracelets', 3, true),
   ('Earrings', 'earrings', 'Stud earrings, hoops, drop earrings & statement pieces', 4, true),
   ('Women''s Watches', 'women-watches', 'Elegant women''s watches for every occasion', 5, true),
