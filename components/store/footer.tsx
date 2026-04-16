@@ -1,6 +1,7 @@
 import Link from "next/link"
 import Image from "next/image"
-import { Phone, Mail, Clock } from "lucide-react"
+import { Phone, Mail, Clock, MapPin } from "lucide-react"
+import { FloatingWhatsApp } from "./floating-whatsapp"
 
 export function Footer() {
   return (
@@ -114,6 +115,14 @@ export function Footer() {
                   Dispatch: Tuesdays & Fridays
                 </p>
               </div>
+              <div className="flex items-start gap-3">
+                <MapPin className="h-4 w-4 mt-0.5 text-background/40 flex-shrink-0" />
+                <p className="text-background/60 text-sm leading-relaxed">
+                  Pick-up location:
+                  <br />
+                  <span className="text-background font-medium">Pickup Mtaani</span>
+                </p>
+              </div>
             </div>
           </div>
 
@@ -176,6 +185,9 @@ export function Footer() {
               <Link href="/refund-policy" className="text-background/40 text-xs hover:text-background transition-colors">
                 Refund Policy
               </Link>
+              <Link href="/payments-policy" className="text-background/40 text-xs hover:text-background transition-colors">
+                Payments Policy
+              </Link>
             </div>
           </div>
           <div className="mt-4 text-center">
@@ -185,6 +197,7 @@ export function Footer() {
           </div>
         </div>
       </div>
+      <FloatingWhatsApp />
     </footer>
   )
 }
