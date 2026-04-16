@@ -1,7 +1,8 @@
 -- ============================================================
--- Her Kingdom - Necklaces Seed Data
--- NOTE: "Necklaces" is a separate category from "Necklace Sets"
--- Run this SQL in Supabase SQL Editor after running 001_herkingdom_schema.sql
+-- Her Kingdom - Necklaces Seed Data (DEPRECATED)
+-- WARNING: This script incorrectly placed necklace sets under
+-- the "Necklaces" category. Use 007_cleanup_and_move_to_necklace_sets.sql
+-- instead, which deletes this data and re-inserts under "Necklace Sets".
 -- ============================================================
 
 -- Ensure Necklaces category exists and has the correct image
