@@ -16,6 +16,69 @@
   animation: neon-flicker 2s infinite;
 }
 
+@keyframes payments-glow {
+  0%, 100% {
+    color: #ffd1e0;
+    text-shadow: 0 0 4px rgba(255, 182, 213, 0.9), 0 0 10px rgba(255, 120, 170, 0.8), 0 0 18px rgba(255, 80, 150, 0.6);
+  }
+  20% {
+    color: #ffffff;
+    text-shadow: 0 0 2px rgba(255, 255, 255, 0.6);
+  }
+  25% {
+    color: #ffe7f0;
+    text-shadow: 0 0 6px rgba(255, 200, 220, 0.95), 0 0 14px rgba(255, 140, 180, 0.85), 0 0 22px rgba(255, 90, 160, 0.7);
+  }
+  45% {
+    color: #ffb6d5;
+    text-shadow: 0 0 8px rgba(255, 182, 213, 1), 0 0 16px rgba(255, 120, 180, 0.9), 0 0 28px rgba(255, 80, 160, 0.75);
+  }
+  55% {
+    color: #ffffff;
+    text-shadow: 0 0 3px rgba(255, 255, 255, 0.5);
+  }
+  70% {
+    color: #ffd1e0;
+    text-shadow: 0 0 5px rgba(255, 182, 213, 0.9), 0 0 12px rgba(255, 120, 170, 0.8), 0 0 20px rgba(255, 80, 150, 0.6);
+  }
+}
+
+.payments-policy-glow {
+  animation: payments-glow 2.6s infinite;
+}
+
+@keyframes sparkle-twinkle {
+  0%, 100% {
+    opacity: 0;
+    transform: scale(0.4) rotate(0deg);
+  }
+  20% {
+    opacity: 1;
+    transform: scale(1) rotate(45deg);
+  }
+  40% {
+    opacity: 0.3;
+    transform: scale(0.7) rotate(90deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.1) rotate(135deg);
+  }
+  80% {
+    opacity: 0.5;
+    transform: scale(0.8) rotate(180deg);
+  }
+}
+
+.payments-sparkle {
+  animation: sparkle-twinkle 2s infinite;
+}
+
+.payments-sparkle-1 { animation-delay: 0s; }
+.payments-sparkle-2 { animation-delay: 0.5s; }
+.payments-sparkle-3 { animation-delay: 1s; }
+.payments-sparkle-4 { animation-delay: 1.5s; }
+
 @layer base {
   :root {
     /* Classy Collections - Clean Black & White Theme */

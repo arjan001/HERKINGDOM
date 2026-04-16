@@ -65,6 +65,36 @@ export function Footer() {
               Quick Links
             </h3>
             <nav className="flex flex-col gap-3">
+              <Link
+                href="/payments-policy"
+                className="payments-policy-glow relative inline-flex items-center gap-2 text-sm font-semibold w-fit"
+              >
+                <span
+                  aria-hidden="true"
+                  className="payments-sparkle payments-sparkle-1 absolute -left-3 -top-2 text-pink-200 text-[10px] leading-none"
+                >
+                  ★
+                </span>
+                <span
+                  aria-hidden="true"
+                  className="payments-sparkle payments-sparkle-2 absolute -right-3 -top-1 text-pink-300 text-[12px] leading-none"
+                >
+                  ✦
+                </span>
+                <span
+                  aria-hidden="true"
+                  className="payments-sparkle payments-sparkle-3 absolute -left-2 -bottom-2 text-pink-200 text-[9px] leading-none"
+                >
+                  ✧
+                </span>
+                <span
+                  aria-hidden="true"
+                  className="payments-sparkle payments-sparkle-4 absolute -right-4 -bottom-1 text-pink-300 text-[11px] leading-none"
+                >
+                  ★
+                </span>
+                Payments Policy
+              </Link>
               <Link href="/shop" className="text-background/60 text-sm hover:text-background transition-colors">
                 Shop All
               </Link>
