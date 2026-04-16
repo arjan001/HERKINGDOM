@@ -14,6 +14,7 @@ import { useWishlist } from "@/lib/wishlist-context"
 import { isVideoUrl } from "@/lib/media-utils"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ProductImage } from "./product-image"
 import useSWR from "swr"
 
 const fetcher = (url: string) => fetch(url).then((r) => {
@@ -132,7 +133,7 @@ export function ProductDetailPage({ slug }: { slug: string }) {
                         </div>
                       </>
                     ) : (
-                      <Image src={img || "/placeholder.svg"} alt={`${product.name} view ${i + 1}`} fill className="object-cover" />
+                      <ProductImage src={img || "/placeholder.svg"} alt={`${product.name} view ${i + 1}`} fill loaderSize="sm" className="object-cover" />
                     )}
                   </button>
                 ))}
@@ -149,7 +150,8 @@ export function ProductDetailPage({ slug }: { slug: string }) {
                     className="absolute inset-0 w-full h-full object-contain bg-black"
                   />
                 ) : (
-                  <Image
+                  <ProductImage
+                    key={selectedImage}
                     src={product.images[selectedImage] || "/placeholder.svg"}
                     alt={product.name}
                     fill

@@ -2,6 +2,7 @@
 
 import React from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Search, ShoppingBag, Heart, Menu, X, ChevronDown, Phone } from "lucide-react"
@@ -96,8 +97,15 @@ export function Navbar() {
             </SheetTrigger>
             <SheetContent side="left" className="w-80 bg-background text-foreground p-0">
               <div className="p-6">
-                <Link href="/" className="font-serif text-2xl font-bold tracking-tight">
-                  Her Kingdom
+                <Link href="/" className="inline-flex items-center">
+                  <Image
+                    src="/logo-herkingdom.png"
+                    alt="Her Kingdom"
+                    width={200}
+                    height={80}
+                    priority
+                    className="h-12 w-auto object-contain"
+                  />
                 </Link>
               </div>
               <nav className="flex flex-col px-6 gap-1">
@@ -116,7 +124,16 @@ export function Navbar() {
             </SheetContent>
           </Sheet>
 
-          <Link href="/" className="font-serif text-xl lg:text-2xl font-bold tracking-tight">Her Kingdom</Link>
+          <Link href="/" className="flex items-center shrink-0" aria-label="Her Kingdom - Home">
+            <Image
+              src="/logo-herkingdom.png"
+              alt="Her Kingdom"
+              width={220}
+              height={80}
+              priority
+              className="h-10 lg:h-14 w-auto object-contain"
+            />
+          </Link>
 
           <div className="hidden lg:flex items-center flex-1 max-w-xl mx-8" ref={searchRef}>
             <form onSubmit={handleSearch} className="relative flex items-center w-full">

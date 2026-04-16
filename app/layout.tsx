@@ -29,12 +29,12 @@ export const metadata: Metadata = {
     "Shop curated jewelry, necklaces, bracelets, earrings, watches & accessories at Her Kingdom Nairobi. Hypoallergenic, long-lasting pieces that complement your personal style. #HerkingdomBabe",
   icons: {
     icon: [
-      { url: "/logo.png", type: "image/png", sizes: "512x512" },
+      { url: "/favicon.png", type: "image/png", sizes: "512x512" },
     ],
     apple: [
-      { url: "/logo.png", sizes: "512x512", type: "image/png" },
+      { url: "/favicon.png", sizes: "512x512", type: "image/png" },
     ],
-    shortcut: "/logo.png",
+    shortcut: "/favicon.png",
   },
   manifest: "/manifest.json",
   keywords: SITE_SEO.allKeywords,
@@ -115,9 +115,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
       <head>
-        <link rel="icon" href="/logo.png" type="image/png" sizes="512x512" />
-        <link rel="apple-touch-icon" href="/logo.png" sizes="512x512" />
-        <link rel="shortcut icon" href="/logo.png" />
+        <link rel="icon" href="/favicon.png" type="image/png" sizes="512x512" />
+        <link rel="apple-touch-icon" href="/favicon.png" sizes="512x512" />
+        <link rel="shortcut icon" href="/favicon.png" />
         <meta name="format-detection" content="telephone=no" />
         <meta name="theme-color" content="#f4a4c0" />
         <meta name="application-name" content="Her Kingdom" />
@@ -125,7 +125,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="msapplication-TileImage" content="/logo.png" />
+        <meta name="msapplication-TileImage" content="/favicon.png" />
         <meta name="msapplication-TileColor" content="#f4a4c0" />
         <meta name="msapplication-config" content="none" />
         <link rel="dns-prefetch" href="//fonts.googleapis.com" />
