@@ -9,8 +9,8 @@ import useSWR from "swr"
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
 const COLLECTIONS = [
-  { name: "Women", slug: "women", image: "/banners/bodysuit-black-vneck.jpg", href: "/shop/women" },
-  { name: "New In", slug: "new", image: "/banners/top-floral-garden.jpg", href: "/shop?filter=new" },
+  { name: "Women", slug: "women", image: "/images/products/necklace-sets/crystal-cluster-drop-necklace-set.jpeg", href: "/shop/women" },
+  { name: "New In", slug: "new", image: "/images/products/earrings/amara-gemstone-drops.jpeg", href: "/shop?filter=new" },
 ]
 
 const CATEGORY_IMAGES: Record<string, string> = {

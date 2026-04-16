@@ -57,6 +57,16 @@ export interface Offer {
   validUntil: string
 }
 
+export interface Banner {
+  id: string
+  title: string
+  subtitle: string
+  image: string
+  link: string
+  position: "hero" | "mid-page" | string
+  sortOrder: number
+}
+
 export interface DeliveryLocation {
   id: string
   name: string
