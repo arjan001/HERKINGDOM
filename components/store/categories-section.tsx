@@ -16,6 +16,7 @@ const COLLECTIONS = [
 const CATEGORY_IMAGES: Record<string, string> = {
   "women-watches": "/categories/women-watches.jpeg",
   "men-sunglasses": "/categories/men-sunglasses.jpeg",
+  "men-watches": "/categories/men-watches.jpeg",
 }
 
 export function CategoriesSection() {
