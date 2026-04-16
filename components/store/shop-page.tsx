@@ -43,7 +43,7 @@ function FilterSidebar({
           <button type="button" onClick={() => setSelectedCategory("")} className={`text-left text-sm py-1.5 transition-colors ${selectedCategory === "" ? "font-semibold text-foreground" : "text-muted-foreground hover:text-foreground"}`}>All Categories</button>
           {categories.map((cat) => (
             <button key={cat.id} type="button" onClick={() => setSelectedCategory(cat.slug)} className={`text-left text-sm py-1.5 flex items-center justify-between transition-colors ${selectedCategory === cat.slug ? "font-semibold text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
-              {cat.name}<span className="text-xs">({cat.productCount})</span>
+              {cat.name}
             </button>
           ))}
         </div>
