@@ -1,15 +1,14 @@
 "use client"
 
-import { useState, useMemo, useEffect, useCallback } from "react"
-import Image from "next/image"
-import Link from "next/link"
-import { SlidersHorizontal, Grid3X3, LayoutList, X, Search, ChevronLeft, ChevronRight, ChevronRight as ChevronRightBreadcrumb } from "lucide-react"
+import { useState, useMemo, useEffect } from "react"
+import { SlidersHorizontal, Grid3X3, LayoutList, X, Search } from "lucide-react"
 import { usePagination } from "@/hooks/use-pagination"
 import { PaginationControls } from "@/components/pagination-controls"
 import { TopBar } from "./top-bar"
 import { Navbar } from "./navbar"
 import { Footer } from "./footer"
 import { ProductCard } from "./product-card"
+import { CategoryBreadcrumb } from "./category-breadcrumb"
 import type { Product, Category } from "@/lib/types"
 import { Slider } from "@/components/ui/slider"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -23,16 +22,21 @@ function formatPrice(price: number): string {
   return `KSh ${price.toLocaleString()}`
 }
 
-const COLLECTION_INFO: Record<string, { label: string; tagline: string; banners: string[] }> = {
+const COLLECTION_INFO: Record<string, { label: string; tagline: string; fallbackImage: string }> = {
   men: {
     label: "Men's Collection",
     tagline: "Stylish watches, necklaces & accessories for the modern man",
-    banners: ["/banners/men-page-banner.jpg", "/banners/men-collection.jpg"],
+    fallbackImage: "/banners/men-page-banner.jpg",
   },
   women: {
     label: "Women's Collection",
     tagline: "Curated necklaces, bracelets, earrings & accessories for every occasion",
-    banners: ["/banners/women-page-banner.jpg", "/banners/women-collection.jpg"],
+    fallbackImage: "/banners/women-page-banner.jpg",
+  },
+  babyshop: {
+    label: "Kali-ttos Little Wardrobe",
+    tagline: "Playful gifts, flowers & wardrobe staples for little ones",
+    fallbackImage: "/banners/women-collection.jpg",
   },
 }
 
@@ -42,91 +46,6 @@ const sortOptions = [
   { value: "price-high", label: "Price: High to Low" },
   { value: "name", label: "Name A-Z" },
 ]
-
-function CollectionBanner({ collection }: { collection: string }) {
-  const info = COLLECTION_INFO[collection]
-  const [currentSlide, setCurrentSlide] = useState(0)
-  const banners = info?.banners || []
-
-  const nextSlide = useCallback(() => {
-    setCurrentSlide((prev) => (prev + 1) % banners.length)
-  }, [banners.length])
-
-  useEffect(() => {
-    if (banners.length <= 1) return
-    const interval = setInterval(nextSlide, 4000)
-    return () => clearInterval(interval)
-  }, [banners.length, nextSlide])
-
-  if (!info) return null
-
-  return (
-    <div className="relative w-full h-[180px] md:h-[220px] overflow-hidden rounded-sm">
-      {banners.map((src, i) => (
-        <div
-          key={src}
-          className="absolute inset-0 transition-opacity duration-700"
-          style={{ opacity: i === currentSlide ? 1 : 0 }}
-        >
-          <Image
-            src={src}
-            alt={`${collection === "men" ? "Men's" : collection === "women" ? "Women's" : "Kali-ttos Little Wardrobe"} denim collection banner`}
-            fill
-            className="object-cover"
-            priority={i === 0}
-            title={`${info.label} - ${info.tagline}`}
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-foreground/60 via-foreground/30 to-transparent" />
-        </div>
-      ))}
-      <div className="relative z-10 flex items-center h-full px-8 md:px-12">
-        <div>
-          <p className="text-background/70 text-[10px] tracking-[0.3em] uppercase mb-1.5">Shop</p>
-          <h1 className="text-background text-2xl md:text-3xl font-serif font-bold">{info.label}</h1>
-          <p className="text-background/70 text-sm mt-1">{info.tagline}</p>
-          {info.social && (
-            <a
-              href={info.social.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 mt-3 bg-background/20 backdrop-blur-sm text-background text-xs font-medium px-3 py-1.5 rounded-full hover:bg-background/30 transition-colors"
-              title={`Follow Kali-ttos Little Wardrobe on TikTok`}
-            >
-              <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.88-2.88 2.89 2.89 0 0 1 2.88-2.88c.28 0 .56.04.82.12v-3.5a6.37 6.37 0 0 0-.82-.05A6.34 6.34 0 0 0 3.15 15.3 6.34 6.34 0 0 0 9.49 21.65 6.34 6.34 0 0 0 15.83 15.3V8.76a8.3 8.3 0 0 0 4.87 1.56V6.87a4.84 4.84 0 0 1-1.11-.18Z" /></svg>
-              {info.social.handle}
-            </a>
-          )}
-        </div>
-      </div>
-      {banners.length > 1 && (
-        <div className="absolute bottom-3 right-4 z-10 flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => setCurrentSlide((prev) => (prev - 1 + banners.length) % banners.length)}
-            className="p-1 bg-background/20 backdrop-blur-sm rounded-sm hover:bg-background/40 transition-colors"
-          >
-            <ChevronLeft className="h-3.5 w-3.5 text-background" />
-          </button>
-          {banners.map((_, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => setCurrentSlide(i)}
-              className={`w-1.5 h-1.5 rounded-full transition-colors ${i === currentSlide ? "bg-background" : "bg-background/40"}`}
-            />
-          ))}
-          <button
-            type="button"
-            onClick={nextSlide}
-            className="p-1 bg-background/20 backdrop-blur-sm rounded-sm hover:bg-background/40 transition-colors"
-          >
-            <ChevronRight className="h-3.5 w-3.5 text-background" />
-          </button>
-        </div>
-      )}
-    </div>
-  )
-}
 
 function FilterSidebar({
   categories, selectedCategory, setSelectedCategory, priceRange, setPriceRange, showNew, setShowNew, showOffers, setShowOffers, maxPrice,
@@ -229,32 +148,51 @@ export function CollectionPage({ collection }: { collection: string }) {
     (priceRange[0] > 0 || priceRange[1] < maxPrice) && `${formatPrice(priceRange[0])} - ${formatPrice(priceRange[1])}`,
   ].filter(Boolean)
 
+  const activeCategory = categories.find((c) => c.slug === selectedCategory)
+  const collectionCategories = useMemo(
+    () =>
+      categories.filter((c) =>
+        collectionProducts.some((p) => p.categorySlug === c.slug),
+      ),
+    [categories, collectionProducts],
+  )
+  const heroImage =
+    activeCategory?.image ||
+    collectionCategories[0]?.image ||
+    info?.fallbackImage ||
+    "/placeholder.svg"
+  const heroTitle = activeCategory?.name || info?.label || "Collection"
+  const heroSubtitle = activeCategory
+    ? `Discover our ${activeCategory.name.toLowerCase()} within the ${info?.label || "collection"}.`
+    : info?.tagline
+  const eyebrow = activeCategory ? info?.label : "Shop the Collection"
+
+  const breadcrumbItems = [
+    { label: "Home", href: "/" },
+    { label: "Shop", href: "/shop" },
+    { label: info?.label || "Collection", href: activeCategory ? `/shop/${collection}` : undefined },
+    ...(activeCategory ? [{ label: activeCategory.name }] : []),
+  ]
+
   return (
     <div className="min-h-screen flex flex-col">
       <TopBar />
       <Navbar />
       <main className="flex-1">
         <div className="mx-auto max-w-7xl px-4 py-6">
-          {/* Breadcrumb */}
-          <nav aria-label="Breadcrumb" className="mb-4">
-            <ol className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              <li>
-                <Link href="/" className="hover:text-foreground transition-colors">Home</Link>
-              </li>
-              <li><ChevronRightBreadcrumb className="h-3.5 w-3.5" /></li>
-              <li>
-                <Link href="/shop" className="hover:text-foreground transition-colors">Shop</Link>
-              </li>
-              <li><ChevronRightBreadcrumb className="h-3.5 w-3.5" /></li>
-              <li className="text-foreground font-medium">{info?.label || "Collection"}</li>
-            </ol>
-          </nav>
-          {/* Collection Banner */}
-          <CollectionBanner collection={collection} />
+          <CategoryBreadcrumb
+            items={breadcrumbItems}
+            title={heroTitle}
+            subtitle={heroSubtitle}
+            imageUrl={heroImage}
+            imageAlt={`${heroTitle} background`}
+            eyebrow={eyebrow}
+            productCount={filtered.length}
+          />
 
-          <div className="flex items-end justify-between mt-8 mb-6">
+          <div className="flex items-end justify-between mt-2 mb-6">
             <div>
-              <h2 className="text-2xl font-serif font-bold">{info?.label || "Collection"}</h2>
+              <h2 className="text-xl md:text-2xl font-serif font-bold">{heroTitle}</h2>
               <p className="text-sm text-muted-foreground mt-1">{filtered.length} product{filtered.length !== 1 ? "s" : ""}</p>
             </div>
             <div className="hidden md:flex items-center border border-border rounded-sm max-w-xs">
