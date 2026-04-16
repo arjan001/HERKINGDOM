@@ -86,7 +86,7 @@ export function ProductCard({ product }: { product: Product }) {
                 e.preventDefault()
                 addItem(product)
               }}
-              className="w-full flex items-center justify-center gap-2 bg-foreground text-background py-2.5 text-xs font-medium uppercase tracking-wider hover:bg-foreground/90 transition-colors"
+              className="w-full flex items-center justify-center gap-2 bg-pink-200 text-foreground py-2.5 text-xs font-medium uppercase tracking-wider hover:bg-pink-300 transition-colors"
             >
               <ShoppingBag className="h-3.5 w-3.5" />
               Add to Cart

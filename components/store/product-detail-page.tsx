@@ -268,7 +268,7 @@ export function ProductDetailPage({ slug }: { slug: string }) {
               <div className="flex gap-3 mt-8">
                 <Button
                   onClick={handleAddToCart}
-                  className="flex-1 bg-foreground text-background hover:bg-foreground/90 h-12 text-sm font-medium"
+                  className="flex-1 bg-pink-200 text-foreground hover:bg-pink-300 h-12 text-sm font-medium"
                 >
                   <ShoppingBag className="h-4 w-4 mr-2" />
                   Add to Cart

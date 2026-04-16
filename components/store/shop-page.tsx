@@ -37,12 +37,12 @@ function FilterSidebar({
 }) {
   return (
     <div className="space-y-8">
-      <div>
-        <h3 className="text-sm font-semibold uppercase tracking-wider mb-4">Categories</h3>
-        <div className="flex flex-col gap-2">
-          <button type="button" onClick={() => setSelectedCategory("")} className={`text-left text-sm py-1.5 transition-colors ${selectedCategory === "" ? "font-semibold text-foreground" : "text-muted-foreground hover:text-foreground"}`}>All Categories</button>
+      <div className="border border-pink-200 rounded-sm overflow-hidden">
+        <h3 className="text-sm font-semibold bg-pink-200 text-foreground px-4 py-3">Product Range</h3>
+        <div className="flex flex-col">
+          <button type="button" onClick={() => setSelectedCategory("")} className={`text-left text-sm px-4 py-3 border-t border-pink-200 transition-colors ${selectedCategory === "" ? "bg-pink-200 font-semibold text-foreground" : "text-foreground hover:bg-pink-50"}`}>All Categories</button>
           {categories.map((cat) => (
-            <button key={cat.id} type="button" onClick={() => setSelectedCategory(cat.slug)} className={`text-left text-sm py-1.5 flex items-center justify-between transition-colors ${selectedCategory === cat.slug ? "font-semibold text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
+            <button key={cat.id} type="button" onClick={() => setSelectedCategory(cat.slug)} className={`text-left text-sm px-4 py-3 border-t border-pink-200 flex items-center justify-between transition-colors ${selectedCategory === cat.slug ? "bg-pink-200 font-semibold text-foreground" : "text-foreground hover:bg-pink-50"}`}>
               {cat.name}
             </button>
           ))}
