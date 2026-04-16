@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { NextRequest, NextResponse } from "next/server"
 import { requireAuth, rateLimit, rateLimitResponse } from "@/lib/security"
+import { resolveCategoryImage } from "@/lib/category-images"
 
 export async function GET(request: NextRequest) {
   const rl = rateLimit(request, { limit: 30, windowSeconds: 60 })
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest) {
     id: cat.id,
     name: cat.name,
     slug: cat.slug,
-    image: cat.image_url || "/placeholder.svg?height=500&width=400",
+    image: resolveCategoryImage(cat.slug, cat.image_url),
     productCount: countMap[cat.id] || 0,
     isActive: cat.is_active,
     sortOrder: cat.sort_order,

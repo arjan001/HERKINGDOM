@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import type { Product, Category, DeliveryLocation, Offer, HeroBanner } from "./types"
+import { resolveCategoryImage } from "./category-images"
 
 export function formatPrice(price: number): string {
   return `KSh ${price.toLocaleString()}`
@@ -156,7 +157,7 @@ export async function getCategories(): Promise<Category[]> {
     id: cat.id,
     name: cat.name,
     slug: cat.slug,
-    image: cat.image_url || "/placeholder.svg?height=500&width=400",
+    image: resolveCategoryImage(cat.slug, cat.image_url),
     productCount: countMap[cat.id] || 0,
   }))
 }

@@ -35,6 +35,10 @@ export function CheckoutPage() {
     address: "",
     notes: "",
   })
+  const [isGift, setIsGift] = useState(false)
+  const [giftMessage, setGiftMessage] = useState("")
+  const GIFT_WRAP_FEE = 250
+  const FREE_SHIPPING_THRESHOLD = 7000
 
   useEffect(() => {
     fetch("/api/delivery-locations")
@@ -47,8 +51,9 @@ export function CheckoutPage() {
 
   const selectedDelivery = deliveryLocations.find((l) => l.id === deliveryLocation)
   const deliveryFee = selectedDelivery?.fee || 0
-  const grandTotal = totalPrice + deliveryFee
-  const freeShipping = totalPrice >= 5000
+  const giftFee = isGift ? GIFT_WRAP_FEE : 0
+  const freeShipping = totalPrice >= FREE_SHIPPING_THRESHOLD
+  const grandTotal = totalPrice + (freeShipping ? 0 : deliveryFee) + giftFee
 
   // Validate Kenyan phone: +254, 254, 07, 01, 011
   const cleanPhone = formData.phone.replace(/[\s\-()]/g, "")
@@ -56,29 +61,35 @@ export function CheckoutPage() {
   const isFormValid = formData.name && formData.phone && formData.address && isPhoneValid
   const [formError, setFormError] = useState("")
 
-  const buildOrderPayload = (orderedVia: string) => ({
-    customerName: formData.name,
-    customerEmail: formData.email || undefined,
-    customerPhone: formData.phone,
-    deliveryLocationId: deliveryLocation || undefined,
-    deliveryAddress: formData.address,
-    deliveryFee: freeShipping ? 0 : deliveryFee,
-    subtotal: totalPrice,
-    total: freeShipping ? totalPrice : grandTotal,
-    notes: formData.notes || undefined,
-    orderedVia,
-    items: items.map((item) => ({
-      productId: item.product.id,
-      productName: item.product.name,
-      productImage: item.product.images[0],
-      variation: item.selectedVariations
-        ? Object.entries(item.selectedVariations).map(([k, v]) => `${k}: ${v}`).join(", ")
-        : undefined,
-      quantity: item.quantity,
-      unitPrice: item.product.price,
-      totalPrice: item.product.price * item.quantity,
-    })),
-  })
+  const buildOrderPayload = (orderedVia: string) => {
+    const giftNote = isGift
+      ? `[GIFT ORDER${giftMessage ? ` - Message: "${giftMessage}"` : ""} - Gift wrap fee KSh ${GIFT_WRAP_FEE}]`
+      : ""
+    const combinedNotes = [formData.notes, giftNote].filter(Boolean).join(" ")
+    return {
+      customerName: formData.name,
+      customerEmail: formData.email || undefined,
+      customerPhone: formData.phone,
+      deliveryLocationId: deliveryLocation || undefined,
+      deliveryAddress: formData.address,
+      deliveryFee: freeShipping ? 0 : deliveryFee,
+      subtotal: totalPrice,
+      total: grandTotal,
+      notes: combinedNotes || undefined,
+      orderedVia,
+      items: items.map((item) => ({
+        productId: item.product.id,
+        productName: item.product.name,
+        productImage: item.product.images[0],
+        variation: item.selectedVariations
+          ? Object.entries(item.selectedVariations).map(([k, v]) => `${k}: ${v}`).join(", ")
+          : undefined,
+        quantity: item.quantity,
+        unitPrice: item.product.price,
+        totalPrice: item.product.price * item.quantity,
+      })),
+    }
+  }
 
   const validateForm = (): boolean => {
     if (!formData.name.trim()) { setFormError("Please enter your full name."); return false }
@@ -516,10 +527,41 @@ export function CheckoutPage() {
                 <div className="flex items-center gap-3 bg-secondary p-4 rounded-sm">
                   <Truck className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                   <p className="text-sm">
-                    Your order qualifies for <span className="font-semibold">FREE shipping</span>!
+                    Your order qualifies for <span className="font-semibold">FREE delivery</span> (orders above KSh {FREE_SHIPPING_THRESHOLD.toLocaleString()})!
                   </p>
                 </div>
               )}
+
+              {/* Gift wrapping */}
+              <div>
+                <h2 className="text-lg font-semibold mb-4">Is this a gift?</h2>
+                <label className="flex items-start gap-3 p-4 border border-border rounded-sm cursor-pointer hover:bg-secondary/40 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={isGift}
+                    onChange={(e) => setIsGift(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded border-border"
+                  />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">Yes, package this order as a gift</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      We will place it in a signature box with a decorative gift wrapper. Extra cost: <span className="font-semibold text-foreground">KSh {GIFT_WRAP_FEE}</span>.
+                    </p>
+                  </div>
+                </label>
+                {isGift && (
+                  <div className="mt-3">
+                    <Label htmlFor="giftMessage" className="text-sm font-medium mb-1.5 block">Gift message (optional)</Label>
+                    <Textarea
+                      id="giftMessage"
+                      value={giftMessage}
+                      onChange={(e) => setGiftMessage(e.target.value)}
+                      placeholder="To: ... From: ..."
+                      rows={2}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Right - Order Summary */}
@@ -587,9 +629,15 @@ export function CheckoutPage() {
                       {freeShipping ? "FREE" : selectedDelivery ? formatPrice(deliveryFee) : "\u2014"}
                     </span>
                   </div>
+                  {isGift && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Gift wrapping</span>
+                      <span>{formatPrice(giftFee)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-base font-semibold pt-2 border-t border-border">
                     <span>Total</span>
-                    <span>{formatPrice(freeShipping ? totalPrice : grandTotal)}</span>
+                    <span>{formatPrice(grandTotal)}</span>
                   </div>
                 </div>
 
@@ -626,30 +674,8 @@ export function CheckoutPage() {
                     Pay with Card
                   </Button>
 
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-border" />
-                    </div>
-                    <div className="relative flex justify-center text-xs">
-                      <span className="bg-secondary/50 px-3 text-muted-foreground">or</span>
-                    </div>
-                  </div>
-
-                  {/* WhatsApp Checkout */}
-                  <Button
-                    onClick={handleWhatsAppCheckout}
-                    disabled={isSubmitting}
-                    variant="outline"
-                    className="w-full h-12 text-sm font-medium disabled:opacity-40 bg-transparent"
-                  >
-                    <svg className="h-4 w-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-                    </svg>
-                    Complete via WhatsApp
-                  </Button>
-
-                  <p className="text-xs text-muted-foreground text-center">
-                    We will confirm your order and arrange delivery
+                  <p className="text-xs text-muted-foreground text-center leading-relaxed">
+                    A receipt will be sent to your email and WhatsApp after payment is confirmed.
                   </p>
                 </div>
               </div>
@@ -662,14 +688,14 @@ export function CheckoutPage() {
       <MpesaPaymentModal
         isOpen={showMpesa}
         onClose={() => setShowMpesa(false)}
-        total={freeShipping ? totalPrice : grandTotal}
+        total={grandTotal}
         onPaymentConfirmed={handleMpesaConfirmed}
       />
 
       <CardPaymentModal
         isOpen={showCardPayment}
         onClose={() => setShowCardPayment(false)}
-        total={freeShipping ? totalPrice : grandTotal}
+        total={grandTotal}
         onPaymentComplete={handleCardPaymentComplete}
       />
     </div>

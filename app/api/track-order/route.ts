@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
 
   let query = supabase
     .from("orders")
-    .select("id, order_no, customer_name, customer_phone, subtotal, delivery_fee, total, status, delivery_address, delivery_location_id, created_at")
+    .select("id, order_no, customer_name, customer_phone, customer_email, subtotal, delivery_fee, total, status, delivery_address, delivery_location_id, created_at, payment_method, mpesa_code, order_notes")
     .order("created_at", { ascending: false })
 
   if (orderNumber) {
@@ -81,6 +81,7 @@ export async function GET(request: NextRequest) {
     orderNumber: o.order_no,
     customer: o.customer_name,
     phone: o.customer_phone,
+    email: o.customer_email || "",
     items: (itemsByOrder[o.id] || []).map((item) => {
       let variation = undefined
       if (item.selected_variations && typeof item.selected_variations === "object") {
@@ -100,6 +101,9 @@ export async function GET(request: NextRequest) {
     location: o.delivery_location_id ? locationMap[o.delivery_location_id] : "",
     address: o.delivery_address || "",
     status: o.status || "pending",
+    paymentMethod: o.payment_method || "cod",
+    mpesaCode: o.mpesa_code || "",
+    notes: o.order_notes || "",
     createdAt: o.created_at,
   }))
 

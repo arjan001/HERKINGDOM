@@ -21,6 +21,7 @@ interface TrackedOrder {
   orderNumber: string
   customer: string
   phone: string
+  email?: string
   items: OrderItem[]
   subtotal: number
   deliveryFee: number
@@ -28,6 +29,9 @@ interface TrackedOrder {
   location: string
   address: string
   status: OrderStatus
+  paymentMethod?: string
+  mpesaCode?: string
+  notes?: string
   createdAt: string
 }
 
@@ -300,6 +304,26 @@ export function TrackOrderForm({ initialOrderNumber }: { initialOrderNumber?: st
                 <p className="text-xs text-muted-foreground mt-3">
                   Delivery to: <span className="font-medium text-foreground">{order.location}</span>
                   {order.address && ` - ${order.address}`}
+                </p>
+              )}
+              {(order.paymentMethod || order.mpesaCode) && (
+                <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+                  <span className="text-muted-foreground">Payment:</span>
+                  {order.paymentMethod === "mpesa" ? (
+                    <span className="font-semibold uppercase tracking-wider px-2 py-0.5 rounded-sm bg-[#00843D]/10 text-[#00843D]">M-PESA Lipa Na</span>
+                  ) : order.paymentMethod === "card" ? (
+                    <span className="font-semibold uppercase tracking-wider px-2 py-0.5 rounded-sm bg-secondary text-foreground">Card</span>
+                  ) : (
+                    <span className="font-semibold uppercase tracking-wider px-2 py-0.5 rounded-sm bg-secondary text-muted-foreground">{order.paymentMethod?.toUpperCase() || "COD"}</span>
+                  )}
+                  {order.mpesaCode && (
+                    <span className="font-mono font-semibold tracking-wider text-foreground">{order.mpesaCode}</span>
+                  )}
+                </div>
+              )}
+              {order.notes && (
+                <p className="text-xs text-muted-foreground mt-3 italic">
+                  Notes: <span className="text-foreground not-italic">{order.notes}</span>
                 </p>
               )}
             </div>
