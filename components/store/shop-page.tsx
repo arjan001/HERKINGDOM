@@ -2,14 +2,14 @@
 
 import { useState, useMemo, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
-import Link from "next/link"
-import { SlidersHorizontal, Grid3X3, LayoutList, X, Search, ChevronRight } from "lucide-react"
+import { SlidersHorizontal, Grid3X3, LayoutList, X, Search } from "lucide-react"
 import { usePagination } from "@/hooks/use-pagination"
 import { PaginationControls } from "@/components/pagination-controls"
 import { TopBar } from "./top-bar"
 import { Navbar } from "./navbar"
 import { Footer } from "./footer"
 import { ProductCard } from "./product-card"
+import { CategoryBreadcrumb } from "./category-breadcrumb"
 import type { Product, Category } from "@/lib/types"
 import { Slider } from "@/components/ui/slider"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -135,27 +135,52 @@ export function ShopPage() {
     (priceRange[0] > 0 || priceRange[1] < maxPrice) && `${formatPrice(priceRange[0])} - ${formatPrice(priceRange[1])}`,
   ].filter(Boolean)
 
+  const activeCategory = categories.find((c) => c.slug === selectedCategory)
+  const heroImage =
+    activeCategory?.image ||
+    categories[0]?.image ||
+    "/banners/hero-dress-floral-white.jpg"
+  const heroTitle = queryParam
+    ? `Results for "${queryParam}"`
+    : activeCategory
+    ? activeCategory.name
+    : "Shop All"
+  const heroSubtitle = queryParam
+    ? `Explore ${filtered.length} matching item${filtered.length !== 1 ? "s" : ""} across our catalog.`
+    : activeCategory
+    ? `Hand-picked ${activeCategory.name.toLowerCase()} from Her Kingdom.`
+    : "Discover our full catalog of jewelry, accessories & gifts."
+  const eyebrow = queryParam ? "Search Results" : activeCategory ? "Category" : "Boutique Collection"
+
+  const breadcrumbItems = [
+    { label: "Home", href: "/" },
+    { label: "Shop", href: activeCategory || queryParam ? "/shop" : undefined },
+    ...(queryParam
+      ? [{ label: `Search: "${queryParam}"` }]
+      : activeCategory
+      ? [{ label: activeCategory.name }]
+      : []),
+  ]
+
   return (
     <div className="min-h-screen flex flex-col">
       <TopBar />
       <Navbar />
       <main className="flex-1">
-        <div className="mx-auto max-w-7xl px-4 py-8">
-          {/* Breadcrumb */}
-          <nav aria-label="Breadcrumb" className="mb-4">
-            <ol className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              <li>
-                <Link href="/" className="hover:text-foreground transition-colors">Home</Link>
-              </li>
-              <li><ChevronRight className="h-3.5 w-3.5" /></li>
-              <li className="text-foreground font-medium">
-                {queryParam ? `Search: "${queryParam}"` : selectedCategory ? categories.find((c) => c.slug === selectedCategory)?.name || "Shop" : "Shop"}
-              </li>
-            </ol>
-          </nav>
-          <div className="flex items-end justify-between mb-8">
+        <div className="mx-auto max-w-7xl px-4 py-6">
+          <CategoryBreadcrumb
+            items={breadcrumbItems}
+            title={heroTitle}
+            subtitle={heroSubtitle}
+            imageUrl={heroImage}
+            imageAlt={`${heroTitle} background`}
+            eyebrow={eyebrow}
+            productCount={filtered.length}
+          />
+
+          <div className="flex items-end justify-between mt-2 mb-6">
             <div>
-              <h1 className="text-3xl font-serif font-bold">{queryParam ? `Results for "${queryParam}"` : "Shop"}</h1>
+              <h2 className="text-xl md:text-2xl font-serif font-bold">{heroTitle}</h2>
               <p className="text-sm text-muted-foreground mt-1">{filtered.length} product{filtered.length !== 1 ? "s" : ""}</p>
             </div>
             <div className="hidden md:flex items-center border border-border rounded-sm max-w-xs">
