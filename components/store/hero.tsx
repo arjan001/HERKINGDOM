@@ -11,33 +11,33 @@ const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
 const FALLBACK_BANNERS: HeroBanner[] = [
   {
-    id: "women-bodysuits",
-    title: "Bodysuits Collection",
-    subtitle: "Sleek, sculpted bodysuits for every occasion. From casual layering to bold statement pieces — find your perfect fit.",
-    collection: "women-bodysuits",
-    bannerImage: "/banners/bodysuit-black-vneck.jpg",
-    linkUrl: "/shop?category=women-bodysuits",
-    buttonText: "Shop Bodysuits",
+    id: "signature-jewelry",
+    title: "The Signature Jewelry Edit",
+    subtitle: "Hand-picked crystal sets, drop earrings and statement pieces — curated in Nairobi, made to be worn.",
+    collection: "jewelry-sets",
+    bannerImage: "/images/products/necklace-sets/crystal-cluster-drop-necklace-set.jpeg",
+    linkUrl: "/shop?category=jewelry-sets",
+    buttonText: "Shop The Edit",
     sortOrder: 0,
   },
   {
-    id: "women-dresses",
-    title: "Dresses & Tops",
-    subtitle: "Elegant dresses, floral tops, and corset pieces designed for the modern woman.",
-    collection: "women-dresses",
-    bannerImage: "/banners/dress-beige-wrap.jpg",
-    linkUrl: "/shop?filter=new",
-    buttonText: "Explore Collection",
+    id: "timepieces",
+    title: "Timeless Timepieces",
+    subtitle: "Rose-gold chain watches and floral bracelet dials — quietly luxurious, priced to be worn.",
+    collection: "women-watches",
+    bannerImage: "/images/products/women-watches/gold-flower-bracelet-watch.jpeg",
+    linkUrl: "/shop?category=women-watches",
+    buttonText: "Browse Watches",
     sortOrder: 1,
   },
   {
-    id: "new-arrivals",
-    title: "New Arrivals",
-    subtitle: "Fresh styles added weekly. Bodysuits, tops, dresses, and jackets — curated for you.",
-    collection: "new-arrivals",
-    bannerImage: "/banners/top-floral-garden.jpg",
-    linkUrl: "/shop?filter=new",
-    buttonText: "View New In",
+    id: "everyday-sparkle",
+    title: "Everyday Sparkle",
+    subtitle: "Featherlight earrings, dainty studs and drop crystals designed for every hour of the day.",
+    collection: "earrings",
+    bannerImage: "/images/products/earrings/amara-gemstone-drops.jpeg",
+    linkUrl: "/shop?category=earrings",
+    buttonText: "Shop Earrings",
     sortOrder: 2,
   },
 ]
@@ -107,7 +107,7 @@ function BannerImage({ src, alt, priority = false }: { src: string; alt: string;
   if (hasError) {
     return (
       <Image
-        src="/banners/bodysuit-black-vneck.jpg"
+        src="/images/products/necklace-sets/crystal-cluster-drop-necklace-set.jpeg"
         alt={alt}
         fill
         className="object-cover"
@@ -125,7 +125,7 @@ function BannerImage({ src, alt, priority = false }: { src: string; alt: string;
       priority={priority}
       onError={() => {
         setHasError(true)
-        setImgSrc("/banners/bodysuit-black-vneck.jpg")
+        setImgSrc("/images/products/necklace-sets/crystal-cluster-drop-necklace-set.jpeg")
       }}
     />
   )
@@ -140,7 +140,7 @@ export function Hero() {
 
     return banners.slice(0, 3).map((b) => ({
       ...b,
-      bannerImage: b.bannerImage || "/banners/bodysuit-black-vneck.jpg",
+      bannerImage: b.bannerImage || "/images/products/necklace-sets/crystal-cluster-drop-necklace-set.jpeg",
       linkUrl: b.linkUrl || "/shop",
       buttonText: b.buttonText || "Shop Now",
     }))

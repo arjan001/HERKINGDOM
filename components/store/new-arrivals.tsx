@@ -2,41 +2,44 @@
 
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
+import { useMemo } from "react"
 import { ProductCard } from "./product-card"
 import type { Product } from "@/lib/types"
 import useSWR from "swr"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr]
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[a[i], a[j]] = [a[j], a[i]]
+  }
+  return a
+}
+
+const TARGET = 8
+
 export function NewArrivals() {
   const { data: products = [] } = useSWR<Product[]>("/api/products", fetcher)
-  const newProducts = products.filter((p) => p.isNew)
 
-  // If not enough new products, fill with recent products from different categories
-  let displayed = [...newProducts]
-  if (displayed.length < 4) {
-    const usedIds = new Set(displayed.map((p) => p.id))
-    const usedCats = new Set(displayed.map((p) => p.categorySlug))
-    // Add products from categories not yet represented
-    for (const p of products) {
-      if (displayed.length >= 4) break
-      if (!usedIds.has(p.id) && !usedCats.has(p.categorySlug)) {
-        displayed.push(p)
-        usedIds.add(p.id)
-        usedCats.add(p.categorySlug)
+  const displayed = useMemo(() => {
+    if (products.length === 0) return []
+
+    const newShuffled = shuffle(products.filter((p) => p.isNew))
+    const result: Product[] = newShuffled.slice(0, TARGET)
+
+    if (result.length < TARGET) {
+      const usedIds = new Set(result.map((p) => p.id))
+      const rest = shuffle(products.filter((p) => !usedIds.has(p.id)))
+      for (const p of rest) {
+        if (result.length >= TARGET) break
+        result.push(p)
       }
     }
-    // If still not enough, add any remaining
-    for (const p of products) {
-      if (displayed.length >= 4) break
-      if (!usedIds.has(p.id)) {
-        displayed.push(p)
-        usedIds.add(p.id)
-      }
-    }
-  }
 
-  displayed = displayed.slice(0, 4)
+    return result
+  }, [products])
 
   if (displayed.length === 0) return null
 

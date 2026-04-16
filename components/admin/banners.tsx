@@ -235,7 +235,7 @@ export function AdminBanners() {
             {heroBanners.map((h) => (
               <div key={h.id} className="flex items-center gap-4 border border-border rounded-sm p-4">
                 <div className="relative w-32 h-20 bg-secondary rounded-sm overflow-hidden flex-shrink-0">
-                  <Image src={h.image_url || "/banners/bodysuit-black-vneck.jpg"} alt={h.title} fill className="object-cover" />
+                  <Image src={h.image_url || "/placeholder.svg"} alt={h.title} fill className="object-cover" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="text-sm font-semibold truncate">{h.title}</h3>
@@ -382,8 +382,8 @@ export function AdminBanners() {
             <div><Label className="text-sm font-medium mb-1.5 block">Subtitle</Label><Input value={heroForm.subtitle} onChange={(e) => setHeroForm({ ...heroForm, subtitle: e.target.value })} placeholder="Discover stylish women's fashion" /></div>
             <div>
               <Label className="text-sm font-medium mb-1.5 block">Banner Image</Label>
-              <Input value={heroForm.imageUrl} onChange={(e) => setHeroForm({ ...heroForm, imageUrl: e.target.value })} placeholder="/banners/bodysuit-black-vneck.jpg" />
-              <p className="text-[11px] text-muted-foreground mt-1">Available: /banners/bodysuit-black-vneck.jpg, /banners/dress-beige-wrap.jpg, /banners/top-floral-garden.jpg, /banners/bodysuit-teal-cami.jpg, /banners/corset-floral-cream.jpg</p>
+              <Input value={heroForm.imageUrl} onChange={(e) => setHeroForm({ ...heroForm, imageUrl: e.target.value })} placeholder="/images/products/necklace-sets/crystal-cluster-drop-necklace-set.jpeg" />
+              <p className="text-[11px] text-muted-foreground mt-1">Use any image from /images/products/** (e.g. /images/products/earrings/amara-gemstone-drops.jpeg, /images/products/women-watches/gold-flower-bracelet-watch.jpeg, /images/products/bracelets/celestia-graduated-cz-bracelet.jpeg).</p>
               {heroForm.imageUrl && (
                 <div className="relative w-full h-28 mt-2 rounded-sm overflow-hidden bg-secondary">
                   <Image src={heroForm.imageUrl} alt="Preview" fill className="object-cover" />

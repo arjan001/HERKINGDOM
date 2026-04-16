@@ -214,9 +214,31 @@ export async function getPopupOffer(): Promise<Offer | null> {
     title: offer.title,
     description: offer.description || "",
     discount: offer.discount_label || "",
-    image: offer.image_url || "/banners/bodysuit-blush-square.jpg",
+    image: offer.image_url || "/placeholder.svg",
     validUntil: offer.valid_until || "2026-12-31",
   }
+}
+
+export async function getMidPageBanners() {
+  const supabase = await createClient()
+  if (!supabase) return []
+
+  const { data } = await supabase
+    .from("banners")
+    .select("id, title, subtitle, image_url, link, position, sort_order")
+    .eq("is_active", true)
+    .eq("position", "mid-page")
+    .order("sort_order", { ascending: true })
+
+  return (data || []).map((b) => ({
+    id: b.id as string,
+    title: (b.title as string) || "",
+    subtitle: (b.subtitle as string) || "",
+    image: (b.image_url as string) || "/placeholder.svg",
+    link: (b.link as string) || "/shop",
+    position: (b.position as string) || "mid-page",
+    sortOrder: (b.sort_order as number) || 0,
+  }))
 }
 
 export async function getSiteSettings() {
@@ -334,7 +356,7 @@ export async function getHeroBanners(): Promise<HeroBanner[]> {
       title: b.title || "Women's Collection",
       subtitle: b.subtitle || "Discover premium women's fashion",
       collection: "women-collection",
-      bannerImage: b.image_url || "/banners/bodysuit-black-vneck.jpg",
+      bannerImage: b.image_url || "/images/products/necklace-sets/crystal-cluster-drop-necklace-set.jpeg",
       linkUrl: b.button_link || "/shop",
       buttonText: b.button_text || "Shop Now",
       sortOrder: b.sort_order || 0,

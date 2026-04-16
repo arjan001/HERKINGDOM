@@ -2,14 +2,23 @@
 
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
+import { useMemo } from "react"
 import { ProductCard } from "./product-card"
 import type { Product } from "@/lib/types"
 import useSWR from "swr"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
-function getMixedProducts(products: Product[], count: number): Product[] {
-  // Group products by category
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr]
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[a[i], a[j]] = [a[j], a[i]]
+  }
+  return a
+}
+
+function getMixedRandom(products: Product[], count: number): Product[] {
   const byCategory: Record<string, Product[]> = {}
   for (const p of products) {
     const cat = p.categorySlug || "other"
@@ -17,10 +26,14 @@ function getMixedProducts(products: Product[], count: number): Product[] {
     byCategory[cat].push(p)
   }
 
-  const categories = Object.keys(byCategory)
+  // Shuffle each category bucket so picks differ per load
+  for (const cat of Object.keys(byCategory)) {
+    byCategory[cat] = shuffle(byCategory[cat])
+  }
+
+  const categories = shuffle(Object.keys(byCategory))
   if (categories.length === 0) return []
 
-  // Round-robin pick from each category to get a nice mix
   const result: Product[] = []
   const indices: Record<string, number> = {}
   for (const cat of categories) indices[cat] = 0
@@ -43,14 +56,10 @@ function getMixedProducts(products: Product[], count: number): Product[] {
 export function FeaturedProducts() {
   const { data: products = [] } = useSWR<Product[]>("/api/products", fetcher)
 
-  // Prioritize featured/offer/new items but mix from all categories
-  const prioritized = [...products].sort((a, b) => {
-    const aScore = (a.isOnOffer ? 2 : 0) + (a.isNew ? 1 : 0)
-    const bScore = (b.isOnOffer ? 2 : 0) + (b.isNew ? 1 : 0)
-    return bScore - aScore
-  })
-
-  const featured = getMixedProducts(prioritized, 8)
+  const featured = useMemo(() => {
+    if (products.length === 0) return []
+    return getMixedRandom(products, 8)
+  }, [products])
 
   if (featured.length === 0) return null
 
