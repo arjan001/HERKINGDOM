@@ -8,6 +8,7 @@ import { formatPrice } from "@/lib/format"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden"
+import { ProductImage } from "./product-image"
 
 export function CartDrawer() {
   const { items, removeItem, updateQuantity, totalPrice, isCartOpen, setIsCartOpen } = useCart()
@@ -41,10 +42,11 @@ export function CartDrawer() {
               {items.map((item) => (
                 <div key={item.product.id} className="flex gap-4">
                   <div className="relative w-20 h-24 flex-shrink-0 bg-secondary rounded-sm overflow-hidden">
-                    <Image
+                    <ProductImage
                       src={item.product.images[0] || "/placeholder.svg"}
                       alt={item.product.name}
                       fill
+                      loaderSize="sm"
                       className="object-cover"
                     />
                   </div>

@@ -10,6 +10,7 @@ import { useWishlist } from "@/lib/wishlist-context"
 import { useCart } from "@/lib/cart-context"
 import { formatPrice } from "@/lib/format"
 import { Button } from "@/components/ui/button"
+import { ProductImage } from "./product-image"
 
 export function WishlistPage() {
   const { items, removeItem, clearWishlist } = useWishlist()
@@ -87,10 +88,11 @@ export function WishlistPage() {
                         <td className="px-5 py-4">
                           <Link href={`/product/${product.slug}`} className="flex items-center gap-4 group">
                             <div className="relative w-16 h-20 flex-shrink-0 bg-secondary rounded-sm overflow-hidden">
-                              <Image
+                              <ProductImage
                                 src={product.images[0] || "/placeholder.svg"}
                                 alt={product.name}
                                 fill
+                                loaderSize="sm"
                                 className="object-cover group-hover:scale-105 transition-transform duration-300"
                               />
                             </div>
@@ -147,10 +149,11 @@ export function WishlistPage() {
                     <div className="flex gap-4">
                       <Link href={`/product/${product.slug}`} className="flex-shrink-0">
                         <div className="relative w-24 h-28 bg-secondary rounded-sm overflow-hidden">
-                          <Image
+                          <ProductImage
                             src={product.images[0] || "/placeholder.svg"}
                             alt={product.name}
                             fill
+                            loaderSize="sm"
                             className="object-cover"
                           />
                         </div>

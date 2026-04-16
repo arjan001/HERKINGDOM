@@ -10,11 +10,14 @@ export function Footer() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
           {/* Brand + Social */}
           <div>
-            <Link href="/" className="flex items-center gap-3">
-              <Image src="/logo.png" alt="Her Kingdom" width={48} height={48} className="rounded-full" />
-              <span className="font-serif text-2xl font-bold tracking-tight">
-                Her Kingdom
-              </span>
+            <Link href="/" className="inline-flex items-center">
+              <Image
+                src="/logo-herkingdom.png"
+                alt="Her Kingdom"
+                width={240}
+                height={96}
+                className="h-16 w-auto object-contain brightness-0 invert"
+              />
             </Link>
             <p className="text-background/60 text-sm mt-4 leading-relaxed max-w-xs">
               Curated jewelry & accessories that complement your personal style and embody individuality. Hypoallergenic, long-lasting pieces delivered across Kenya.

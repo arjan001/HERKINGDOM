@@ -8,6 +8,7 @@ import { formatPrice } from "@/lib/format"
 import { useCart } from "@/lib/cart-context"
 import { useWishlist } from "@/lib/wishlist-context"
 import { isVideoUrl } from "@/lib/media-utils"
+import { ProductImage } from "./product-image"
 
 export function ProductCard({ product }: { product: Product }) {
   const { addItem } = useCart()
@@ -36,7 +37,7 @@ export function ProductCard({ product }: { product: Product }) {
               </div>
             </>
           ) : (
-            <Image
+            <ProductImage
               src={primaryMedia || "/placeholder.svg"}
               alt={product.name}
               fill
