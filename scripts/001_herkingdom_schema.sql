@@ -519,6 +519,7 @@ INSERT INTO public.categories (name, slug, description, sort_order, is_active) V
   ('Men''s Necklaces', 'men-necklaces', 'Men''s chain necklaces and pendants', 7, true),
   ('Handbags & Purses', 'handbags-purses', 'Curated handbags, clutches and purses', 8, true),
   ('Sunglasses', 'sunglasses', 'Women''s and men''s sunglasses', 9, true),
+  ('Men''s Sunglasses', 'men-sunglasses', 'Stylish men''s sunglasses for every occasion', 15, true),
   ('Scarves & Shawls', 'scarves-shawls', 'Elegant scarves, shawls and ponchos', 10, true),
   ('Perfume & Scents', 'perfume-scents', 'Curated fragrances and scents', 11, true),
   ('Gift Packages', 'gift-packages', 'Ready-made gift boxes for every occasion', 12, true),
