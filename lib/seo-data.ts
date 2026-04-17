@@ -310,7 +310,7 @@ export const PAGE_SEO = {
   paymentsPolicy: {
     title: "Payments Policy | Her Kingdom — M-PESA, Card & Cash on Delivery",
     description:
-      "How payments work at Her Kingdom — M-PESA Lipa Na, card payments, processing times, gift packaging, free delivery above KSh 7,000, receipts, and WhatsApp support.",
+      "How payments work at Her Kingdom — M-PESA STK push via PayHero, card payments, processing times, gift packaging, free delivery above KSh 7,000, receipts, and WhatsApp support.",
   },
   checkout: {
     title: "Checkout | Her Kingdom",
@@ -366,7 +366,7 @@ export const PAGE_KEYWORDS = {
     "jewelry wishlist", "saved jewelry", "Her Kingdom wishlist",
   ],
   paymentsPolicy: [
-    "payments policy", "Her Kingdom payments", "M-PESA Lipa Na", "Lipa Na M-PESA Kenya",
+    "payments policy", "Her Kingdom payments", "M-PESA STK push", "PayHero M-PESA Kenya",
     "Kenya jewelry payments", "pay jewelry online Kenya", "card payment jewelry Kenya",
     "cash on delivery jewelry Nairobi", "delivery policy Kenya", "free delivery above KSh 7000",
     "Her Kingdom payment methods", "jewelry receipt Her Kingdom",

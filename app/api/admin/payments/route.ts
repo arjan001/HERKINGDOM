@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAuth, rateLimit, rateLimitResponse } from "@/lib/security"
+import { requireAuth, rateLimit, rateLimitResponse, isValidPhone } from "@/lib/security"
 import { createClient } from "@/lib/supabase/server"
+import { getPayHeroEnv, initiateStkPush, getWalletBalance } from "@/lib/payhero"
 
-const LIPANA_API_BASE = "https://api.lipana.dev/v1"
+/**
+ * Admin payments API.
+ *
+ * Transactions are stored in the `orders` table (payment_method = "mpesa"),
+ * so we no longer talk to any external transactions list — PayHero is only
+ * used to fire STK pushes and read the wallet balance.
+ */
 
-function getLipanaKey(): string | null {
-  return process.env.LIPANA_SECRET_KEY || null
-}
-
-// GET: Fetch transactions from Lipana or card payment orders
 export async function GET(request: NextRequest) {
   const rl = rateLimit(request, { limit: 30, windowSeconds: 60 })
   if (!rl.success) return rateLimitResponse()
@@ -18,7 +20,6 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const action = searchParams.get("action") || "transactions"
 
-  // Card payments are fetched from the orders table, not Lipana
   if (action === "card-payments") {
     try {
       const supabase = await createClient()
@@ -40,91 +41,122 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  const apiKey = getLipanaKey()
-  if (!apiKey) {
-    return NextResponse.json({ error: "Lipana API key not configured. Add LIPANA_SECRET_KEY to environment variables." }, { status: 500 })
-  }
-
-  try {
-    if (action === "transactions") {
+  if (action === "transactions") {
+    try {
+      const supabase = await createClient()
       const status = searchParams.get("status") || ""
-      const limit = searchParams.get("limit") || "50"
-      const params = new URLSearchParams()
-      if (status) params.set("status", status)
-      params.set("limit", limit)
+      const limit = Math.min(100, Number(searchParams.get("limit") || "50"))
 
-      const res = await fetch(`${LIPANA_API_BASE}/transactions?${params.toString()}`, {
-        headers: { "x-api-key": apiKey },
-      })
-      const data = await res.json()
-      return NextResponse.json(data)
+      let query = supabase
+        .from("orders")
+        .select("id, order_no, customer_name, customer_phone, mpesa_code, mpesa_phone, total, status, payment_method, created_at")
+        .eq("payment_method", "mpesa")
+        .order("created_at", { ascending: false })
+        .limit(limit)
+
+      if (status === "success" || status === "completed") {
+        query = query.eq("status", "confirmed")
+      } else if (status === "pending") {
+        query = query.eq("status", "pending")
+      } else if (status === "failed") {
+        query = query.eq("status", "cancelled")
+      }
+
+      const { data, error } = await query
+      if (error) {
+        console.error("Supabase transactions error:", error)
+        return NextResponse.json({ error: "Failed to fetch transactions" }, { status: 500 })
+      }
+
+      const txs = (data || []).map((row) => ({
+        id: row.id,
+        reference: row.order_no,
+        amount: Number(row.total) || 0,
+        currency: "KES",
+        status: row.status === "confirmed" ? "success" : row.status,
+        phone: row.mpesa_phone || row.customer_phone,
+        mpesaReceipt: row.mpesa_code || "",
+        customer: row.customer_name,
+        timestamp: row.created_at,
+      }))
+      return NextResponse.json(txs)
+    } catch (error) {
+      console.error("Transactions error:", error)
+      return NextResponse.json({ error: "Failed to fetch transactions" }, { status: 500 })
     }
-
-    if (action === "payment-links") {
-      const res = await fetch(`${LIPANA_API_BASE}/payment-links`, {
-        headers: { "x-api-key": apiKey },
-      })
-      const data = await res.json()
-      return NextResponse.json(data)
-    }
-
-    return NextResponse.json({ error: "Invalid action" }, { status: 400 })
-  } catch (error) {
-    console.error("Lipana API error:", error)
-    return NextResponse.json({ error: "Failed to fetch from Lipana API" }, { status: 500 })
   }
+
+  if (action === "balance") {
+    const env = getPayHeroEnv()
+    if (!env) {
+      return NextResponse.json({ configured: false, error: "PayHero not configured" })
+    }
+    const balance = await getWalletBalance(env)
+    if (!balance) {
+      return NextResponse.json({ configured: true, error: "Could not read wallet balance" }, { status: 502 })
+    }
+    return NextResponse.json({
+      configured: true,
+      balance: balance.balance,
+      currency: "KES",
+      channelId: balance.channelId,
+      channelName: balance.channelName,
+    })
+  }
+
+  return NextResponse.json({ error: "Invalid action" }, { status: 400 })
 }
 
-// POST: Create payment links or initiate STK push
 export async function POST(request: NextRequest) {
   const rl = rateLimit(request, { limit: 15, windowSeconds: 60 })
   if (!rl.success) return rateLimitResponse()
   const auth = await requireAuth()
   if (!auth.authenticated) return auth.response!
 
-  const apiKey = getLipanaKey()
-  if (!apiKey) {
-    return NextResponse.json({ error: "Lipana API key not configured. Add LIPANA_SECRET_KEY to environment variables." }, { status: 500 })
-  }
-
   try {
     const body = await request.json()
     const { action, ...payload } = body
 
-    if (action === "create-payment-link") {
-      const res = await fetch(`${LIPANA_API_BASE}/payment-links`, {
-        method: "POST",
-        headers: {
-          "x-api-key": apiKey,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      })
-      const data = await res.json()
-      if (!res.ok) return NextResponse.json(data, { status: res.status })
-      return NextResponse.json(data)
-    }
-
     if (action === "stk-push") {
-      const res = await fetch(`${LIPANA_API_BASE}/transactions/push-stk`, {
-        method: "POST",
-        headers: {
-          "x-api-key": apiKey,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          phone: payload.phone,
-          amount: payload.amount,
-        }),
+      const env = getPayHeroEnv()
+      if (!env) {
+        return NextResponse.json(
+          { error: "PayHero not configured. Set PAYHERO_API_USERNAME, PAYHERO_API_PASSWORD, PAYHERO_CHANNEL_ID and PAYHERO_CALLBACK_URL." },
+          { status: 503 },
+        )
+      }
+
+      const phone = String(payload.phone || "")
+      const amount = Math.round(Number(payload.amount) || 0)
+      if (!isValidPhone(phone) || amount < 1) {
+        return NextResponse.json({ error: "Valid phone and amount are required" }, { status: 400 })
+      }
+
+      // Admin-initiated STK pushes do not come from a customer-facing order;
+      // stamp them with a traceable reference so the callback can be matched
+      // if the operator wants to reconcile later.
+      const reference = `ADMIN-${Date.now().toString(36).toUpperCase()}`
+      const result = await initiateStkPush(env, {
+        amount,
+        phone,
+        externalReference: reference,
+        customerName: payload.customerName ? String(payload.customerName) : undefined,
       })
-      const data = await res.json()
-      if (!res.ok) return NextResponse.json(data, { status: res.status })
-      return NextResponse.json(data)
+
+      if (!result.success) {
+        return NextResponse.json({ error: result.error || "STK push failed", details: result.raw }, { status: 502 })
+      }
+      return NextResponse.json({
+        success: true,
+        reference,
+        checkoutRequestId: result.checkoutRequestId,
+        status: result.status,
+      })
     }
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 })
   } catch (error) {
-    console.error("Lipana API error:", error)
-    return NextResponse.json({ error: "Failed to process Lipana request" }, { status: 500 })
+    console.error("PayHero admin error:", error)
+    return NextResponse.json({ error: "Failed to process request" }, { status: 500 })
   }
 }

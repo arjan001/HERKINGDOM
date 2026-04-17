@@ -8,13 +8,10 @@ import {
   CreditCard,
   Send,
   RefreshCw,
-  ExternalLink,
   CheckCircle2,
   XCircle,
   Clock,
   Phone,
-  Copy,
-  Link2,
   AlertCircle,
   Wallet,
 } from "lucide-react"
@@ -23,27 +20,23 @@ const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
 interface Transaction {
   id: string
+  reference: string
   amount: number
   currency: string
   status: string
   phone: string
+  mpesaReceipt?: string
+  customer?: string
   timestamp: string
-  paymentLink?: {
-    id: string
-    title: string
-  }
 }
 
-interface PaymentLink {
-  id: string
-  slug: string
-  title: string
-  description?: string
-  amount: number
-  currency: string
-  status: string
-  url: string
-  createdAt: string
+interface BalanceInfo {
+  configured: boolean
+  balance?: number
+  currency?: string
+  channelId?: number
+  channelName?: string
+  error?: string
 }
 
 interface CardPaymentOrder {
@@ -79,10 +72,10 @@ function StatusBadge({ status }: { status: string }) {
   const config: Record<string, { icon: typeof CheckCircle2; className: string; label: string }> = {
     success: { icon: CheckCircle2, className: "bg-emerald-100 text-emerald-700", label: "Success" },
     completed: { icon: CheckCircle2, className: "bg-emerald-100 text-emerald-700", label: "Completed" },
+    confirmed: { icon: CheckCircle2, className: "bg-emerald-100 text-emerald-700", label: "Confirmed" },
     failed: { icon: XCircle, className: "bg-red-100 text-red-700", label: "Failed" },
+    cancelled: { icon: XCircle, className: "bg-red-100 text-red-700", label: "Cancelled" },
     pending: { icon: Clock, className: "bg-yellow-100 text-yellow-700", label: "Pending" },
-    active: { icon: CheckCircle2, className: "bg-blue-100 text-blue-700", label: "Active" },
-    inactive: { icon: XCircle, className: "bg-gray-100 text-gray-500", label: "Inactive" },
   }
 
   const c = config[status] || { icon: Clock, className: "bg-gray-100 text-gray-600", label: status }
@@ -109,19 +102,9 @@ function StkPushForm() {
     }
 
     const numAmount = Number(amount)
-    if (numAmount < 10) {
-      toast.error("Minimum amount is KSh 10")
+    if (numAmount < 1) {
+      toast.error("Minimum amount is KSh 1")
       return
-    }
-
-    // Format phone number
-    let formattedPhone = phone.replace(/\s/g, "")
-    if (formattedPhone.startsWith("0")) {
-      formattedPhone = "+254" + formattedPhone.slice(1)
-    } else if (formattedPhone.startsWith("254")) {
-      formattedPhone = "+" + formattedPhone
-    } else if (!formattedPhone.startsWith("+")) {
-      formattedPhone = "+254" + formattedPhone
     }
 
     setLoading(true)
@@ -131,7 +114,7 @@ function StkPushForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "stk-push",
-          phone: formattedPhone,
+          phone: phone.trim(),
           amount: numAmount,
         }),
       })
@@ -140,10 +123,9 @@ function StkPushForm() {
         toast.error(data.error || "Failed to initiate STK push")
         return
       }
-      toast.success("STK push sent! Customer will receive an M-Pesa prompt on their phone.")
+      toast.success("STK push sent via PayHero. The customer will receive an M-Pesa prompt.")
       setPhone("")
       setAmount("")
-      // Refresh transactions list
       mutate("/api/admin/payments?action=transactions")
     } catch {
       toast.error("Failed to initiate STK push")
@@ -166,19 +148,18 @@ function StkPushForm() {
             className="w-full h-10 pl-10 pr-3 border border-border rounded-md text-sm bg-background"
           />
         </div>
-        <p className="text-[11px] text-muted-foreground mt-1">Kenyan phone number (Safaricom M-Pesa)</p>
+        <p className="text-[11px] text-muted-foreground mt-1">Kenyan Safaricom number</p>
       </div>
       <div>
         <label className="block text-sm font-medium mb-1.5">Amount (KES)</label>
         <input
           type="number"
-          min="10"
+          min="1"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           placeholder="e.g. 5000"
           className="w-full h-10 px-3 border border-border rounded-md text-sm bg-background"
         />
-        <p className="text-[11px] text-muted-foreground mt-1">Minimum KSh 10</p>
       </div>
       <button
         type="submit"
@@ -192,124 +173,75 @@ function StkPushForm() {
   )
 }
 
-function CreatePaymentLinkForm() {
-  const [title, setTitle] = useState("")
-  const [description, setDescription] = useState("")
-  const [amount, setAmount] = useState("")
-  const [loading, setLoading] = useState(false)
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!title || !amount) {
-      toast.error("Title and amount are required")
-      return
-    }
-
-    setLoading(true)
-    try {
-      const res = await fetch("/api/admin/payments", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "create-payment-link",
-          title,
-          description,
-          amount: Number(amount),
-          currency: "KES",
-        }),
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        toast.error(data.error || "Failed to create payment link")
-        return
-      }
-      toast.success("Payment link created successfully!")
-      setTitle("")
-      setDescription("")
-      setAmount("")
-      mutate("/api/admin/payments?action=payment-links")
-    } catch {
-      toast.error("Failed to create payment link")
-    } finally {
-      setLoading(false)
-    }
-  }
+function BalanceCard() {
+  const { data, isLoading } = useSWR<BalanceInfo>(
+    "/api/admin/payments?action=balance",
+    fetcher,
+    { refreshInterval: 30000 },
+  )
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium mb-1.5">Title</label>
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="e.g. Premium Subscription"
-          className="w-full h-10 px-3 border border-border rounded-md text-sm bg-background"
-        />
+    <div className="p-5 rounded-md border border-border bg-gradient-to-br from-[#00843D]/5 to-background">
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+          <Wallet className="h-3.5 w-3.5" />
+          PayHero Wallet
+        </p>
+        <button
+          type="button"
+          onClick={() => mutate("/api/admin/payments?action=balance")}
+          className="text-[11px] text-muted-foreground hover:text-foreground"
+        >
+          Refresh
+        </button>
       </div>
-      <div>
-        <label className="block text-sm font-medium mb-1.5">Description (optional)</label>
-        <input
-          type="text"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="e.g. Monthly premium subscription"
-          className="w-full h-10 px-3 border border-border rounded-md text-sm bg-background"
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-medium mb-1.5">Amount (KES)</label>
-        <input
-          type="number"
-          min="10"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          placeholder="e.g. 5000"
-          className="w-full h-10 px-3 border border-border rounded-md text-sm bg-background"
-        />
-      </div>
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full h-10 bg-foreground text-background rounded-md text-sm font-medium hover:bg-foreground/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-      >
-        <Link2 className="h-4 w-4" />
-        {loading ? "Creating..." : "Create Payment Link"}
-      </button>
-    </form>
+      {isLoading ? (
+        <p className="text-sm text-muted-foreground mt-3">Loading balance...</p>
+      ) : !data?.configured ? (
+        <p className="text-xs text-muted-foreground mt-2">Add PayHero credentials to see your balance.</p>
+      ) : data.error ? (
+        <p className="text-xs text-red-600 mt-2">{data.error}</p>
+      ) : (
+        <>
+          <p className="text-2xl font-bold mt-2 text-[#00843D]">
+            {formatPrice(Number(data.balance) || 0)}
+          </p>
+          <p className="text-[11px] text-muted-foreground mt-1">
+            {data.channelName || `Channel #${data.channelId}`}
+          </p>
+        </>
+      )}
+    </div>
   )
 }
 
 export function AdminPayments() {
-  const [activeTab, setActiveTab] = useState<"transactions" | "stk-push" | "payment-links" | "card-payments">("transactions")
+  const [activeTab, setActiveTab] = useState<"transactions" | "stk-push" | "card-payments">("transactions")
   const { data: transactions, isLoading: txLoading } = useSWR<Transaction[]>(
     "/api/admin/payments?action=transactions",
     fetcher,
-    { refreshInterval: 15000 }
-  )
-  const { data: paymentLinks, isLoading: plLoading } = useSWR<PaymentLink[]>(
-    "/api/admin/payments?action=payment-links",
-    fetcher
+    { refreshInterval: 15000 },
   )
   const { data: cardPayments, isLoading: cpLoading } = useSWR<CardPaymentOrder[]>(
     "/api/admin/payments?action=card-payments",
     fetcher,
-    { refreshInterval: 15000 }
+    { refreshInterval: 15000 },
+  )
+  const { data: balance } = useSWR<BalanceInfo>(
+    "/api/admin/payments?action=balance",
+    fetcher,
+    { refreshInterval: 30000 },
   )
 
-  const isConfigured = !(
-    (Array.isArray(transactions) === false && (transactions as Record<string, string>)?.error?.includes("not configured")) ||
-    (Array.isArray(paymentLinks) === false && (paymentLinks as Record<string, string>)?.error?.includes("not configured"))
-  )
+  const isConfigured = balance?.configured !== false
 
   const txList = Array.isArray(transactions) ? transactions : []
-  const plList = Array.isArray(paymentLinks) ? paymentLinks : []
   const cpList = Array.isArray(cardPayments) ? cardPayments : []
 
-  const successCount = txList.filter((t) => t.status === "success" || t.status === "completed").length
+  const successCount = txList.filter((t) => t.status === "success" || t.status === "completed" || t.status === "confirmed").length
   const pendingCount = txList.filter((t) => t.status === "pending").length
   const totalRevenue = txList
-    .filter((t) => t.status === "success" || t.status === "completed")
+    .filter((t) => t.status === "success" || t.status === "completed" || t.status === "confirmed")
     .reduce((sum, t) => sum + (t.amount || 0), 0)
   const cardPaymentCount = cpList.length
   const cardPaymentTotal = cpList.reduce((sum, o) => sum + (o.total || 0), 0)
@@ -317,20 +249,19 @@ export function AdminPayments() {
   return (
     <AdminShell title="Payments">
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-serif font-bold">Payments</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Manage M-Pesa payments via Lipana, view card payment orders, send STK push requests, create payment links, and track transactions.
+              Accept M-Pesa via PayHero, monitor your wallet balance, send STK push requests, and review card payment orders.
             </p>
           </div>
           <button
             type="button"
             onClick={() => {
               mutate("/api/admin/payments?action=transactions")
-              mutate("/api/admin/payments?action=payment-links")
               mutate("/api/admin/payments?action=card-payments")
+              mutate("/api/admin/payments?action=balance")
               toast.success("Refreshed")
             }}
             className="flex items-center gap-2 px-4 py-2 border border-border rounded-md text-sm hover:bg-secondary transition-colors self-start"
@@ -340,35 +271,37 @@ export function AdminPayments() {
           </button>
         </div>
 
-        {/* API Key Warning */}
         {!isConfigured && (
           <div className="flex items-start gap-3 p-4 rounded-md border border-yellow-300 bg-yellow-50 text-yellow-800">
             <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
             <div>
-              <p className="text-sm font-medium">Lipana API Key Not Configured</p>
-              <p className="text-xs mt-1">
-                Add your <code className="bg-yellow-100 px-1 py-0.5 rounded font-mono text-[11px]">LIPANA_SECRET_KEY</code> environment variable in your Netlify dashboard to enable M-Pesa payments.
-                Get your API key from{" "}
-                <a href="https://lipana.dev" target="_blank" rel="noopener noreferrer" className="underline font-medium">
-                  lipana.dev
-                </a>
+              <p className="text-sm font-medium">PayHero is not configured</p>
+              <p className="text-xs mt-1 leading-relaxed">
+                Add <code className="bg-yellow-100 px-1 py-0.5 rounded font-mono text-[11px]">PAYHERO_API_USERNAME</code>,{" "}
+                <code className="bg-yellow-100 px-1 py-0.5 rounded font-mono text-[11px]">PAYHERO_API_PASSWORD</code>,{" "}
+                <code className="bg-yellow-100 px-1 py-0.5 rounded font-mono text-[11px]">PAYHERO_CHANNEL_ID</code> and{" "}
+                <code className="bg-yellow-100 px-1 py-0.5 rounded font-mono text-[11px]">PAYHERO_CALLBACK_URL</code> in your Netlify environment to start collecting payments. Grab credentials from{" "}
+                <a href="https://payherokenya.com" target="_blank" rel="noopener noreferrer" className="underline font-medium">
+                  payherokenya.com
+                </a>.
               </p>
             </div>
           </div>
         )}
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        {/* Stats + wallet balance */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <BalanceCard />
           <div className="p-4 rounded-md border border-border">
             <p className="text-xs text-muted-foreground uppercase tracking-wider">M-Pesa Revenue</p>
             <p className="text-2xl font-bold mt-1">{formatPrice(totalRevenue)}</p>
           </div>
           <div className="p-4 rounded-md border border-border">
-            <p className="text-xs text-muted-foreground uppercase tracking-wider">Successful M-Pesa</p>
+            <p className="text-xs text-muted-foreground uppercase tracking-wider">Successful</p>
             <p className="text-2xl font-bold mt-1 text-emerald-600">{successCount}</p>
           </div>
           <div className="p-4 rounded-md border border-border">
-            <p className="text-xs text-muted-foreground uppercase tracking-wider">Pending M-Pesa</p>
+            <p className="text-xs text-muted-foreground uppercase tracking-wider">Pending</p>
             <p className="text-2xl font-bold mt-1 text-yellow-600">{pendingCount}</p>
           </div>
           <div className="p-4 rounded-md border border-border">
@@ -378,14 +311,12 @@ export function AdminPayments() {
           </div>
         </div>
 
-        {/* Tabs */}
         <div className="border-b border-border">
           <div className="flex gap-6">
             {[
               { key: "transactions" as const, label: "M-Pesa Transactions", icon: CreditCard },
               { key: "card-payments" as const, label: "Card Payments", icon: Wallet },
-              { key: "stk-push" as const, label: "STK Push", icon: Send },
-              { key: "payment-links" as const, label: "Payment Links", icon: Link2 },
+              { key: "stk-push" as const, label: "Send STK Push", icon: Send },
             ].map((tab) => (
               <button
                 key={tab.key}
@@ -404,7 +335,6 @@ export function AdminPayments() {
           </div>
         </div>
 
-        {/* Transactions Tab */}
         {activeTab === "transactions" && (
           <div>
             {txLoading ? (
@@ -412,31 +342,33 @@ export function AdminPayments() {
             ) : txList.length === 0 ? (
               <div className="text-center py-12">
                 <CreditCard className="h-10 w-10 mx-auto text-muted-foreground/40 mb-3" />
-                <p className="text-sm text-muted-foreground">No transactions yet</p>
-                <p className="text-xs text-muted-foreground mt-1">Send an STK push or share a payment link to get started.</p>
+                <p className="text-sm text-muted-foreground">No M-Pesa transactions yet</p>
+                <p className="text-xs text-muted-foreground mt-1">STK pushes from checkout will appear here.</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border text-left">
-                      <th className="pb-3 font-medium text-muted-foreground">ID</th>
+                      <th className="pb-3 font-medium text-muted-foreground">Order</th>
+                      <th className="pb-3 font-medium text-muted-foreground">Customer</th>
                       <th className="pb-3 font-medium text-muted-foreground">Phone</th>
+                      <th className="pb-3 font-medium text-muted-foreground">M-PESA Code</th>
                       <th className="pb-3 font-medium text-muted-foreground">Amount</th>
                       <th className="pb-3 font-medium text-muted-foreground">Status</th>
                       <th className="pb-3 font-medium text-muted-foreground">Date</th>
-                      <th className="pb-3 font-medium text-muted-foreground">Link</th>
                     </tr>
                   </thead>
                   <tbody>
                     {txList.map((tx) => (
                       <tr key={tx.id} className="border-b border-border/50 hover:bg-secondary/30 transition-colors">
-                        <td className="py-3 font-mono text-xs">{tx.id?.slice(0, 12)}...</td>
+                        <td className="py-3 font-mono text-xs font-medium">{tx.reference}</td>
+                        <td className="py-3 text-sm">{tx.customer || "—"}</td>
                         <td className="py-3">{tx.phone || "—"}</td>
+                        <td className="py-3 font-mono text-xs">{tx.mpesaReceipt || "—"}</td>
                         <td className="py-3 font-medium">{formatPrice(tx.amount)}</td>
                         <td className="py-3"><StatusBadge status={tx.status} /></td>
                         <td className="py-3 text-muted-foreground text-xs">{tx.timestamp ? formatDate(tx.timestamp) : "—"}</td>
-                        <td className="py-3 text-xs">{tx.paymentLink?.title || "—"}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -446,7 +378,6 @@ export function AdminPayments() {
           </div>
         )}
 
-        {/* Card Payments Tab */}
         {activeTab === "card-payments" && (
           <div>
             {cpLoading ? (
@@ -497,105 +428,35 @@ export function AdminPayments() {
           </div>
         )}
 
-        {/* STK Push Tab */}
         {activeTab === "stk-push" && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="p-6 border border-border rounded-md">
               <h3 className="font-medium mb-1">Send M-Pesa STK Push</h3>
               <p className="text-xs text-muted-foreground mb-4">
-                Send a payment request directly to a customer's phone. They'll receive an M-Pesa prompt to enter their PIN and complete the payment.
+                Trigger a PayHero M-Pesa prompt on a customer's phone. They enter their PIN to complete the payment.
               </p>
               <StkPushForm />
             </div>
             <div className="p-6 border border-border rounded-md bg-secondary/30">
-              <h3 className="font-medium mb-3">How STK Push Works</h3>
+              <h3 className="font-medium mb-3">How it works</h3>
               <ol className="space-y-3 text-sm text-muted-foreground">
                 <li className="flex gap-3">
                   <span className="flex-shrink-0 w-6 h-6 rounded-full bg-foreground text-background flex items-center justify-center text-xs font-bold">1</span>
-                  <span>Enter the customer's Safaricom phone number and amount</span>
+                  <span>Enter the customer's Safaricom phone number and amount.</span>
                 </li>
                 <li className="flex gap-3">
                   <span className="flex-shrink-0 w-6 h-6 rounded-full bg-foreground text-background flex items-center justify-center text-xs font-bold">2</span>
-                  <span>An M-Pesa payment prompt appears on the customer's phone</span>
+                  <span>PayHero pushes an M-Pesa prompt to the phone.</span>
                 </li>
                 <li className="flex gap-3">
                   <span className="flex-shrink-0 w-6 h-6 rounded-full bg-foreground text-background flex items-center justify-center text-xs font-bold">3</span>
-                  <span>Customer enters their M-Pesa PIN to authorize payment</span>
+                  <span>Customer enters their M-Pesa PIN to authorize payment.</span>
                 </li>
                 <li className="flex gap-3">
                   <span className="flex-shrink-0 w-6 h-6 rounded-full bg-foreground text-background flex items-center justify-center text-xs font-bold">4</span>
-                  <span>Payment is confirmed and appears in your transactions</span>
+                  <span>Payment is confirmed via webhook and added to your wallet.</span>
                 </li>
               </ol>
-            </div>
-          </div>
-        )}
-
-        {/* Payment Links Tab */}
-        {activeTab === "payment-links" && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="p-6 border border-border rounded-md">
-                <h3 className="font-medium mb-1">Create Payment Link</h3>
-                <p className="text-xs text-muted-foreground mb-4">
-                  Generate a shareable link customers can use to pay via M-Pesa.
-                </p>
-                <CreatePaymentLinkForm />
-              </div>
-              <div className="lg:col-span-2">
-                <h3 className="font-medium mb-3">Your Payment Links</h3>
-                {plLoading ? (
-                  <div className="text-center py-8 text-muted-foreground text-sm">Loading...</div>
-                ) : plList.length === 0 ? (
-                  <div className="text-center py-8 border border-border rounded-md">
-                    <Link2 className="h-8 w-8 mx-auto text-muted-foreground/40 mb-2" />
-                    <p className="text-sm text-muted-foreground">No payment links yet</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {plList.map((link) => (
-                      <div key={link.id} className="p-4 border border-border rounded-md flex items-center justify-between gap-4">
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-medium truncate">{link.title}</p>
-                            <StatusBadge status={link.status} />
-                          </div>
-                          {link.description && (
-                            <p className="text-xs text-muted-foreground mt-0.5 truncate">{link.description}</p>
-                          )}
-                          <p className="text-sm font-bold mt-1">{formatPrice(link.amount)}</p>
-                        </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          {link.url && (
-                            <>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  navigator.clipboard.writeText(link.url)
-                                  toast.success("Link copied!")
-                                }}
-                                className="p-2 border border-border rounded-md hover:bg-secondary transition-colors"
-                                title="Copy link"
-                              >
-                                <Copy className="h-4 w-4" />
-                              </button>
-                              <a
-                                href={link.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="p-2 border border-border rounded-md hover:bg-secondary transition-colors"
-                                title="Open link"
-                              >
-                                <ExternalLink className="h-4 w-4" />
-                              </a>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
             </div>
           </div>
         )}

@@ -206,40 +206,34 @@ export function CheckoutPage() {
     setShowMpesa(true)
   }
 
-  const handleMpesaConfirmed = async (mpesaCode: string, mpesaPhone: string, mpesaMessage: string) => {
+  // Creates the pending MPESA order server-side so PayHero has something to
+  // attach the payment to. The STK push is fired from inside the modal.
+  const createMpesaPendingOrder = async (): Promise<{ orderNumber: string } | null> => {
     try {
       const payload = {
         ...buildOrderPayload("mpesa"),
         paymentMethod: "mpesa",
-        mpesaCode,
-        mpesaPhone: mpesaPhone || formData.phone,
-        mpesaMessage,
         status: "pending",
       }
-
       const res = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       })
-
       const data = await res.json()
-
-      if (!res.ok) {
-        alert("Error placing order: " + (data.error || "Unknown error"))
-        setShowMpesa(false)
-        return
-      }
-
-      setOrderResult({ orderNumber: data.orderNumber, paymentMethod: "mpesa" })
-      clearCart()
-      resetGiftSelection()
-      setShowMpesa(false)
-    } catch (err) {
-      console.error("[v0] M-PESA order exception:", err)
-      alert("Error processing payment: " + (err instanceof Error ? err.message : "Unknown error"))
-      setShowMpesa(false)
+      if (!res.ok) return null
+      return { orderNumber: data.orderNumber }
+    } catch {
+      return null
     }
+  }
+
+  const handleMpesaConfirmed = (result: { orderNumber: string; mpesaReceipt: string; phone: string }) => {
+    setOrderResult({ orderNumber: result.orderNumber, paymentMethod: "mpesa" })
+    clearCart()
+    resetGiftSelection()
+    // Leave the modal visible for a moment so the success state is seen.
+    setTimeout(() => setShowMpesa(false), 1500)
   }
 
 
@@ -783,6 +777,9 @@ export function CheckoutPage() {
         isOpen={showMpesa}
         onClose={() => setShowMpesa(false)}
         total={grandTotal}
+        defaultPhone={formData.phone}
+        customerName={formData.name}
+        createPendingOrder={createMpesaPendingOrder}
         onPaymentConfirmed={handleMpesaConfirmed}
       />
 

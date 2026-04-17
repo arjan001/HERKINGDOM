@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Package, Tag, Percent, TrendingUp, ShoppingBag, Eye, ShoppingCart, ChevronLeft, ChevronRight } from "lucide-react"
+import { Package, Tag, Percent, ShoppingBag, Eye, ShoppingCart, ChevronLeft, ChevronRight, Wallet } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { AdminShell } from "./admin-shell"
 import { formatPrice } from "@/lib/format"
@@ -17,8 +17,22 @@ interface DashboardData {
   recentOrders: { id: string; orderNo: string; customer: string; total: number; status: string; date: string }[]
 }
 
+interface PayHeroBalance {
+  configured: boolean
+  balance?: number
+  currency?: string
+  channelName?: string
+  channelId?: number
+  error?: string
+}
+
 export function AdminDashboard() {
   const { data } = useSWR<DashboardData>("/api/admin/dashboard", fetcher)
+  const { data: balance } = useSWR<PayHeroBalance>(
+    "/api/admin/payhero/balance",
+    fetcher,
+    { refreshInterval: 30000 },
+  )
 
   const stats = [
     { label: "Total Products", value: data?.stats.totalProducts?.toString() || "0", icon: Package, change: "Live from DB" },
@@ -58,6 +72,33 @@ export function AdminDashboard() {
               <p className="text-xs text-muted-foreground mt-1">{stat.change}</p>
             </div>
           ))}
+        </div>
+
+        {/* PayHero wallet balance */}
+        <div className="border border-border rounded-sm p-5 bg-gradient-to-br from-[#00843D]/5 to-background">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Wallet className="h-4 w-4 text-[#00843D]" />
+              <span className="text-xs text-muted-foreground uppercase tracking-wider">PayHero M-Pesa Wallet</span>
+            </div>
+            <Link href="/admin/payments" className="text-xs text-muted-foreground hover:text-foreground">Manage</Link>
+          </div>
+          {balance?.configured === false ? (
+            <p className="text-sm text-muted-foreground mt-3">
+              Add PayHero credentials in Netlify environment variables to see your wallet balance here.
+            </p>
+          ) : balance?.error ? (
+            <p className="text-sm text-red-600 mt-3">{balance.error}</p>
+          ) : balance ? (
+            <>
+              <p className="text-3xl font-bold mt-2 text-[#00843D]">{formatPrice(Number(balance.balance) || 0)}</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {balance.channelName || `Channel #${balance.channelId ?? ""}`}
+              </p>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground mt-3">Loading...</p>
+          )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
