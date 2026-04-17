@@ -1,14 +1,16 @@
 "use client"
 
 import useSWR from "swr"
-
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+import { safeFetcher } from "@/lib/fetcher"
 
 export function TopBar() {
-  const { data } = useSWR("/api/site-data", fetcher)
-  const offers: string[] = data?.navbarOffers?.map((o: { text: string }) => o.text) || ["FREE SHIPPING on orders above KSh 5,000"]
+  const { data } = useSWR<{ navbarOffers?: { text: string }[] }>("/api/site-data", safeFetcher)
+  const offers: string[] = Array.isArray(data?.navbarOffers)
+    ? data!.navbarOffers!.map((o) => o?.text).filter((t): t is string => Boolean(t))
+    : []
+  const displayOffers = offers.length > 0 ? offers : ["FREE SHIPPING on orders above KSh 5,000"]
   // Repeat offers 4 times to fill viewport and create seamless loop
-  const repeated = [...offers, ...offers, ...offers, ...offers]
+  const repeated = [...displayOffers, ...displayOffers, ...displayOffers, ...displayOffers]
 
   return (
     <div className="bg-foreground text-background overflow-hidden">

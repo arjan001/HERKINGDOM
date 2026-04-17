@@ -5,11 +5,10 @@ import Image from "next/image"
 import { X } from "lucide-react"
 import useSWR from "swr"
 import type { Offer } from "@/lib/types"
-
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+import { safeFetcher } from "@/lib/fetcher"
 
 export function OfferModal() {
-  const { data } = useSWR("/api/site-data", fetcher)
+  const { data } = useSWR<{ popupOffer?: Offer }>("/api/site-data", safeFetcher)
   const offer: Offer | null = data?.popupOffer || null
   const [isOpen, setIsOpen] = useState(false)
   const [email, setEmail] = useState("")

@@ -1,7 +1,10 @@
 // Core SEO Identity & Keywords — Her Kingdom Jewelry (Nairobi, Kenya)
+const DEFAULT_SITE_URL = "https://herkingdom.shop"
+const resolvedSiteUrl = (process.env.NEXT_PUBLIC_SITE_URL || process.env.URL || DEFAULT_SITE_URL).replace(/\/+$/, "")
+
 export const SITE_SEO = {
   siteName: "Her Kingdom",
-  siteUrl: "https://herkingdom.co.ke",
+  siteUrl: resolvedSiteUrl,
   siteTitle: "Her Kingdom | Curated Jewelry & Accessories for Women in Nairobi, Kenya",
   siteDescription:
     "Shop curated jewelry, necklaces, bracelets, earrings, watches & accessories at Her Kingdom Nairobi. Hypoallergenic, long-lasting pieces that complement your personal style. Order online or WhatsApp +254717264422.",

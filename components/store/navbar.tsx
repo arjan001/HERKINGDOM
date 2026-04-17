@@ -13,8 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { CartDrawer } from "./cart-drawer"
 import useSWR from "swr"
-
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+import { safeFetcher, asArray } from "@/lib/fetcher"
 
 function formatPrice(price: number): string {
   return `KSh ${price.toLocaleString()}`
@@ -24,8 +23,10 @@ export function Navbar() {
   const router = useRouter()
   const { totalItems, setIsCartOpen } = useCart()
   const { totalItems: wishlistCount } = useWishlist()
-  const { data: categories = [] } = useSWR<Category[]>("/api/categories", fetcher)
-  const { data: allProducts = [] } = useSWR<Product[]>("/api/products", fetcher)
+  const { data: categoriesData } = useSWR<Category[]>("/api/categories", safeFetcher)
+  const { data: allProductsData } = useSWR<Product[]>("/api/products", safeFetcher)
+  const categories = asArray<Category>(categoriesData)
+  const allProducts = asArray<Product>(allProductsData)
   const [searchOpen, setSearchOpen] = useState(false)
   const [categoriesOpen, setCategoriesOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")

@@ -5,8 +5,7 @@ import Image from "next/image"
 import { ArrowRight } from "lucide-react"
 import type { Category } from "@/lib/types"
 import useSWR from "swr"
-
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+import { safeFetcher, asArray } from "@/lib/fetcher"
 
 const COLLECTIONS = [
   { name: "Women", slug: "women", image: "/images/products/necklace-sets/crystal-cluster-drop-necklace-set.jpeg", href: "/shop/women" },
@@ -20,7 +19,8 @@ const CATEGORY_IMAGES: Record<string, string> = {
 }
 
 export function CategoriesSection() {
-  const { data: categories = [] } = useSWR<Category[]>("/api/categories", fetcher)
+  const { data } = useSWR<Category[]>("/api/categories", safeFetcher)
+  const categories = asArray<Category>(data)
 
   return (
     <section className="hidden md:block py-14 lg:py-20">

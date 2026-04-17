@@ -15,8 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import useSWR from "swr"
-
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+import { safeFetcher, asArray } from "@/lib/fetcher"
 
 function formatPrice(price: number): string {
   return `KSh ${price.toLocaleString()}`
@@ -85,8 +84,10 @@ function FilterSidebar({
 
 export function CollectionPage({ collection }: { collection: string }) {
   const info = COLLECTION_INFO[collection]
-  const { data: allProducts = [] } = useSWR<Product[]>("/api/products", fetcher)
-  const { data: categories = [] } = useSWR<Category[]>("/api/categories", fetcher)
+  const { data: allProductsData } = useSWR<Product[]>("/api/products", safeFetcher)
+  const { data: categoriesData } = useSWR<Category[]>("/api/categories", safeFetcher)
+  const allProducts = asArray<Product>(allProductsData)
+  const categories = asArray<Category>(categoriesData)
 
   // Filter products by collection (category)
   const collectionProducts = useMemo(() => {

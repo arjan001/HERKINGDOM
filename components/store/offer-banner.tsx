@@ -5,12 +5,11 @@ import Image from "next/image"
 import { ArrowRight } from "lucide-react"
 import useSWR from "swr"
 import type { Banner } from "@/lib/types"
-
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+import { safeFetcher, asArray } from "@/lib/fetcher"
 
 export function OfferBanner() {
-  const { data } = useSWR("/api/site-data", fetcher)
-  const banners: Banner[] = data?.midPageBanners || []
+  const { data } = useSWR("/api/site-data", safeFetcher)
+  const banners = asArray<Banner>((data as { midPageBanners?: Banner[] } | undefined)?.midPageBanners)
 
   if (!banners.length) return null
 
