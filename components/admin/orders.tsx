@@ -127,26 +127,47 @@ export function AdminOrders() {
     else setSelectedIds(new Set(paginatedItems.map((o) => o.id)))
   }
 
-  const handleBulkDelete = async () => {
-    if (selectedIds.size === 0) return
-    const count = selectedIds.size
-    if (!confirm(`Permanently delete ${count} order${count !== 1 ? "s" : ""}? This cannot be undone.`)) return
+  const deleteOrders = async (ids: string[]) => {
+    if (ids.length === 0) return false
     setDeleting(true)
     try {
-      const ids = Array.from(selectedIds).join(",")
-      const res = await fetch(`/api/admin/orders?ids=${ids}`, { method: "DELETE" })
+      const res = await fetch(`/api/admin/orders?ids=${ids.join(",")}`, { method: "DELETE" })
+      const data = await res.json().catch(() => ({}))
       if (res.ok) {
+        const count = data.deleted ?? ids.length
         toast.success(`${count} order${count !== 1 ? "s" : ""} deleted`)
-        setSelectedIds(new Set())
         mutate()
-      } else {
-        const data = await res.json()
-        toast.error(data.error || "Failed to delete orders")
+        return true
       }
+      toast.error(data.error || "Failed to delete orders")
+      return false
     } catch {
       toast.error("Failed to delete orders")
+      return false
     } finally {
       setDeleting(false)
+    }
+  }
+
+  const handleBulkDelete = async () => {
+    const count = selectedIds.size
+    if (count === 0) return
+    if (!confirm(`Permanently delete ${count} order${count !== 1 ? "s" : ""}? This cannot be undone.`)) return
+    const ok = await deleteOrders(Array.from(selectedIds))
+    if (ok) setSelectedIds(new Set())
+  }
+
+  const handleSingleDelete = async (order: Order) => {
+    if (!confirm(`Permanently delete order ${order.orderNo}? This cannot be undone.`)) return
+    const ok = await deleteOrders([order.id])
+    if (ok) {
+      setSelectedIds((prev) => {
+        if (!prev.has(order.id)) return prev
+        const next = new Set(prev)
+        next.delete(order.id)
+        return next
+      })
+      setSelectedOrder((prev) => (prev?.id === order.id ? null : prev))
     }
   }
 
@@ -370,9 +391,21 @@ export function AdminOrders() {
                             </span>
                           </td>
                           <td className="px-4 py-3 text-right">
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedOrder(order)}>
-                              <Eye className="h-3.5 w-3.5" />
-                            </Button>
+                            <div className="inline-flex items-center gap-1 justify-end">
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedOrder(order)} aria-label={`View ${order.orderNo}`}>
+                                <Eye className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-500/10"
+                                onClick={() => handleSingleDelete(order)}
+                                disabled={deleting}
+                                aria-label={`Delete ${order.orderNo}`}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       )
@@ -616,6 +649,22 @@ export function AdminOrders() {
                     </Button>
                   ))}
                 </div>
+              </div>
+
+              {/* Danger Zone */}
+              <div className="border-t border-border pt-4">
+                <p className="text-sm font-medium mb-2 text-red-600">Danger Zone</p>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="bg-red-600 hover:bg-red-700 text-white gap-2"
+                  onClick={() => handleSingleDelete(selectedOrder)}
+                  disabled={deleting}
+                >
+                  {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                  Delete this order
+                </Button>
+                <p className="text-xs text-muted-foreground mt-2">This permanently removes the order and all related items, shipments, and analytics events.</p>
               </div>
             </div>
           )}

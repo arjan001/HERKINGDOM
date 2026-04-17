@@ -63,6 +63,8 @@ export async function GET(request: NextRequest) {
   return NextResponse.json(result)
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 export async function DELETE(request: NextRequest) {
   const auth = await requireAuth()
   if (!auth.authenticated) return auth.response!
@@ -73,24 +75,50 @@ export async function DELETE(request: NextRequest) {
 
   if (!ids) return NextResponse.json({ error: "Missing ids" }, { status: 400 })
 
-  const idArray = ids.split(",")
+  const idArray = Array.from(
+    new Set(
+      ids
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+    ),
+  )
 
-  // Delete order items first (foreign key)
+  if (idArray.length === 0) return NextResponse.json({ error: "No ids provided" }, { status: 400 })
+
+  const invalid = idArray.filter((id) => !UUID_RE.test(id))
+  if (invalid.length > 0) {
+    return NextResponse.json({ error: `Invalid order id format` }, { status: 400 })
+  }
+
+  // Remove dependent rows first so the orders delete does not trip FK constraints.
+  // Tables with order_id FK: order_items, order_shipments, analytics_events.
+  const { error: analyticsError } = await supabase
+    .from("analytics_events")
+    .delete()
+    .in("order_id", idArray)
+  if (analyticsError) return NextResponse.json({ error: `analytics_events: ${analyticsError.message}` }, { status: 500 })
+
+  const { error: shipmentsError } = await supabase
+    .from("order_shipments")
+    .delete()
+    .in("order_id", idArray)
+  if (shipmentsError) return NextResponse.json({ error: `order_shipments: ${shipmentsError.message}` }, { status: 500 })
+
   const { error: itemsError } = await supabase
     .from("order_items")
     .delete()
     .in("order_id", idArray)
+  if (itemsError) return NextResponse.json({ error: `order_items: ${itemsError.message}` }, { status: 500 })
 
-  if (itemsError) return NextResponse.json({ error: itemsError.message }, { status: 500 })
-
-  // Delete orders
-  const { error } = await supabase
+  const { data: deleted, error } = await supabase
     .from("orders")
     .delete()
     .in("id", idArray)
+    .select("id")
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ success: true, deleted: idArray.length })
+  return NextResponse.json({ success: true, deleted: deleted?.length ?? 0 })
 }
 
 export async function PATCH(request: NextRequest) {
