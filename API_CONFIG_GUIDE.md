@@ -31,12 +31,13 @@ SMTP_USER=your_email
 SMTP_PASSWORD=your_email_password
 ```
 
-### Payment Integration (Optional - for M-PESA)
+### Payment Integration (Optional - for M-PESA via PayHero)
 ```
-MPESA_CONSUMER_KEY=your_key
-MPESA_CONSUMER_SECRET=your_secret
-MPESA_SHORTCODE=your_shortcode
-MPESA_PASSKEY=your_passkey
+PAYHERO_API_USERNAME=your_payhero_api_username
+PAYHERO_API_PASSWORD=your_payhero_api_password
+PAYHERO_CHANNEL_ID=your_payment_channel_id
+PAYHERO_WALLET_ID=your_wallet_channel_id
+PAYHERO_CALLBACK_URL=https://your-site.netlify.app/api/payments/payhero/callback
 ```
 
 ### Analytics (Optional)

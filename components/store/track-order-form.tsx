@@ -310,7 +310,7 @@ export function TrackOrderForm({ initialOrderNumber }: { initialOrderNumber?: st
                 <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
                   <span className="text-muted-foreground">Payment:</span>
                   {order.paymentMethod === "mpesa" ? (
-                    <span className="font-semibold uppercase tracking-wider px-2 py-0.5 rounded-sm bg-[#00843D]/10 text-[#00843D]">M-PESA Lipa Na</span>
+                    <span className="font-semibold uppercase tracking-wider px-2 py-0.5 rounded-sm bg-[#00843D]/10 text-[#00843D]">M-PESA</span>
                   ) : order.paymentMethod === "card" ? (
                     <span className="font-semibold uppercase tracking-wider px-2 py-0.5 rounded-sm bg-secondary text-foreground">Card</span>
                   ) : (

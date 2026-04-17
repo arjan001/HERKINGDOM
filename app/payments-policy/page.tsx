@@ -62,7 +62,7 @@ export default function PaymentsPolicyPage() {
             </h1>
             <p className="text-muted-foreground mt-4 text-sm md:text-base max-w-2xl mx-auto leading-relaxed">
               Everything you need to know about paying for your Her Kingdom order — from
-              M-PESA Lipa Na, to gift wrapping, to what happens if anything takes a little longer.
+              M-PESA STK push via PayHero, to gift wrapping, to what happens if anything takes a little longer.
             </p>
           </div>
         </section>
@@ -72,9 +72,9 @@ export default function PaymentsPolicyPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="border border-border rounded-sm p-5 bg-card">
               <Smartphone className="h-5 w-5 text-[#00843D] mb-3" />
-              <p className="text-sm font-semibold">M-PESA Lipa Na</p>
+              <p className="text-sm font-semibold">M-PESA STK Push</p>
               <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
-                Secure automated Lipa Na M-PESA checkout — pay, then carry on with your day.
+                Secure automated M-PESA checkout powered by PayHero — pay, then carry on with your day.
               </p>
             </div>
             <div className="border border-border rounded-sm p-5 bg-card">
@@ -103,17 +103,17 @@ export default function PaymentsPolicyPage() {
             </div>
             <div className="prose prose-sm max-w-none text-muted-foreground prose-strong:text-foreground">
               <p>
-                We keep things simple with automated <strong>M-PESA Lipa Na</strong> as our primary payment method.
-                After you enter your details on checkout and tap <em>Pay with M-PESA</em>, our Lipa Na wrapper
-                prompts your phone with an STK push — just enter your M-PESA PIN and you are done.
+                We keep things simple with automated <strong>M-PESA STK push</strong> (powered by PayHero) as our primary payment method.
+                After you enter your details on checkout and tap <em>Pay with M-PESA</em>, PayHero prompts your phone with
+                an STK push — just enter your M-PESA PIN and you are done.
               </p>
               <ul>
-                <li><strong>M-PESA Lipa Na (automated):</strong> recommended and fastest.</li>
+                <li><strong>M-PESA STK push (automated via PayHero):</strong> recommended and fastest.</li>
                 <li><strong>Pay with Card:</strong> for card holders; receipts arrive by email and WhatsApp.</li>
                 <li><strong>Cash on pick-up:</strong> available at our pick-up location only.</li>
               </ul>
               <p>
-                Every M-PESA transaction is matched to your order automatically by transaction code, so confirmations
+                Every M-PESA transaction is matched to your order automatically by PayHero's webhook, so confirmations
                 are near-instant and you do not need to forward us an SMS.
               </p>
             </div>
@@ -237,7 +237,7 @@ export default function PaymentsPolicyPage() {
             <div className="prose prose-sm max-w-none text-muted-foreground prose-strong:text-foreground">
               <p>
                 We never store your M-PESA PIN, card CVV, or full card number. Payments run through
-                Safaricom&apos;s Lipa Na M-PESA wrapper and our card processor on encrypted channels, and we only
+                PayHero's certified M-PESA gateway and our card processor on encrypted channels, and we only
                 keep what we need to reconcile your order: the transaction code, the amount, and the phone number that paid.
               </p>
             </div>

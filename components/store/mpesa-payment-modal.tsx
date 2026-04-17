@@ -1,64 +1,168 @@
 "use client"
 
-import { useState } from "react"
-import { X, Loader2, MessageSquare, Sparkles } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
+import { X, Loader2, Smartphone, CheckCircle2, AlertCircle } from "lucide-react"
 import { formatPrice } from "@/lib/format"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 
-const BUSINESS_NAME = "CLASSY COLLECTIONS"
+const BUSINESS_NAME = "HER KINGDOM"
+
+type Step = "prompt" | "pushing" | "waiting" | "success" | "failed"
 
 interface MpesaPaymentModalProps {
   isOpen: boolean
   onClose: () => void
   total: number
-  onPaymentConfirmed: (mpesaCode: string, phone: string, mpesaMessage: string) => void
+  /**
+   * Called after the customer has created the pending order on the server
+   * and we have an order number to send to PayHero. The parent component
+   * decides what to do with a confirmed payment (e.g. show receipt).
+   */
+  onPaymentConfirmed: (result: { orderNumber: string; mpesaReceipt: string; phone: string }) => void
+  /**
+   * Creates the pending order on the server and returns its order number.
+   * We initiate the STK push against that order number.
+   */
+  createPendingOrder: () => Promise<{ orderNumber: string } | null>
+  defaultPhone?: string
+  customerName?: string
 }
 
-export function MpesaPaymentModal({ isOpen, onClose, total, onPaymentConfirmed }: MpesaPaymentModalProps) {
-  const [mpesaCode, setMpesaCode] = useState("")
-  const [mpesaPhone, setMpesaPhone] = useState("")
-  const [mpesaMessage, setMpesaMessage] = useState("")
-  const [isConfirming, setIsConfirming] = useState(false)
+const POLL_INTERVAL_MS = 3000
+const MAX_POLLS = 40 // ~2 minutes
+
+export function MpesaPaymentModal({
+  isOpen,
+  onClose,
+  total,
+  onPaymentConfirmed,
+  createPendingOrder,
+  defaultPhone,
+  customerName,
+}: MpesaPaymentModalProps) {
+  const [step, setStep] = useState<Step>("prompt")
+  const [phone, setPhone] = useState(defaultPhone || "")
+  const [error, setError] = useState("")
+  const [statusMessage, setStatusMessage] = useState("")
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const pollsRef = useRef(0)
+
+  useEffect(() => {
+    if (defaultPhone && !phone) setPhone(defaultPhone)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultPhone])
+
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current)
+    }
+  }, [])
 
   if (!isOpen) return null
 
-  const canSubmit = mpesaMessage.trim().length >= 10
+  const cleanPhone = phone.replace(/[\s\-()]/g, "")
+  const isPhoneValid = /^(\+?254[17]\d{8}|0[17]\d{8}|011\d{7})$/.test(cleanPhone)
 
-  const handleConfirm = async () => {
-    if (!canSubmit) return
-
-    try {
-      setIsConfirming(true)
-
-      // Accept any message as valid - be lenient with validation
-      // Just use the message as-is, extract code only if present (optional)
-      const codeMatch = mpesaMessage.match(/[A-Z0-9]{10}/)?.[0] || "MPESA-" + Date.now().toString().slice(-6)
-      const phoneMatch = mpesaMessage.match(/(?:254|0)\d{9}/)?.[0] || mpesaPhone.trim() || "Not provided"
-
-      // Call the parent callback to handle payment confirmation
-      await new Promise((r) => setTimeout(r, 500)) // Brief delay for UX
-      onPaymentConfirmed(codeMatch, phoneMatch, mpesaMessage.trim())
-
-      // Reset form
-      setMpesaCode("")
-      setMpesaPhone("")
-      setMpesaMessage("")
-    } catch (error) {
-      console.error("[v0] M-Pesa confirmation error:", error)
-      alert("Error processing payment. Please try again.")
-      setIsConfirming(false)
+  const stopPolling = () => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current)
+      pollRef.current = null
     }
+    pollsRef.current = 0
   }
 
+  const resetAll = () => {
+    stopPolling()
+    setStep("prompt")
+    setError("")
+    setStatusMessage("")
+  }
 
   const handleClose = () => {
-    setMpesaCode("")
-    setMpesaPhone("")
-    setMpesaMessage("")
+    resetAll()
+    setPhone(defaultPhone || "")
     onClose()
+  }
+
+  const pollStatus = (orderNumber: string) => {
+    stopPolling()
+    pollsRef.current = 0
+    pollRef.current = setInterval(async () => {
+      pollsRef.current += 1
+      if (pollsRef.current > MAX_POLLS) {
+        stopPolling()
+        setStep("failed")
+        setError("We did not receive confirmation in time. If you paid, your order will be confirmed shortly.")
+        return
+      }
+      try {
+        const res = await fetch(`/api/payments/payhero/status?orderNumber=${encodeURIComponent(orderNumber)}`)
+        const data = await res.json()
+        if (!res.ok) return
+        if (data.status === "success") {
+          stopPolling()
+          setStep("success")
+          setStatusMessage(`Payment received (${data.mpesaReceipt || "confirmed"})`)
+          onPaymentConfirmed({
+            orderNumber,
+            mpesaReceipt: data.mpesaReceipt || "",
+            phone: data.phone || cleanPhone,
+          })
+        } else if (data.status === "failed" || data.status === "cancelled") {
+          stopPolling()
+          setStep("failed")
+          setError(data.message || "Payment was cancelled or failed. Please try again.")
+        }
+      } catch {
+        // transient errors are fine — keep polling
+      }
+    }, POLL_INTERVAL_MS)
+  }
+
+  const handlePay = async () => {
+    if (!isPhoneValid) {
+      setError("Enter a valid Safaricom number (e.g. 0712345678)")
+      return
+    }
+    setError("")
+    setStep("pushing")
+    setStatusMessage("Creating your order...")
+
+    const created = await createPendingOrder()
+    if (!created?.orderNumber) {
+      setStep("failed")
+      setError("We could not save your order. Please try again.")
+      return
+    }
+
+    setStatusMessage("Sending M-PESA prompt to your phone...")
+
+    try {
+      const res = await fetch("/api/payments/payhero/stk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderNumber: created.orderNumber,
+          phone: cleanPhone,
+          amount: Math.round(total),
+          customerName,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.success) {
+        setStep("failed")
+        setError(data.error || "Could not reach M-PESA. Please try again.")
+        return
+      }
+      setStep("waiting")
+      setStatusMessage("Check your phone and enter your M-PESA PIN to complete payment.")
+      pollStatus(created.orderNumber)
+    } catch {
+      setStep("failed")
+      setError("Network error. Please check your connection and try again.")
+    }
   }
 
   return (
@@ -66,109 +170,121 @@ export function MpesaPaymentModal({ isOpen, onClose, total, onPaymentConfirmed }
       <div className="absolute inset-0 bg-foreground/60 backdrop-blur-sm" onClick={handleClose} />
 
       <div className="relative bg-background w-full max-w-md max-h-[90vh] overflow-y-auto rounded-sm shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-        {/* Close button */}
-        <button type="button" onClick={handleClose} className="absolute top-3 right-3 z-20 p-1.5 hover:bg-secondary rounded-sm transition-colors">
+        <button
+          type="button"
+          onClick={handleClose}
+          className="absolute top-3 right-3 z-20 p-1.5 hover:bg-secondary rounded-sm transition-colors"
+        >
           <X className="h-5 w-5" />
         </button>
 
-        {/* Lipa na M-Pesa Header */}
         <div className="bg-[#00843D] px-6 pt-8 pb-6 text-center relative overflow-hidden">
-          <div className="absolute right-6 top-4 opacity-20">
-            <svg width="48" height="72" viewBox="0 0 48 72" fill="white">
-              <rect x="6" y="0" width="36" height="72" rx="6" stroke="white" strokeWidth="2" fill="none" />
-              <rect x="14" y="6" width="20" height="48" rx="1" fill="white" opacity="0.3" />
-              <circle cx="24" cy="62" r="4" fill="white" opacity="0.4" />
-            </svg>
-          </div>
-
           <h2 className="text-white font-extrabold text-2xl tracking-tight">
-            LIPA NA M
-            <span className="relative inline-block mx-0.5">
-              <span className="text-white">-</span>
-            </span>
-            PESA
+            LIPA NA M-PESA
           </h2>
-          <div className="flex justify-center mt-1">
+          <p className="text-white/80 text-xs mt-1">Powered by PayHero</p>
+          <div className="flex justify-center mt-2">
             <div className="w-16 h-1 bg-[#E4002B] rounded-full" />
           </div>
         </div>
 
         <div className="px-6 pb-6">
-          {/* Automated STK Push notice - replaces the till number card while
-              the automated M-PESA STK push integration is being wired up. */}
-          <div className="bg-background border-2 border-[#00843D]/20 rounded-sm -mt-3 relative z-10 shadow-lg">
-            <div className="px-5 py-5 text-center space-y-2">
-              <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-[#00843D]/10 mx-auto">
-                <Sparkles className="h-5 w-5 text-[#00843D]" />
-              </div>
-              <p className="text-[#00843D] font-bold text-sm tracking-wider uppercase">
-                Automated STK Push Coming Soon
-              </p>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                We are rolling out automated M-PESA payments. For now, complete your M-PESA payment on your phone,
-                then paste the confirmation SMS below and our team will verify it.
-              </p>
-              <p className="text-foreground font-extrabold text-base tracking-wide pt-1">{BUSINESS_NAME}</p>
-            </div>
-          </div>
-
-          {/* Amount to pay */}
           <div className="mt-4 bg-[#00843D]/5 border border-[#00843D]/15 rounded-sm p-4 flex items-center justify-between">
             <span className="text-sm font-medium text-muted-foreground">Amount to Pay:</span>
             <span className="text-xl font-bold text-[#00843D]">{formatPrice(total)}</span>
           </div>
 
-          {/* Paste M-PESA Message */}
-          <div className="mt-5 space-y-4">
-            <div className="flex items-center gap-2 mb-1">
-              <MessageSquare className="h-4 w-4 text-[#00843D]" />
-              <p className="text-sm font-semibold">After paying, paste the M-PESA SMS below</p>
-            </div>
-
-            <div>
-              <Label className="text-sm font-medium mb-1.5 block">M-PESA Confirmation Message *</Label>
-              <Textarea
-                value={mpesaMessage}
-                onChange={(e) => setMpesaMessage(e.target.value)}
-                placeholder={"Paste the full M-PESA SMS here e.g.\nSHK3A7B2C1 Confirmed. Ksh1,500.00 sent to CLASSY COLLECTIONS..."}
-                rows={4}
-                className="text-sm"
-              />
-              <p className="text-[11px] text-muted-foreground mt-1">
-                Paste the entire confirmation SMS from Safaricom M-PESA
-              </p>
-            </div>
-
-            <div>
-              <Label className="text-sm font-medium mb-1.5 block">Phone Number Used (optional)</Label>
-              <Input
-                value={mpesaPhone}
-                onChange={(e) => setMpesaPhone(e.target.value)}
-                placeholder="e.g. 0712 345 678"
-                className="h-11"
-                type="tel"
-              />
-            </div>
-          </div>
-
-          <Button
-            onClick={handleConfirm}
-            disabled={!canSubmit || isConfirming}
-            className="w-full h-12 mt-5 bg-[#00843D] text-white hover:bg-[#006B32] text-sm font-semibold disabled:opacity-40"
-          >
-            {isConfirming ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Submitting...
-              </>
-            ) : (
-              "Submit Payment"
-            )}
-          </Button>
-
-          <p className="text-[11px] text-muted-foreground text-center mt-4 leading-relaxed">
-            Our team will verify your payment. You will receive a confirmation shortly.
+          <p className="text-[11px] text-center text-muted-foreground mt-2 uppercase tracking-wider">
+            Paying {BUSINESS_NAME}
           </p>
+
+          {step === "prompt" && (
+            <div className="mt-5 space-y-4">
+              <div>
+                <Label className="text-sm font-medium mb-1.5 block">Safaricom Phone Number *</Label>
+                <div className="relative">
+                  <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    value={phone}
+                    onChange={(e) => { setPhone(e.target.value); setError("") }}
+                    placeholder="e.g. 0712 345 678"
+                    className="h-11 pl-10"
+                    type="tel"
+                    inputMode="tel"
+                    autoFocus
+                  />
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  We will send an M-PESA prompt to this number. Enter your PIN on the phone to approve.
+                </p>
+              </div>
+
+              {error && (
+                <div className="flex items-start gap-2 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-xs px-3 py-2 rounded-sm">
+                  <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                  <span>{error}</span>
+                </div>
+              )}
+
+              <Button
+                onClick={handlePay}
+                disabled={!isPhoneValid}
+                className="w-full h-12 bg-[#00843D] text-white hover:bg-[#006B32] text-sm font-semibold disabled:opacity-40"
+              >
+                Pay {formatPrice(total)} with M-PESA
+              </Button>
+            </div>
+          )}
+
+          {(step === "pushing" || step === "waiting") && (
+            <div className="mt-6 text-center space-y-4">
+              <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#00843D]/10 mx-auto">
+                <Loader2 className="h-7 w-7 text-[#00843D] animate-spin" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold">
+                  {step === "pushing" ? "Sending prompt..." : "Awaiting your confirmation"}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto leading-relaxed">
+                  {statusMessage}
+                </p>
+              </div>
+              <div className="text-[11px] text-muted-foreground bg-secondary/40 rounded-sm px-3 py-2 text-left leading-relaxed">
+                <p className="font-semibold text-foreground mb-1">What to do now:</p>
+                1. Unlock your phone.<br />
+                2. Find the M-PESA pop-up showing {BUSINESS_NAME}.<br />
+                3. Enter your M-PESA PIN and press OK.<br />
+                4. Wait here for confirmation.
+              </div>
+            </div>
+          )}
+
+          {step === "success" && (
+            <div className="mt-6 text-center space-y-3">
+              <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#00843D]/10 mx-auto">
+                <CheckCircle2 className="h-7 w-7 text-[#00843D]" />
+              </div>
+              <p className="text-sm font-semibold text-[#00843D]">Payment Received</p>
+              {statusMessage && (
+                <p className="text-xs text-muted-foreground">{statusMessage}</p>
+              )}
+            </div>
+          )}
+
+          {step === "failed" && (
+            <div className="mt-6 space-y-4">
+              <div className="flex items-start gap-2 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm px-3 py-3 rounded-sm">
+                <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                <span>{error || "Payment did not complete."}</span>
+              </div>
+              <Button
+                onClick={resetAll}
+                className="w-full h-11 bg-[#00843D] text-white hover:bg-[#006B32] text-sm font-semibold"
+              >
+                Try Again
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </div>
