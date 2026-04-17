@@ -44,11 +44,6 @@ export function CheckoutPage() {
     email: "",
     address: "",
   })
-  const {
-    selection: giftSelection,
-    setSelection: setGiftSelection,
-    resetSelection: resetGiftSelection,
-  } = useGiftSelection()
   const isGift = giftSelection.isGift
   const giftMessage = giftSelection.messageNote
   const FREE_SHIPPING_THRESHOLD = 7000
