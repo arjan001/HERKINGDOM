@@ -74,8 +74,9 @@ export function CheckoutPage() {
   const [formError, setFormError] = useState("")
 
   const buildOrderPayload = (orderedVia: string) => {
+    const giftSummary = isGift ? giftSelectionSummary(giftSelection) : ""
     const giftNote = isGift
-      ? `[GIFT ORDER - ${giftSelectionSummary(giftSelection) || "no extras selected"} - extras fee KSh ${giftSelectionTotal(giftSelection)}]`
+      ? `[GIFT ORDER - ${giftSummary || "no extras selected"} - extras fee KSh ${giftSelectionTotal(giftSelection)}]`
       : ""
     const combinedNotes = [specialInstructions, giftNote].filter(Boolean).join(" ")
     return {
@@ -88,6 +89,10 @@ export function CheckoutPage() {
       subtotal: totalPrice,
       total: grandTotal,
       notes: combinedNotes || undefined,
+      specialInstructions: specialInstructions || undefined,
+      isGift,
+      giftSelection: isGift ? giftSelection : undefined,
+      giftExtrasTotal: isGift ? giftSelectionTotal(giftSelection) : 0,
       orderedVia,
       items: items.map((item) => ({
         productId: item.product.id,
@@ -163,12 +168,15 @@ export function CheckoutPage() {
       )
       .join("\n\n")
 
+    const giftDetails = isGift ? giftSelectionSummary(giftSelection) : ""
     const message = encodeURIComponent(
       `Hi! I'd like to place an order:\n\n*ORDER DETAILS*\n${orderItems}\n\n*Subtotal:* ${formatPrice(totalPrice)}\n*Delivery:* ${
         freeShipping ? "FREE" : selectedDelivery ? `${formatPrice(deliveryFee)} (${selectedDelivery.name})` : "Not selected"
       }\n*Total:* ${formatPrice(freeShipping ? totalPrice : grandTotal)}\n\n*CUSTOMER INFO*\nName: ${formData.name}\nPhone: ${formData.phone}${
         formData.email ? `\nEmail: ${formData.email}` : ""
-      }\nAddress: ${formData.address}${specialInstructions ? `\nNotes: ${specialInstructions}` : ""}`
+      }\nAddress: ${formData.address}${specialInstructions ? `\n\n*Special Instructions:* ${specialInstructions}` : ""}${
+        isGift ? `\n\n*Gift Order*\n${giftDetails || "(options to be confirmed)"}\nGifting extras: ${formatPrice(giftSelectionTotal(giftSelection))}` : ""
+      }`
     )
 
         window.open(`https://wa.me/254717264422?text=${message}`, "_blank")
@@ -231,10 +239,11 @@ export function CheckoutPage() {
     // Card payment always shows declined in test mode
     // The order is still saved so admin can see the attempt
     try {
+      const base = buildOrderPayload("website")
       const payload = {
-        ...buildOrderPayload("website"),
+        ...base,
         paymentMethod: "card",
-        notes: specialInstructions ? `${specialInstructions}\n[Card payment attempted - ending ${last4}]` : `[Card payment attempted - ending ${last4}]`,
+        notes: base.notes ? `${base.notes} [Card payment attempted - ending ${last4}]` : `[Card payment attempted - ending ${last4}]`,
       }
       await fetch("/api/orders", {
         method: "POST",

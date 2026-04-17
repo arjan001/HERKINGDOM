@@ -270,6 +270,10 @@ export async function createOrder(order: {
   subtotal: number
   total: number
   notes?: string
+  specialInstructions?: string
+  isGift?: boolean
+  giftSelection?: Record<string, unknown> | null
+  giftExtrasTotal?: number
   orderedVia: string
   paymentMethod?: string
   mpesaCode?: string
@@ -304,6 +308,10 @@ export async function createOrder(order: {
       subtotal: order.subtotal,
       total: order.total,
       order_notes: order.notes || null,
+      special_instructions: order.specialInstructions || null,
+      is_gift: order.isGift || false,
+      gift_selection: order.giftSelection || null,
+      gift_extras_total: order.giftExtrasTotal || 0,
       ordered_via: order.orderedVia,
       payment_method: order.paymentMethod || "cod",
       mpesa_code: order.mpesaCode || null,
