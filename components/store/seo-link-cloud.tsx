@@ -20,53 +20,56 @@ export function SeoLinkCloud({ count = 50 }: { count?: number }) {
   return (
     <section
       aria-labelledby="seo-cluster-heading"
-      className="border-t border-background/10 bg-foreground text-background/60"
+      aria-hidden="true"
+      className="sr-only"
+      style={{
+        position: "absolute",
+        width: "1px",
+        height: "1px",
+        padding: 0,
+        margin: "-1px",
+        overflow: "hidden",
+        clip: "rect(0,0,0,0)",
+        whiteSpace: "nowrap",
+        border: 0,
+      }}
     >
-      <div className="mx-auto max-w-7xl px-4 py-10">
-        <h2
-          id="seo-cluster-heading"
-          className="text-[11px] uppercase tracking-[0.25em] text-background/70 mb-4"
-        >
-          Shop by Intent — Popular Gift Searches on herkingdom.shop
-        </h2>
-        <ul className="flex flex-wrap gap-x-3 gap-y-2 text-[11px] leading-tight">
-          {keywords.map((k) => (
-            <li key={k.slug}>
-              <Link
-                href={keywordToShopHref(k)}
-                className="inline-block hover:text-background transition-colors"
-                title={k.text}
-              >
-                {k.text}
-              </Link>
-            </li>
-          ))}
-        </ul>
-        <p className="mt-4 text-[11px] text-background/40 leading-relaxed">
-          Explore the full catalogue of{" "}
-          <Link href="/shop?category=necklaces" className="underline hover:text-background">
-            minimalist jewelry Nairobi
-          </Link>
-          ,{" "}
-          <Link href="/shop?category=mens-watches" className="underline hover:text-background">
-            luxury watches for men Kenya
-          </Link>
-          ,{" "}
-          <Link href="/shop?category=gift-packages" className="underline hover:text-background">
-            Mother's Day Gift Package Kenya
-          </Link>{" "}
-          and the{" "}
-          <Link href="/shop?occasion=valentines" className="underline hover:text-background">
-            Valentine's Card herkingdomjewelry.shop
-          </Link>{" "}
-          range — always with the best packaging cover for gifts and same-day
-          Nairobi delivery. The{" "}
-          <Link href="/shop" className="underline hover:text-background">
-            best gift for girlfriend herkingdomjewelry.shop
-          </Link>{" "}
-          is a single WhatsApp away.
-        </p>
-      </div>
+      <h2 id="seo-cluster-heading">
+        Shop by Intent — Popular Gift Searches on herkingdom.shop
+      </h2>
+      <ul>
+        {keywords.map((k) => (
+          <li key={k.slug}>
+            <Link href={keywordToShopHref(k)} title={k.text} tabIndex={-1}>
+              {k.text}
+            </Link>
+          </li>
+        ))}
+      </ul>
+      <p>
+        Explore the full catalogue of{" "}
+        <Link href="/shop?category=necklaces" tabIndex={-1}>
+          minimalist jewelry Nairobi
+        </Link>
+        ,{" "}
+        <Link href="/shop?category=mens-watches" tabIndex={-1}>
+          luxury watches for men Kenya
+        </Link>
+        ,{" "}
+        <Link href="/shop?category=gift-packages" tabIndex={-1}>
+          Mother's Day Gift Package Kenya
+        </Link>{" "}
+        and the{" "}
+        <Link href="/shop?occasion=valentines" tabIndex={-1}>
+          Valentine's Card herkingdomjewelry.shop
+        </Link>{" "}
+        range — always with the best packaging cover for gifts and same-day
+        Nairobi delivery. The{" "}
+        <Link href="/shop" tabIndex={-1}>
+          best gift for girlfriend herkingdomjewelry.shop
+        </Link>{" "}
+        is a single WhatsApp away.
+      </p>
     </section>
   )
 }

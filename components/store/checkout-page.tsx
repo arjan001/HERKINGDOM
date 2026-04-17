@@ -37,14 +37,20 @@ export function CheckoutPage() {
   const [showCardPayment, setShowCardPayment] = useState(false)
   const [showGiftModal, setShowGiftModal] = useState(false)
   const [notesOpen, setNotesOpen] = useState(false)
+  const [specialInstructions, setSpecialInstructions] = useState("")
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
     email: "",
     address: "",
   })
-  const [specialInstructions, setSpecialInstructions] = useState("")
+  const {
+    selection: giftSelection,
+    setSelection: setGiftSelection,
+    resetSelection: resetGiftSelection,
+  } = useGiftSelection()
   const isGift = giftSelection.isGift
+  const giftMessage = giftSelection.messageNote
   const FREE_SHIPPING_THRESHOLD = 7000
 
   // Hydrate gift state from the cart drawer's "Is this a gift?" toggle so the
@@ -90,7 +96,7 @@ export function CheckoutPage() {
   const buildOrderPayload = (orderedVia: string) => {
     const giftSummary = isGift ? giftSelectionSummary(giftSelection) : ""
     const giftNote = isGift
-      ? `[GIFT ORDER - ${giftSummary || "no extras selected"} - extras fee KSh ${giftSelectionTotal(giftSelection)}]`
+      ? `[GIFT ORDER${giftMessage ? ` - Card: "${giftMessage}"` : ""} - Luxe Gift Wrap${ribbonNote} (KSh ${giftSelectionTotal(giftSelection)})]`
       : ""
     const combinedNotes = [specialInstructions, giftNote].filter(Boolean).join(" ")
     return {
