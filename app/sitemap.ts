@@ -9,7 +9,10 @@ const SITE_URL = SITE_SEO.siteUrl
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date()
 
-  // Static pages — only clean path URLs, no query parameters
+  // Static pages — only real, publicly-reachable routes for this jewelry shop.
+  // The navbar is dynamic (categories come from Supabase) and links to
+  // /shop?category={slug}, so individual category URLs are filters on /shop
+  // rather than separate pages and are intentionally not listed here.
   const staticPages: MetadataRoute.Sitemap = [
     {
       url: SITE_URL,
@@ -19,24 +22,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     {
       url: `${SITE_URL}/shop`,
-      lastModified: now,
-      changeFrequency: "daily",
-      priority: 0.9,
-    },
-    {
-      url: `${SITE_URL}/shop/men`,
-      lastModified: now,
-      changeFrequency: "daily",
-      priority: 0.9,
-    },
-    {
-      url: `${SITE_URL}/shop/women`,
-      lastModified: now,
-      changeFrequency: "daily",
-      priority: 0.9,
-    },
-    {
-      url: `${SITE_URL}/shop/babyshop`,
       lastModified: now,
       changeFrequency: "daily",
       priority: 0.9,
@@ -53,11 +38,35 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "monthly",
       priority: 0.3,
     },
+    {
+      url: `${SITE_URL}/privacy-policy`,
+      lastModified: now,
+      changeFrequency: "yearly",
+      priority: 0.3,
+    },
+    {
+      url: `${SITE_URL}/terms-of-service`,
+      lastModified: now,
+      changeFrequency: "yearly",
+      priority: 0.3,
+    },
+    {
+      url: `${SITE_URL}/refund-policy`,
+      lastModified: now,
+      changeFrequency: "yearly",
+      priority: 0.3,
+    },
+    {
+      url: `${SITE_URL}/payments-policy`,
+      lastModified: now,
+      changeFrequency: "yearly",
+      priority: 0.3,
+    },
   ]
 
   // Try to fetch dynamic pages from Supabase, but never let DB errors break the sitemap
   let productPages: MetadataRoute.Sitemap = []
-  let categoryPages: MetadataRoute.Sitemap = []
+  let policyPages: MetadataRoute.Sitemap = []
 
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -78,22 +87,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.8,
       }))
 
-      // Category pages as clean path URLs via collection routes
-      const { data: categories } = await supabase
-        .from("categories")
-        .select("slug")
-        .eq("is_active", true)
+      // Dynamic policy pages from the policies table
+      const { data: policies } = await supabase
+        .from("policies")
+        .select("slug, updated_at, created_at")
 
-      categoryPages = (categories || []).map((c) => ({
-        url: `${SITE_URL}/shop/${c.slug}`,
-        lastModified: now,
-        changeFrequency: "weekly" as const,
-        priority: 0.7,
+      policyPages = (policies || []).map((p) => ({
+        url: `${SITE_URL}/policies/${p.slug}`,
+        lastModified: new Date(p.updated_at || p.created_at || now),
+        changeFrequency: "yearly" as const,
+        priority: 0.3,
       }))
     }
   } catch {
     // If Supabase is unavailable, return static pages only — never fail the sitemap
   }
 
-  return [...staticPages, ...productPages, ...categoryPages]
+  return [...staticPages, ...productPages, ...policyPages]
 }
