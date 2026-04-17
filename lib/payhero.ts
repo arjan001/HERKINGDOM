@@ -79,14 +79,19 @@ export function getPayHeroEnv(): PayHeroEnv | null {
   if (!authHeader || !channelIdRaw || !callbackUrl) return null
 
   const channelId = Number(channelIdRaw)
-  if (!Number.isFinite(channelId)) return null
-  const walletId = walletIdRaw ? Number(walletIdRaw) : undefined
+  if (!Number.isFinite(channelId) || channelId <= 0) return null
+
+  // Treat the .env.example placeholder (0) the same as an unset wallet ID so
+  // we don't accidentally hit /payment_channels/0, which PayHero answers with
+  // "wallet not found". Only a positive integer is considered a real override.
+  const walletIdParsed = walletIdRaw ? Number(walletIdRaw) : NaN
+  const walletId = Number.isFinite(walletIdParsed) && walletIdParsed > 0 ? walletIdParsed : undefined
 
   return {
     username: process.env.PAYHERO_API_USERNAME,
     password: process.env.PAYHERO_API_PASSWORD,
     channelId,
-    walletId: Number.isFinite(walletId) ? walletId : undefined,
+    walletId,
     callbackUrl,
     authHeader,
   }
@@ -288,6 +293,34 @@ function extractBalance(payload: unknown): number | null {
   return null
 }
 
+function extractErrorMessage(payload: unknown): string | null {
+  if (!payload || typeof payload !== "object") return null
+  const obj = payload as Record<string, unknown>
+  const candidates = [
+    obj.error_message,
+    obj.message,
+    obj.error,
+    obj.detail,
+    (obj.data as Record<string, unknown> | undefined)?.error_message,
+    (obj.data as Record<string, unknown> | undefined)?.message,
+    (obj.data as Record<string, unknown> | undefined)?.error,
+  ]
+  for (const c of candidates) {
+    if (typeof c === "string" && c.trim()) return c.trim()
+  }
+  // PayHero sometimes returns { success: false } with no explicit message.
+  if (obj.success === false) return "PayHero rejected the request"
+  return null
+}
+
+function humanizeWalletError(raw: string): string {
+  const lower = raw.toLowerCase()
+  if (lower.includes("wallet not found") || lower.includes("channel not found")) {
+    return "PayHero returned \"wallet not found\" for the configured channel. Set PAYHERO_WALLET_ID to your wallet payment channel ID (Dashboard > Payment Channels — the channel whose type is \"wallet\")."
+  }
+  return raw
+}
+
 /**
  * Read a wallet balance from PayHero.
  *
@@ -300,22 +333,26 @@ function extractBalance(payload: unknown): number | null {
  *     and returns "wallet not found"; the balance lives on the wallet
  *     payment channel itself:
  *       GET /api/v2/payment_channels/{wallet_channel_id}
- *     Response carries `balance_plain.balance`. `wallet_channel_id` comes
- *     from PAYHERO_WALLET_ID (fall back to PAYHERO_CHANNEL_ID).
+ *     Response carries `balance_plain.balance` and `channel_type: "wallet"`.
+ *     `wallet_channel_id` comes from PAYHERO_WALLET_ID (fall back to
+ *     PAYHERO_CHANNEL_ID only when the operator has a single channel).
  *
- * On non-2xx responses we return a `WalletBalanceError` so callers can
- * forward the actionable PayHero error text to the admin UI.
+ * On non-2xx responses — and on 200 bodies that carry an explicit PayHero
+ * error (e.g. `{ "error": "wallet not found" }`) — we return a
+ * `WalletBalanceError` with the PayHero message so the admin UI can show
+ * something actionable instead of a generic failure.
  */
 export async function getWalletBalance(
   env: PayHeroEnv,
   walletType: WalletType = "service_wallet",
 ): Promise<WalletBalance | WalletBalanceError> {
   let url: string
+  let channelId: number | undefined
   if (walletType === "service_wallet") {
     url = `${PAYHERO_BASE}/wallets?wallet_type=service_wallet`
   } else {
-    const channelId = env.walletId ?? env.channelId
-    if (!Number.isFinite(channelId)) {
+    channelId = env.walletId ?? env.channelId
+    if (!Number.isFinite(channelId) || (channelId as number) <= 0) {
       return {
         error:
           "PAYHERO_WALLET_ID is not set. Add the wallet payment channel ID from app.payhero.co.ke > Payment Channels to read your payments wallet balance.",
@@ -329,19 +366,42 @@ export async function getWalletBalance(
     const data = await res.json().catch(() => ({}))
 
     if (!res.ok) {
-      const msg =
-        (data && typeof data === "object" &&
-          ((data as Record<string, unknown>).error_message ||
-            (data as Record<string, unknown>).message ||
-            (data as Record<string, unknown>).error)) ||
-        `PayHero responded with HTTP ${res.status}`
-      return { error: String(msg), status: res.status, raw: data }
+      const msg = extractErrorMessage(data) || `PayHero responded with HTTP ${res.status}`
+      return { error: humanizeWalletError(msg), status: res.status, raw: data }
+    }
+
+    // PayHero occasionally returns HTTP 200 with { error: "wallet not found" }
+    // or { success: false, ... } for payment_channels/{id} when the ID does
+    // not resolve. Surface those before the balance extractor loses the
+    // context.
+    const explicitError = extractErrorMessage(data)
+    if (explicitError) {
+      return { error: humanizeWalletError(explicitError), status: res.status, raw: data }
+    }
+
+    // For the payments wallet, insist the channel we read is actually a
+    // wallet channel. Pointing PAYHERO_WALLET_ID at the STK-push channel
+    // returns valid channel data without balance_plain, which would
+    // otherwise bubble up as a vague "unexpected response".
+    if (walletType === "payment_wallet" && data && typeof data === "object") {
+      const obj = data as Record<string, unknown>
+      const type = typeof obj.channel_type === "string" ? obj.channel_type.toLowerCase() : null
+      if (type && type !== "wallet") {
+        return {
+          error: `PAYHERO_WALLET_ID ${channelId} points to a "${type}" channel, not a wallet channel. Use the channel whose type is "wallet" in Dashboard > Payment Channels.`,
+          status: res.status,
+          raw: data,
+        }
+      }
     }
 
     const balance = extractBalance(data)
     if (balance == null) {
       return {
-        error: "PayHero returned an unexpected wallet response",
+        error:
+          walletType === "payment_wallet"
+            ? "PayHero returned the channel without a balance. Confirm PAYHERO_WALLET_ID is the wallet payment channel (channel_type: \"wallet\")."
+            : "PayHero returned an unexpected wallet response",
         status: res.status,
         raw: data,
       }
