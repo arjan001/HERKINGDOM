@@ -1,14 +1,17 @@
 "use client"
 
-import Image from "next/image"
+import { useState } from "react"
 import Link from "next/link"
 import { X, Minus, Plus, ShoppingBag, Gift } from "lucide-react"
 import { useCart } from "@/lib/cart-context"
 import { formatPrice } from "@/lib/format"
 import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden"
 import { ProductImage } from "./product-image"
+
+const FREE_SHIPPING_THRESHOLD = 7000
 
 export function CartDrawer() {
   const { items, removeItem, updateQuantity, totalPrice, isCartOpen, setIsCartOpen, gift, setGift } = useCart()
@@ -38,6 +41,26 @@ export function CartDrawer() {
           </div>
         ) : (
           <>
+            {/* Free shipping progress */}
+            <div className="px-5 pt-4 pb-1 text-center">
+              {reachedFreeShipping ? (
+                <p className="text-sm font-medium text-[#00843D] flex items-center justify-center gap-1.5">
+                  <Truck className="h-4 w-4" />
+                  You qualify for <span className="font-semibold">FREE shipping!</span>
+                </p>
+              ) : (
+                <p className="text-sm text-[#00843D]">
+                  Spend <span className="font-semibold">{formatPrice(remaining)}</span> more to reach free shipping!
+                </p>
+              )}
+              <div className="mt-2 h-1.5 w-full rounded-full bg-secondary overflow-hidden">
+                <div
+                  className="h-full bg-[#00843D] rounded-full transition-all duration-500 ease-out"
+                  style={{ width: `${progressPct}%` }}
+                />
+              </div>
+            </div>
+
             <div className="flex-1 overflow-y-auto p-5 space-y-4">
               {items.map((item) => (
                 <div key={item.product.id} className="flex gap-4">
@@ -87,6 +110,32 @@ export function CartDrawer() {
                   </button>
                 </div>
               ))}
+
+              {/* Special order instructions */}
+              <div className="border border-border rounded-sm bg-secondary/40">
+                <button
+                  type="button"
+                  onClick={() => setNotesOpen((v) => !v)}
+                  className="w-full flex items-center justify-between px-4 py-3 text-left"
+                  aria-expanded={notesOpen}
+                >
+                  <span className="text-sm font-medium">Add Special Order Instructions</span>
+                  <ChevronDown
+                    className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${notesOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
+                {notesOpen && (
+                  <div className="px-4 pb-4">
+                    <Textarea
+                      value={specialInstructions}
+                      onChange={(e) => setSpecialInstructions(e.target.value)}
+                      placeholder="Order special instructions"
+                      rows={4}
+                      className="bg-background resize-none"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="border-t border-border p-5 space-y-4">

@@ -1,15 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import { X, Loader2, Copy, Check, MessageSquare } from "lucide-react"
+import { X, Loader2, MessageSquare, Sparkles } from "lucide-react"
 import { formatPrice } from "@/lib/format"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 
-const TILL_NUMBER = "8 4 9 2 7 3 5"
-const TILL_DIGITS = TILL_NUMBER.split(" ")
 const BUSINESS_NAME = "CLASSY COLLECTIONS"
 
 interface MpesaPaymentModalProps {
@@ -23,24 +21,15 @@ export function MpesaPaymentModal({ isOpen, onClose, total, onPaymentConfirmed }
   const [mpesaCode, setMpesaCode] = useState("")
   const [mpesaPhone, setMpesaPhone] = useState("")
   const [mpesaMessage, setMpesaMessage] = useState("")
-  const [copied, setCopied] = useState(false)
   const [isConfirming, setIsConfirming] = useState(false)
 
   if (!isOpen) return null
-
-  const tillRaw = TILL_DIGITS.join("")
-
-  const copyTill = () => {
-    navigator.clipboard.writeText(tillRaw)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
 
   const canSubmit = mpesaMessage.trim().length >= 10
 
   const handleConfirm = async () => {
     if (!canSubmit) return
-    
+
     try {
       setIsConfirming(true)
 
@@ -52,7 +41,7 @@ export function MpesaPaymentModal({ isOpen, onClose, total, onPaymentConfirmed }
       // Call the parent callback to handle payment confirmation
       await new Promise((r) => setTimeout(r, 500)) // Brief delay for UX
       onPaymentConfirmed(codeMatch, phoneMatch, mpesaMessage.trim())
-      
+
       // Reset form
       setMpesaCode("")
       setMpesaPhone("")
@@ -105,42 +94,21 @@ export function MpesaPaymentModal({ isOpen, onClose, total, onPaymentConfirmed }
         </div>
 
         <div className="px-6 pb-6">
-          {/* Till Number Card */}
+          {/* Automated STK Push notice - replaces the till number card while
+              the automated M-PESA STK push integration is being wired up. */}
           <div className="bg-background border-2 border-[#00843D]/20 rounded-sm -mt-3 relative z-10 shadow-lg">
-            <div className="text-center pt-5 pb-3">
-              <p className="text-[#00843D] font-bold text-sm tracking-wider uppercase">
-                Buy Goods Till Number
-              </p>
-            </div>
-
-            <div className="flex justify-center gap-1.5 px-4 pb-3">
-              {TILL_DIGITS.map((digit, i) => (
-                <div key={i} className="w-10 h-12 border-2 border-foreground/80 rounded-sm flex items-center justify-center">
-                  <span className="text-[#00843D] text-xl font-extrabold">{digit}</span>
-                </div>
-              ))}
-            </div>
-
-            <div className="text-center pb-4">
-              <p className="text-foreground font-extrabold text-lg tracking-wide">{BUSINESS_NAME}</p>
-            </div>
-
-            <div className="flex justify-center pb-4">
-              <button
-                type="button"
-                onClick={copyTill}
-                className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground bg-secondary/60 hover:bg-secondary px-4 py-2 rounded-sm transition-colors"
-              >
-                {copied ? <Check className="h-3.5 w-3.5 text-[#00843D]" /> : <Copy className="h-3.5 w-3.5" />}
-                {copied ? "Copied!" : "Copy Till Number"}
-              </button>
-            </div>
-
-            <div className="flex justify-end px-4 pb-3">
-              <div className="text-right">
-                <p className="text-[#00843D] text-xs font-bold leading-tight">Safaricom</p>
-                <p className="text-[10px] text-muted-foreground font-semibold tracking-wider">M-PESA</p>
+            <div className="px-5 py-5 text-center space-y-2">
+              <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-[#00843D]/10 mx-auto">
+                <Sparkles className="h-5 w-5 text-[#00843D]" />
               </div>
+              <p className="text-[#00843D] font-bold text-sm tracking-wider uppercase">
+                Automated STK Push Coming Soon
+              </p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                We are rolling out automated M-PESA payments. For now, complete your M-PESA payment on your phone,
+                then paste the confirmation SMS below and our team will verify it.
+              </p>
+              <p className="text-foreground font-extrabold text-base tracking-wide pt-1">{BUSINESS_NAME}</p>
             </div>
           </div>
 

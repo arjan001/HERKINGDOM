@@ -70,6 +70,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined)
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([])
   const [isCartOpen, setIsCartOpen] = useState(false)
+  const [specialInstructions, setSpecialInstructionsState] = useState("")
   const [hydrated, setHydrated] = useState(false)
   const [gift, setGiftState] = useState<GiftPersonalization>(DEFAULT_GIFT)
 

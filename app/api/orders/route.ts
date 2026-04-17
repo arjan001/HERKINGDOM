@@ -17,9 +17,19 @@ export async function POST(request: NextRequest) {
     const customerPhone = sanitize(body.customerPhone, 20)
     const deliveryAddress = sanitize(body.deliveryAddress, 500)
     const notes = sanitize(body.notes, 1000)
+    const specialInstructions = body.specialInstructions ? sanitize(body.specialInstructions, 2000) : ""
     const mpesaCode = sanitize(body.mpesaCode, 12)
     const mpesaPhone = sanitize(body.mpesaPhone, 20)
     const mpesaMessage = sanitize(body.mpesaMessage, 2000)
+
+    // Preserve the full gifting selection (add-ons, wraps, greeting cards
+    // with per-card messages, and the sender/recipient/note) so the order
+    // captures every instruction the shopper added on checkout.
+    const isGift = Boolean(body.isGift)
+    const giftSelection = body.giftSelection && typeof body.giftSelection === "object"
+      ? (body.giftSelection as Record<string, unknown>)
+      : null
+    const giftExtrasTotal = Math.max(0, Number(body.giftExtrasTotal) || 0)
 
     // Validate required fields
     if (!customerName || !customerPhone || !deliveryAddress || !body.items?.length) {
@@ -71,6 +81,10 @@ export async function POST(request: NextRequest) {
       subtotal,
       total,
       notes,
+      specialInstructions,
+      isGift,
+      giftSelection,
+      giftExtrasTotal,
       orderedVia: body.orderedVia === "whatsapp" ? "whatsapp" : "website",
       paymentMethod,
       mpesaCode,

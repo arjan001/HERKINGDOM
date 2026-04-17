@@ -73,3 +73,49 @@ export interface DeliveryLocation {
   fee: number
   estimatedDays: string
 }
+
+export type GiftItemCategory = "addon" | "gift_wrap" | "greeting_card"
+
+export interface GiftItem {
+  id: string
+  category: GiftItemCategory
+  name: string
+  description?: string
+  price: number
+  imageUrl?: string
+  isActive: boolean
+  sortOrder: number
+}
+
+export interface GiftSelectionAddon {
+  id: string
+  name: string
+  price: number
+  imageUrl?: string
+  quantity: number
+}
+
+export interface GiftSelectionWrap {
+  id: string
+  name: string
+  price: number
+  imageUrl?: string
+}
+
+export interface GiftSelectionCard {
+  id: string
+  name: string
+  price: number
+  imageUrl?: string
+  message?: string
+}
+
+export interface GiftSelection {
+  isGift: boolean
+  addons: GiftSelectionAddon[]
+  wraps: GiftSelectionWrap[]
+  cards: GiftSelectionCard[]
+  messageFrom?: string
+  messageTo?: string
+  messageNote?: string
+}

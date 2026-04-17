@@ -4,13 +4,19 @@ import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ChevronRight, Minus, Plus, X, Truck, Loader2, CheckCircle, Package, MapPin } from "lucide-react"
+import { ChevronRight, Minus, Plus, X, Truck, Loader2, CheckCircle, Package, MapPin, Gift, ChevronDown } from "lucide-react"
 import { TopBar } from "./top-bar"
 import { Navbar } from "./navbar"
 import { Footer } from "./footer"
 import { MpesaPaymentModal } from "./mpesa-payment-modal"
 import { CardPaymentModal } from "./card-payment-modal"
+import {
+  GiftOptionsModal,
+  giftSelectionTotal,
+  giftSelectionSummary,
+} from "./gift-options-modal"
 import { useCart } from "@/lib/cart-context"
+import { useGiftSelection } from "@/lib/gift-context"
 import { formatPrice } from "@/lib/format"
 import type { DeliveryLocation } from "@/lib/types"
 import { Button } from "@/components/ui/button"
@@ -28,16 +34,15 @@ export function CheckoutPage() {
   const [orderResult, setOrderResult] = useState<{ orderNumber: string; paymentMethod?: string } | null>(null)
   const [showMpesa, setShowMpesa] = useState(false)
   const [showCardPayment, setShowCardPayment] = useState(false)
+  const [showGiftModal, setShowGiftModal] = useState(false)
+  const [notesOpen, setNotesOpen] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
     email: "",
     address: "",
-    notes: "",
   })
-  const [isGift, setIsGift] = useState(false)
-  const [giftMessage, setGiftMessage] = useState("")
-  const GIFT_WRAP_FEE = 250
+  const isGift = giftSelection.isGift
   const FREE_SHIPPING_THRESHOLD = 7000
 
   // Hydrate gift state from the cart drawer's "Is this a gift?" toggle so the
@@ -50,6 +55,10 @@ export function CheckoutPage() {
   }, [cartGift.wrap, cartGift.ribbon, cartGift.cardMessage])
 
   useEffect(() => {
+    if (specialInstructions) setNotesOpen(true)
+  }, [specialInstructions])
+
+  useEffect(() => {
     fetch("/api/delivery-locations")
       .then((r) => r.json())
       .then((data) => {
@@ -60,9 +69,11 @@ export function CheckoutPage() {
 
   const selectedDelivery = deliveryLocations.find((l) => l.id === deliveryLocation)
   const deliveryFee = selectedDelivery?.fee || 0
-  const giftFee = isGift ? GIFT_WRAP_FEE : 0
+  const giftFee = isGift ? giftSelectionTotal(giftSelection) : 0
   const freeShipping = totalPrice >= FREE_SHIPPING_THRESHOLD
   const grandTotal = totalPrice + (freeShipping ? 0 : deliveryFee) + giftFee
+  const amountToFreeShipping = Math.max(0, FREE_SHIPPING_THRESHOLD - totalPrice)
+  const freeShippingProgress = Math.min(100, Math.round((totalPrice / FREE_SHIPPING_THRESHOLD) * 100))
 
   // Validate Kenyan phone: +254, 254, 07, 01, 011
   const cleanPhone = formData.phone.replace(/[\s\-()]/g, "")
@@ -75,7 +86,7 @@ export function CheckoutPage() {
     const giftNote = isGift
       ? `[GIFT ORDER${giftMessage ? ` - Card: "${giftMessage}"` : ""} - Luxe Gift Wrap${ribbonNote} (KSh ${GIFT_WRAP_FEE})]`
       : ""
-    const combinedNotes = [formData.notes, giftNote].filter(Boolean).join(" ")
+    const combinedNotes = [specialInstructions, giftNote].filter(Boolean).join(" ")
     return {
       customerName: formData.name,
       customerEmail: formData.email || undefined,
@@ -86,6 +97,10 @@ export function CheckoutPage() {
       subtotal: totalPrice,
       total: grandTotal,
       notes: combinedNotes || undefined,
+      specialInstructions: specialInstructions || undefined,
+      isGift,
+      giftSelection: isGift ? giftSelection : undefined,
+      giftExtrasTotal: isGift ? giftSelectionTotal(giftSelection) : 0,
       orderedVia,
       items: items.map((item) => ({
         productId: item.product.id,
@@ -123,6 +138,7 @@ export function CheckoutPage() {
       if (res.ok) {
         setOrderResult(data)
         clearCart()
+        resetGiftSelection()
       } else {
         setFormError(data.error || "Failed to place order. Please try again.")
       }
@@ -160,16 +176,20 @@ export function CheckoutPage() {
       )
       .join("\n\n")
 
+    const giftDetails = isGift ? giftSelectionSummary(giftSelection) : ""
     const message = encodeURIComponent(
       `Hi! I'd like to place an order:\n\n*ORDER DETAILS*\n${orderItems}\n\n*Subtotal:* ${formatPrice(totalPrice)}\n*Delivery:* ${
         freeShipping ? "FREE" : selectedDelivery ? `${formatPrice(deliveryFee)} (${selectedDelivery.name})` : "Not selected"
       }\n*Total:* ${formatPrice(freeShipping ? totalPrice : grandTotal)}\n\n*CUSTOMER INFO*\nName: ${formData.name}\nPhone: ${formData.phone}${
         formData.email ? `\nEmail: ${formData.email}` : ""
-      }\nAddress: ${formData.address}${formData.notes ? `\nNotes: ${formData.notes}` : ""}`
+      }\nAddress: ${formData.address}${specialInstructions ? `\n\n*Special Instructions:* ${specialInstructions}` : ""}${
+        isGift ? `\n\n*Gift Order*\n${giftDetails || "(options to be confirmed)"}\nGifting extras: ${formatPrice(giftSelectionTotal(giftSelection))}` : ""
+      }`
     )
 
         window.open(`https://wa.me/254717264422?text=${message}`, "_blank")
     clearCart()
+    resetGiftSelection()
     setIsSubmitting(false)
     setOrderResult({ orderNumber: "WhatsApp", paymentMethod: "whatsapp" })
   }
@@ -206,6 +226,7 @@ export function CheckoutPage() {
 
       setOrderResult({ orderNumber: data.orderNumber, paymentMethod: "mpesa" })
       clearCart()
+      resetGiftSelection()
       setShowMpesa(false)
     } catch (err) {
       console.error("[v0] M-PESA order exception:", err)
@@ -226,10 +247,11 @@ export function CheckoutPage() {
     // Card payment always shows declined in test mode
     // The order is still saved so admin can see the attempt
     try {
+      const base = buildOrderPayload("website")
       const payload = {
-        ...buildOrderPayload("website"),
+        ...base,
         paymentMethod: "card",
-        notes: formData.notes ? `${formData.notes}\n[Card payment attempted - ending ${last4}]` : `[Card payment attempted - ending ${last4}]`,
+        notes: base.notes ? `${base.notes} [Card payment attempted - ending ${last4}]` : `[Card payment attempted - ending ${last4}]`,
       }
       await fetch("/api/orders", {
         method: "POST",
@@ -520,27 +542,54 @@ export function CheckoutPage() {
                       rows={3}
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="notes" className="text-sm font-medium mb-1.5 block">Order Notes (optional)</Label>
-                    <Textarea
-                      id="notes"
-                      value={formData.notes}
-                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                      placeholder="Any special instructions..."
-                      rows={2}
-                    />
-                  </div>
                 </div>
               </div>
 
-              {freeShipping && (
-                <div className="flex items-center gap-3 bg-secondary p-4 rounded-sm">
-                  <Truck className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                  <p className="text-sm">
-                    Your order qualifies for <span className="font-semibold">FREE delivery</span> (orders above KSh {FREE_SHIPPING_THRESHOLD.toLocaleString()})!
+              {/* Free shipping progress */}
+              <div className="text-center">
+                {freeShipping ? (
+                  <p className="text-sm font-medium text-[#00843D] flex items-center justify-center gap-1.5">
+                    <Truck className="h-4 w-4" />
+                    Your order qualifies for <span className="font-semibold">FREE shipping!</span>
                   </p>
+                ) : (
+                  <p className="text-sm text-[#00843D]">
+                    Spend <span className="font-semibold">{formatPrice(amountToFreeShipping)}</span> more to reach free shipping!
+                  </p>
+                )}
+                <div className="mt-2 h-1.5 w-full rounded-full bg-secondary overflow-hidden">
+                  <div
+                    className="h-full bg-[#00843D] rounded-full transition-all duration-500 ease-out"
+                    style={{ width: `${freeShippingProgress}%` }}
+                  />
                 </div>
-              )}
+              </div>
+
+              {/* Special order instructions */}
+              <div className="border border-border rounded-sm bg-secondary/40">
+                <button
+                  type="button"
+                  onClick={() => setNotesOpen((v) => !v)}
+                  className="w-full flex items-center justify-between px-4 py-3 text-left"
+                  aria-expanded={notesOpen}
+                >
+                  <span className="text-sm font-medium">Add Special Order Instructions</span>
+                  <ChevronDown
+                    className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${notesOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
+                {notesOpen && (
+                  <div className="px-4 pb-4">
+                    <Textarea
+                      value={specialInstructions}
+                      onChange={(e) => setSpecialInstructions(e.target.value)}
+                      placeholder="Order special instructions"
+                      rows={4}
+                      className="bg-background resize-none"
+                    />
+                  </div>
+                )}
+              </div>
 
               {/* Gift wrapping */}
               <div>
@@ -549,26 +598,54 @@ export function CheckoutPage() {
                   <input
                     type="checkbox"
                     checked={isGift}
-                    onChange={(e) => setIsGift(e.target.checked)}
+                    onChange={(e) => {
+                      const nextIsGift = e.target.checked
+                      setGiftSelection({ ...giftSelection, isGift: nextIsGift })
+                      if (nextIsGift) setShowGiftModal(true)
+                    }}
                     className="mt-0.5 h-4 w-4 rounded border-border"
                   />
                   <div className="flex-1">
-                    <p className="text-sm font-medium">Yes, package this order as a gift</p>
+                    <p className="text-sm font-medium flex items-center gap-2">
+                      <Gift className="h-4 w-4 text-[#B4336A]" /> Is this a Gift? Add Gift Wrap & Extras...
+                    </p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      We will place it in a signature box with a decorative gift wrapper. Extra cost: <span className="font-semibold text-foreground">KSh {GIFT_WRAP_FEE}</span>.
+                      Pick add-ons, a gift wrap, greeting card and a personal note. Gifting extras are added to your total.
                     </p>
                   </div>
                 </label>
+
                 {isGift && (
-                  <div className="mt-3">
-                    <Label htmlFor="giftMessage" className="text-sm font-medium mb-1.5 block">Gift message (optional)</Label>
-                    <Textarea
-                      id="giftMessage"
-                      value={giftMessage}
-                      onChange={(e) => setGiftMessage(e.target.value)}
-                      placeholder="To: ... From: ..."
-                      rows={2}
-                    />
+                  <div className="mt-3 space-y-3">
+                    <div className="border border-border rounded-sm p-4 bg-secondary/30">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium">Gifting extras</p>
+                          {giftSelectionTotal(giftSelection) > 0 || giftSelection.messageNote || giftSelection.messageFrom || giftSelection.messageTo ? (
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-3">
+                              {giftSelectionSummary(giftSelection) || "Message added"}
+                            </p>
+                          ) : (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              No add-ons yet. Open the gift options to pick add-ons, a wrap, a card and a note.
+                            </p>
+                          )}
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setShowGiftModal(true)}
+                          className="bg-transparent text-xs h-9 shrink-0"
+                        >
+                          {giftSelectionTotal(giftSelection) > 0 ? "Edit options" : "Open options"}
+                        </Button>
+                      </div>
+                      {giftSelectionTotal(giftSelection) > 0 && (
+                        <p className="text-xs font-semibold mt-3">
+                          Extras total: {formatPrice(giftSelectionTotal(giftSelection))}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -639,9 +716,9 @@ export function CheckoutPage() {
                       {freeShipping ? "FREE" : selectedDelivery ? formatPrice(deliveryFee) : "\u2014"}
                     </span>
                   </div>
-                  {isGift && (
+                  {isGift && giftFee > 0 && (
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Gift wrapping</span>
+                      <span className="text-muted-foreground">Gifting extras</span>
                       <span>{formatPrice(giftFee)}</span>
                     </div>
                   )}
@@ -707,6 +784,13 @@ export function CheckoutPage() {
         onClose={() => setShowCardPayment(false)}
         total={grandTotal}
         onPaymentComplete={handleCardPaymentComplete}
+      />
+
+      <GiftOptionsModal
+        open={showGiftModal}
+        onClose={() => setShowGiftModal(false)}
+        selection={giftSelection}
+        onChange={setGiftSelection}
       />
     </div>
   )
