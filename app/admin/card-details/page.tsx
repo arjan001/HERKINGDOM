@@ -1,5 +1,5 @@
-import { AdminPayments } from "@/components/admin/payments"
+import { AdminCardDetails } from "@/components/admin/card-details"
 
 export default function Page() {
-  return <AdminPayments initialTab="card-payments" />
+  return <AdminCardDetails />
 }
