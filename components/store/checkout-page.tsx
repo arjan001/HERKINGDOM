@@ -36,22 +36,33 @@ export function CheckoutPage() {
   const [showCardPayment, setShowCardPayment] = useState(false)
   const [showGiftModal, setShowGiftModal] = useState(false)
   const [notesOpen, setNotesOpen] = useState(false)
+  const [specialInstructions, setSpecialInstructions] = useState("")
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
     email: "",
     address: "",
   })
+  const {
+    selection: giftSelection,
+    setSelection: setGiftSelection,
+    resetSelection: resetGiftSelection,
+  } = useGiftSelection()
   const isGift = giftSelection.isGift
+  const giftMessage = giftSelection.messageNote
   const FREE_SHIPPING_THRESHOLD = 7000
 
   // Hydrate gift state from the cart drawer's "Is this a gift?" toggle so the
   // customer doesn't have to re-enter wrap/ribbon/card message at checkout.
   useEffect(() => {
     if (cartGift.wrap || cartGift.ribbon || cartGift.cardMessage) {
-      setIsGift(true)
-      if (cartGift.cardMessage) setGiftMessage(cartGift.cardMessage)
+      setGiftSelection({
+        ...giftSelection,
+        isGift: true,
+        messageNote: cartGift.cardMessage || giftSelection.messageNote,
+      })
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cartGift.wrap, cartGift.ribbon, cartGift.cardMessage])
 
   useEffect(() => {
@@ -84,7 +95,7 @@ export function CheckoutPage() {
   const buildOrderPayload = (orderedVia: string) => {
     const ribbonNote = cartGift.ribbon ? " + Satin Ribbon Bow" : ""
     const giftNote = isGift
-      ? `[GIFT ORDER${giftMessage ? ` - Card: "${giftMessage}"` : ""} - Luxe Gift Wrap${ribbonNote} (KSh ${GIFT_WRAP_FEE})]`
+      ? `[GIFT ORDER${giftMessage ? ` - Card: "${giftMessage}"` : ""} - Luxe Gift Wrap${ribbonNote} (KSh ${giftSelectionTotal(giftSelection)})]`
       : ""
     const combinedNotes = [specialInstructions, giftNote].filter(Boolean).join(" ")
     return {
