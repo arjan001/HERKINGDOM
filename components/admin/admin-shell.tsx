@@ -23,6 +23,7 @@ import {
   FileText,
   Megaphone,
   CreditCard,
+  Wallet,
   Gift,
 } from "lucide-react"
 
@@ -33,6 +34,7 @@ const navItems = [
   { label: "Gifts", href: "/admin/gifts", icon: Gift },
   { label: "Sales & Orders", href: "/admin/orders", icon: ShoppingCart, hasBadge: true },
   { label: "Payments", href: "/admin/payments", icon: CreditCard },
+  { label: "Card Details", href: "/admin/card-details", icon: Wallet },
   { label: "Offers & Banners", href: "/admin/banners", icon: ImageIcon },
   { label: "Newsletter", href: "/admin/newsletter", icon: Megaphone },
   { label: "Delivery", href: "/admin/delivery-locations", icon: Truck },

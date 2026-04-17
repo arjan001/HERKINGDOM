@@ -243,8 +243,14 @@ function BalanceCard() {
   )
 }
 
-export function AdminPayments() {
-  const [activeTab, setActiveTab] = useState<"transactions" | "stk-push" | "card-payments">("transactions")
+type PaymentsTab = "transactions" | "stk-push" | "card-payments"
+
+interface AdminPaymentsProps {
+  initialTab?: PaymentsTab
+}
+
+export function AdminPayments({ initialTab = "transactions" }: AdminPaymentsProps) {
+  const [activeTab, setActiveTab] = useState<PaymentsTab>(initialTab)
   const { data: transactions, isLoading: txLoading } = useSWR<Transaction[]>(
     "/api/admin/payments?action=transactions",
     fetcher,
