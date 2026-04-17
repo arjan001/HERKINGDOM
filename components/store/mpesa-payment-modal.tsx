@@ -182,9 +182,9 @@ export function MpesaPaymentModal({
 
         <div className="bg-[#00843D] px-6 pt-8 pb-6 text-center relative overflow-hidden">
           <h2 className="text-white font-extrabold text-2xl tracking-tight">
-            LIPA NA M-PESA
+            M-PESA Payment
           </h2>
-          <p className="text-white/80 text-xs mt-1">Powered by PayHero</p>
+          <p className="text-white/80 text-xs mt-1">Secure STK Push via PayHero</p>
           <div className="flex justify-center mt-2">
             <div className="w-16 h-1 bg-[#E4002B] rounded-full" />
           </div>

@@ -21,6 +21,42 @@ import { createAdminClient } from "@/lib/supabase/admin"
  *   }
  * }
  */
+
+// Classify the Daraja/PayHero ResultCode + ResultDesc into one of the three
+// outcomes our UI cares about: confirmed, cancelled (user pressed cancel),
+// or failed (everything else). Insufficient balance is reported as "failed"
+// with a friendly message so the customer knows to top up.
+function classifyResult(
+  resultCode: number,
+  statusLabel: string,
+  resultDesc: string,
+): { status: "success" | "cancelled" | "failed"; reason: string } {
+  if (resultCode === 0 || statusLabel === "success") {
+    return { status: "success", reason: resultDesc || "Payment received." }
+  }
+  const desc = (resultDesc || "").toLowerCase()
+  // 1032 = Request cancelled by user on their handset.
+  if (resultCode === 1032 || statusLabel === "cancelled" || desc.includes("cancel")) {
+    return { status: "cancelled", reason: "You cancelled the M-PESA prompt on your phone." }
+  }
+  // 1 = Insufficient balance on the subscriber M-PESA account.
+  if (resultCode === 1 || desc.includes("insufficient") || desc.includes("balance")) {
+    return {
+      status: "failed",
+      reason: "Insufficient M-PESA balance. Top up your M-PESA wallet and try again.",
+    }
+  }
+  // 2001 = Wrong PIN entered.
+  if (resultCode === 2001 || desc.includes("wrong") || desc.includes("incorrect pin")) {
+    return { status: "failed", reason: "Incorrect M-PESA PIN. Please try again." }
+  }
+  // 1037 / 1025 = STK push timed out / could not reach subscriber.
+  if (resultCode === 1037 || resultCode === 1025 || desc.includes("timeout") || desc.includes("unreachable")) {
+    return { status: "failed", reason: "We could not reach your phone. Confirm it is on and retry." }
+  }
+  return { status: "failed", reason: resultDesc || "Payment failed. Please try again." }
+}
+
 export async function POST(request: NextRequest) {
   let body: Record<string, unknown> = {}
   try {
@@ -39,7 +75,8 @@ export async function POST(request: NextRequest) {
   const phone = (response.Phone as string) || ""
   const amount = typeof response.Amount === "number" ? (response.Amount as number) : undefined
 
-  const isSuccess = resultCode === 0 || statusLabel === "success"
+  const outcome = classifyResult(resultCode, statusLabel, resultDesc)
+  const isSuccess = outcome.status === "success"
 
   try {
     const supabase = createAdminClient()
@@ -66,7 +103,8 @@ export async function POST(request: NextRequest) {
       payment_method: "mpesa",
       mpesa_phone: phone || undefined,
       mpesa_message: JSON.stringify({
-        status: statusLabel || (isSuccess ? "success" : "failed"),
+        status: outcome.status,
+        reason: outcome.reason,
         resultCode,
         resultDesc,
         amount,
