@@ -2,6 +2,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { Phone, Mail, Clock, MapPin } from "lucide-react"
 import { FloatingWhatsApp } from "./floating-whatsapp"
+import { SeoLinkCloud } from "./seo-link-cloud"
 
 export function Footer() {
   return (
@@ -230,6 +231,7 @@ export function Footer() {
           </div>
         </div>
       </div>
+      <SeoLinkCloud />
       <FloatingWhatsApp />
     </footer>
   )
