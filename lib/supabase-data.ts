@@ -358,34 +358,75 @@ export async function createOrder(order: {
   // Generate order number
   const orderNumber = `CC-${Date.now().toString(36).toUpperCase()}`
 
-  const { data: orderData, error: orderError } = await supabase
-    .from("orders")
-    .insert({
-      order_no: orderNumber,
-      customer_name: order.customerName,
-      customer_email: order.customerEmail || null,
-      customer_phone: order.customerPhone,
-      delivery_location_id: order.deliveryLocationId || null,
-      delivery_address: order.deliveryAddress,
-      delivery_fee: order.deliveryFee,
-      subtotal: order.subtotal,
-      total: order.total,
-      order_notes: order.notes || null,
-      special_instructions: order.specialInstructions || null,
-      is_gift: order.isGift || false,
-      gift_selection: order.giftSelection || null,
-      gift_extras_total: order.giftExtrasTotal || 0,
-      ordered_via: order.orderedVia,
-      payment_method: order.paymentMethod || "cod",
-      mpesa_code: order.mpesaCode || null,
-      mpesa_phone: order.mpesaPhone || null,
-      mpesa_message: order.mpesaMessage || null,
-      status: "pending",
-    })
-    .select()
-    .single()
+  // Columns added in migration 020 (special_instructions, is_gift, gift_selection,
+  // gift_extras_total) may not yet exist on older deployments. We build the base
+  // payload and try the richer insert first; if Postgres rejects it with the
+  // "undefined_column" code (42703), we retry with the minimal columns so that
+  // customers on stale schemas can still place orders.
+  const baseInsert = {
+    order_no: orderNumber,
+    customer_name: order.customerName,
+    customer_email: order.customerEmail || null,
+    customer_phone: order.customerPhone,
+    delivery_location_id: order.deliveryLocationId || null,
+    delivery_address: order.deliveryAddress,
+    delivery_fee: order.deliveryFee,
+    subtotal: order.subtotal,
+    total: order.total,
+    order_notes: order.notes || null,
+    ordered_via: order.orderedVia,
+    payment_method: order.paymentMethod || "cod",
+    mpesa_code: order.mpesaCode || null,
+    mpesa_phone: order.mpesaPhone || null,
+    mpesa_message: order.mpesaMessage || null,
+    status: "pending",
+  }
 
-  if (orderError) throw orderError
+  const extendedInsert = {
+    ...baseInsert,
+    special_instructions: order.specialInstructions || null,
+    is_gift: order.isGift || false,
+    gift_selection: order.giftSelection || null,
+    gift_extras_total: order.giftExtrasTotal || 0,
+  }
+
+  const tryInsert = async (payload: Record<string, unknown>) =>
+    supabase.from("orders").insert(payload).select().single()
+
+  let { data: orderData, error: orderError } = await tryInsert(extendedInsert)
+
+  // Postgres 42703 = undefined_column — happens when migration 020 hasn't run.
+  // Fall back to the base payload so the shopper can still check out, and merge
+  // the gift details into order_notes so fulfilment staff still see them.
+  if (orderError && (orderError.code === "42703" || /column .* does not exist/i.test(orderError.message || ""))) {
+    console.warn("[orders] extended columns unavailable — retrying with minimal payload:", orderError.message)
+    const giftFallbackNote = order.isGift
+      ? `[Gift order — extras total KSh ${Number(order.giftExtrasTotal || 0).toLocaleString()}${
+          order.giftSelection ? ` — details: ${JSON.stringify(order.giftSelection)}` : ""
+        }]`
+      : ""
+    const specialFallbackNote = order.specialInstructions
+      ? `[Special instructions: ${order.specialInstructions}]`
+      : ""
+    const mergedNotes = [baseInsert.order_notes, specialFallbackNote, giftFallbackNote]
+      .filter(Boolean)
+      .join(" ")
+    const fallbackRes = await tryInsert({
+      ...baseInsert,
+      order_notes: mergedNotes || null,
+    })
+    orderData = fallbackRes.data
+    orderError = fallbackRes.error
+  }
+
+  if (orderError) {
+    console.error("[orders] insert failed:", orderError)
+    throw new Error(orderError.message || "Could not save order")
+  }
+
+  if (!orderData) {
+    throw new Error("Order insert returned no data")
+  }
 
   // Insert order items - match actual order_items schema
   const orderItems = order.items.map((item) => ({

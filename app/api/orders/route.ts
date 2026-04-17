@@ -119,6 +119,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(result)
   } catch (error) {
     console.error("Failed to create order:", error)
-    return NextResponse.json({ error: "Failed to create order" }, { status: 500 })
+    const message = error instanceof Error ? error.message : "Failed to create order"
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }
