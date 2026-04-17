@@ -169,10 +169,11 @@ export async function initiateStkPush(env: PayHeroEnv, input: StkPushInput): Pro
     }
 
     if (!res.ok) {
+      const err = extractError()
       return {
         success: false,
         raw: data,
-        error: extractError() || `PayHero responded with HTTP ${res.status}`,
+        error: err ? humanizeStkPushError(err) : `PayHero responded with HTTP ${res.status}`,
       }
     }
 
@@ -185,11 +186,7 @@ export async function initiateStkPush(env: PayHeroEnv, input: StkPushInput): Pro
       return {
         success: false,
         raw: data,
-        error: err
-          ? (err.toLowerCase().includes("sql: no rows in result set")
-              ? "PayHero could not find a matching payment channel — check that PAYHERO_CHANNEL_ID matches an active channel in app.payhero.co.ke."
-              : err)
-          : "PayHero rejected the STK push",
+        error: err ? humanizeStkPushError(err) : "PayHero rejected the STK push",
       }
     }
 
@@ -318,6 +315,32 @@ function humanizeWalletError(raw: string): string {
   if (lower.includes("wallet not found") || lower.includes("channel not found")) {
     return "PayHero returned \"wallet not found\" for the configured channel. Set PAYHERO_WALLET_ID to your wallet payment channel ID (Dashboard > Payment Channels — the channel whose type is \"wallet\")."
   }
+  if (lower.includes("sql: no rows in result set")) {
+    return "PayHero could not resolve the wallet channel (it returned an empty lookup). Confirm PAYHERO_WALLET_ID points at an active wallet channel in app.payhero.co.ke > Payment Channels, and that the channel is linked to this merchant account."
+  }
+  return raw
+}
+
+/**
+ * Translate vague PayHero error strings into something a merchant can act on.
+ * The most common offender is "sql: no rows in result set" — PayHero's
+ * backend surfaces a Go `database/sql` error verbatim when one of its
+ * downstream lookups (channel, wallet, merchant account, short code mapping)
+ * returns no rows. Merchants see the raw message and have no idea what to
+ * fix. We rewrite known patterns into actionable guidance while preserving
+ * the original text for anything we don't recognise.
+ */
+function humanizeStkPushError(raw: string): string {
+  const lower = raw.toLowerCase()
+  if (lower.includes("sql: no rows in result set")) {
+    return "PayHero could not match this payment to an active channel or merchant record. Check in app.payhero.co.ke that: (1) PAYHERO_CHANNEL_ID is an active M-Pesa channel on this merchant account, (2) the channel is linked to your Paybill/Till, and (3) the API credentials belong to the same merchant as the channel."
+  }
+  if (lower.includes("insufficient")) {
+    return "PayHero reports the merchant service wallet has insufficient balance to cover STK-push fees. Top up the service wallet in app.payhero.co.ke > Wallets before retrying."
+  }
+  if (lower.includes("channel not found") || lower.includes("wallet not found")) {
+    return "PayHero could not find the configured payment channel. Verify PAYHERO_CHANNEL_ID matches an active channel in app.payhero.co.ke > Payment Channels."
+  }
   return raw
 }
 
@@ -348,10 +371,21 @@ export async function getWalletBalance(
 ): Promise<WalletBalance | WalletBalanceError> {
   let url: string
   let channelId: number | undefined
+  // Track whether we resolved the channel from PAYHERO_WALLET_ID (an explicit
+  // override) or fell back to PAYHERO_CHANNEL_ID. When we fell back, the
+  // channel likely points at an STK-push channel rather than a wallet, and
+  // the error messaging should name PAYHERO_CHANNEL_ID instead of blaming an
+  // unset PAYHERO_WALLET_ID.
+  let walletIdExplicit = false
   if (walletType === "service_wallet") {
     url = `${PAYHERO_BASE}/wallets?wallet_type=service_wallet`
   } else {
-    channelId = env.walletId ?? env.channelId
+    if (env.walletId && Number.isFinite(env.walletId) && env.walletId > 0) {
+      channelId = env.walletId
+      walletIdExplicit = true
+    } else {
+      channelId = env.channelId
+    }
     if (!Number.isFinite(channelId) || (channelId as number) <= 0) {
       return {
         error:
@@ -387,8 +421,12 @@ export async function getWalletBalance(
       const obj = data as Record<string, unknown>
       const type = typeof obj.channel_type === "string" ? obj.channel_type.toLowerCase() : null
       if (type && type !== "wallet") {
+        const envVar = walletIdExplicit ? "PAYHERO_WALLET_ID" : "PAYHERO_CHANNEL_ID"
+        const hint = walletIdExplicit
+          ? `Use the channel whose type is "wallet" in Dashboard > Payment Channels.`
+          : `Set PAYHERO_WALLET_ID to your wallet payment channel ID (Dashboard > Payment Channels — the channel whose type is "wallet"). PAYHERO_CHANNEL_ID is the STK-push channel and cannot be used to read the payments wallet balance.`
         return {
-          error: `PAYHERO_WALLET_ID ${channelId} points to a "${type}" channel, not a wallet channel. Use the channel whose type is "wallet" in Dashboard > Payment Channels.`,
+          error: `${envVar} ${channelId} points to a "${type}" channel, not a wallet channel. ${hint}`,
           status: res.status,
           raw: data,
         }
