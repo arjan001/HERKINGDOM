@@ -27,8 +27,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 export function CheckoutPage() {
   const router = useRouter()
-  const { items, removeItem, updateQuantity, totalPrice, clearCart, specialInstructions, setSpecialInstructions } = useCart()
-  const { selection: giftSelection, setSelection: setGiftSelection, resetSelection: resetGiftSelection } = useGiftSelection()
+  const { items, removeItem, updateQuantity, totalPrice, clearCart, gift: cartGift, setGift: setCartGift } = useCart()
   const [deliveryLocation, setDeliveryLocation] = useState("")
   const [deliveryLocations, setDeliveryLocations] = useState<DeliveryLocation[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -45,6 +44,15 @@ export function CheckoutPage() {
   })
   const isGift = giftSelection.isGift
   const FREE_SHIPPING_THRESHOLD = 7000
+
+  // Hydrate gift state from the cart drawer's "Is this a gift?" toggle so the
+  // customer doesn't have to re-enter wrap/ribbon/card message at checkout.
+  useEffect(() => {
+    if (cartGift.wrap || cartGift.ribbon || cartGift.cardMessage) {
+      setIsGift(true)
+      if (cartGift.cardMessage) setGiftMessage(cartGift.cardMessage)
+    }
+  }, [cartGift.wrap, cartGift.ribbon, cartGift.cardMessage])
 
   useEffect(() => {
     if (specialInstructions) setNotesOpen(true)
@@ -74,9 +82,9 @@ export function CheckoutPage() {
   const [formError, setFormError] = useState("")
 
   const buildOrderPayload = (orderedVia: string) => {
-    const giftSummary = isGift ? giftSelectionSummary(giftSelection) : ""
+    const ribbonNote = cartGift.ribbon ? " + Satin Ribbon Bow" : ""
     const giftNote = isGift
-      ? `[GIFT ORDER - ${giftSummary || "no extras selected"} - extras fee KSh ${giftSelectionTotal(giftSelection)}]`
+      ? `[GIFT ORDER${giftMessage ? ` - Card: "${giftMessage}"` : ""} - Luxe Gift Wrap${ribbonNote} (KSh ${GIFT_WRAP_FEE})]`
       : ""
     const combinedNotes = [specialInstructions, giftNote].filter(Boolean).join(" ")
     return {

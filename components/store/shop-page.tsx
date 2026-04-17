@@ -91,6 +91,7 @@ export function ShopPage() {
   const categoryParam = searchParams.get("category") || ""
   const filterParam = searchParams.get("filter") || ""
   const queryParam = searchParams.get("q") || ""
+  const tagParam = searchParams.get("tag") || ""
 
   const { data: productsData } = useSWR<Product[]>("/api/products", safeFetcher)
   const { data: categoriesData } = useSWR<Category[]>("/api/categories", safeFetcher)
@@ -137,6 +138,16 @@ export function ShopPage() {
       result = result.filter((p) => p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q) || p.tags.some((t) => t.toLowerCase().includes(q)))
     }
 
+    if (tagParam) {
+      const t = tagParam.toLowerCase().replace(/-/g, " ").trim()
+      result = result.filter((p) =>
+        p.tags.some((pt) => {
+          const norm = pt.toLowerCase()
+          return norm === t || norm.replace(/-/g, " ") === t || norm.includes(t)
+        })
+      )
+    }
+
     if (selectedCategory) result = result.filter((p) => p.categorySlug === selectedCategory)
     if (showNew) result = result.filter((p) => p.isNew)
     if (showOffers) result = result.filter((p) => p.isOnOffer)
@@ -151,7 +162,7 @@ export function ShopPage() {
       default: result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     }
     return result
-  }, [products, selectedCategory, showNew, showOffers, priceRange, sortBy, queryParam, localSearch, randomSeed])
+  }, [products, selectedCategory, showNew, showOffers, priceRange, sortBy, queryParam, localSearch, tagParam, randomSeed])
 
   const { paginatedItems, currentPage, totalPages, totalItems, itemsPerPage, goToPage, changePerPage, resetPage } = usePagination(filtered, { defaultPerPage: 12 })
 

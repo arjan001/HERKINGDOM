@@ -7,6 +7,7 @@ import { GiftProvider } from "@/lib/gift-context"
 import { Toaster } from "@/components/ui/sonner"
 import { PageViewTracker } from "@/components/page-view-tracker"
 import { SITE_SEO } from "@/lib/seo-data"
+import { STATIC_SEO_KEYWORDS_1000, STATIC_SEO_KEYWORDS_1000_CSV } from "@/lib/seo-keywords-static"
 import "./globals.css"
 
 const inter = Inter({
@@ -38,7 +39,7 @@ export const metadata: Metadata = {
     shortcut: "/favicon.png",
   },
   manifest: "/manifest.json",
-  keywords: SITE_SEO.allKeywords,
+  keywords: [...SITE_SEO.allKeywords, ...STATIC_SEO_KEYWORDS_1000],
   authors: [
     { name: "Her Kingdom", url: siteUrl },
   ],
@@ -120,6 +121,8 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/favicon.png" sizes="512x512" />
         <link rel="shortcut icon" href="/favicon.png" />
         <meta name="format-detection" content="telephone=no" />
+        <meta name="keywords" content={STATIC_SEO_KEYWORDS_1000_CSV} />
+        <meta name="news_keywords" content={STATIC_SEO_KEYWORDS_1000_CSV} />
         <meta name="theme-color" content="#f4a4c0" />
         <meta name="application-name" content="Her Kingdom" />
         <meta name="apple-mobile-web-app-title" content="Her Kingdom" />
@@ -275,14 +278,22 @@ export default function RootLayout({
               name: "Her Kingdom Site Pages",
               itemListElement: [
                 { "@type": "SiteNavigationElement", position: 1, name: "Home", url: siteUrl },
-                { "@type": "SiteNavigationElement", position: 2, name: "Shop All", url: `${siteUrl}/shop` },
-                { "@type": "SiteNavigationElement", position: 3, name: "New Arrivals", url: `${siteUrl}/shop?filter=new` },
-                { "@type": "SiteNavigationElement", position: 4, name: "Track My Order", url: `${siteUrl}/track-order` },
-                { "@type": "SiteNavigationElement", position: 5, name: "Delivery Locations", url: `${siteUrl}/delivery` },
-                { "@type": "SiteNavigationElement", position: 6, name: "Wishlist", url: `${siteUrl}/wishlist` },
-                { "@type": "SiteNavigationElement", position: 7, name: "Privacy Policy", url: `${siteUrl}/privacy-policy` },
-                { "@type": "SiteNavigationElement", position: 8, name: "Terms of Service", url: `${siteUrl}/terms-of-service` },
-                { "@type": "SiteNavigationElement", position: 9, name: "Refund Policy", url: `${siteUrl}/refund-policy` },
+                { "@type": "SiteNavigationElement", position: 2, name: "Shop All Jewelry", url: `${siteUrl}/shop` },
+                { "@type": "SiteNavigationElement", position: 3, name: "Necklaces", url: `${siteUrl}/shop?category=necklaces` },
+                { "@type": "SiteNavigationElement", position: 4, name: "Bracelets", url: `${siteUrl}/shop?category=bracelets` },
+                { "@type": "SiteNavigationElement", position: 5, name: "Earrings", url: `${siteUrl}/shop?category=earrings` },
+                { "@type": "SiteNavigationElement", position: 6, name: "Watches", url: `${siteUrl}/shop?category=watches` },
+                { "@type": "SiteNavigationElement", position: 7, name: "Handbags", url: `${siteUrl}/shop?category=handbags` },
+                { "@type": "SiteNavigationElement", position: 8, name: "Gift Packages", url: `${siteUrl}/shop?category=gift-packages` },
+                { "@type": "SiteNavigationElement", position: 9, name: "New Arrivals", url: `${siteUrl}/shop?filter=new` },
+                { "@type": "SiteNavigationElement", position: 10, name: "On Offer", url: `${siteUrl}/shop?filter=offers` },
+                { "@type": "SiteNavigationElement", position: 11, name: "Track My Order", url: `${siteUrl}/track-order` },
+                { "@type": "SiteNavigationElement", position: 12, name: "Delivery Locations", url: `${siteUrl}/delivery` },
+                { "@type": "SiteNavigationElement", position: 13, name: "Wishlist", url: `${siteUrl}/wishlist` },
+                { "@type": "SiteNavigationElement", position: 14, name: "Payments Policy", url: `${siteUrl}/payments-policy` },
+                { "@type": "SiteNavigationElement", position: 15, name: "Refund Policy", url: `${siteUrl}/refund-policy` },
+                { "@type": "SiteNavigationElement", position: 16, name: "Privacy Policy", url: `${siteUrl}/privacy-policy` },
+                { "@type": "SiteNavigationElement", position: 17, name: "Terms of Service", url: `${siteUrl}/terms-of-service` },
               ],
             }),
           }}

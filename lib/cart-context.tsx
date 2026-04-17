@@ -3,6 +3,12 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react"
 import type { CartItem, Product } from "./types"
 
+export interface GiftPersonalization {
+  wrap: boolean
+  ribbon: boolean
+  cardMessage: string
+}
+
 interface CartContextType {
   items: CartItem[]
   addItem: (product: Product, quantity?: number, variations?: Record<string, string>) => void
@@ -13,12 +19,13 @@ interface CartContextType {
   totalPrice: number
   isCartOpen: boolean
   setIsCartOpen: (open: boolean) => void
-  specialInstructions: string
-  setSpecialInstructions: (notes: string) => void
+  gift: GiftPersonalization
+  setGift: (updater: Partial<GiftPersonalization>) => void
 }
 
 const CART_KEY = "herkingdom-cart"
-const CART_NOTES_KEY = "herkingdom-cart-notes"
+const GIFT_KEY = "herkingdom-gift"
+const DEFAULT_GIFT: GiftPersonalization = { wrap: false, ribbon: false, cardMessage: "" }
 
 function loadCart(): CartItem[] {
   if (typeof window === "undefined") return []
@@ -39,6 +46,25 @@ function saveCart(items: CartItem[]) {
   }
 }
 
+function loadGift(): GiftPersonalization {
+  if (typeof window === "undefined") return DEFAULT_GIFT
+  try {
+    const stored = sessionStorage.getItem(GIFT_KEY)
+    return stored ? { ...DEFAULT_GIFT, ...JSON.parse(stored) } : DEFAULT_GIFT
+  } catch {
+    return DEFAULT_GIFT
+  }
+}
+
+function saveGift(gift: GiftPersonalization) {
+  if (typeof window === "undefined") return
+  try {
+    sessionStorage.setItem(GIFT_KEY, JSON.stringify(gift))
+  } catch {
+    // silently fail
+  }
+}
+
 const CartContext = createContext<CartContextType | undefined>(undefined)
 
 export function CartProvider({ children }: { children: ReactNode }) {
@@ -46,6 +72,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [specialInstructions, setSpecialInstructionsState] = useState("")
   const [hydrated, setHydrated] = useState(false)
+  const [gift, setGiftState] = useState<GiftPersonalization>(DEFAULT_GIFT)
 
   // Hydrate from sessionStorage on mount
   useEffect(() => {
@@ -53,14 +80,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (stored.length > 0) {
       setItems(stored)
     }
-    if (typeof window !== "undefined") {
-      try {
-        const notes = sessionStorage.getItem(CART_NOTES_KEY)
-        if (notes) setSpecialInstructionsState(notes)
-      } catch {
-        // ignore
-      }
-    }
+    setGiftState(loadGift())
     setHydrated(true)
   }, [])
 
@@ -72,21 +92,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [items, hydrated])
 
   useEffect(() => {
-    if (!hydrated || typeof window === "undefined") return
-    try {
-      if (specialInstructions) {
-        sessionStorage.setItem(CART_NOTES_KEY, specialInstructions)
-      } else {
-        sessionStorage.removeItem(CART_NOTES_KEY)
-      }
-    } catch {
-      // ignore
+    if (hydrated) {
+      saveGift(gift)
     }
-  }, [specialInstructions, hydrated])
-
-  const setSpecialInstructions = useCallback((notes: string) => {
-    setSpecialInstructionsState(notes)
-  }, [])
+  }, [gift, hydrated])
 
   const addItem = useCallback((product: Product, quantity = 1, variations?: Record<string, string>) => {
     setItems((prev) => {
@@ -124,7 +133,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const clearCart = useCallback(() => {
     setItems([])
-    setSpecialInstructionsState("")
+    setGiftState(DEFAULT_GIFT)
+  }, [])
+
+  const setGift = useCallback((updater: Partial<GiftPersonalization>) => {
+    setGiftState((prev) => ({ ...prev, ...updater }))
   }, [])
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0)
@@ -142,8 +155,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         totalPrice,
         isCartOpen,
         setIsCartOpen,
-        specialInstructions,
-        setSpecialInstructions,
+        gift,
+        setGift,
       }}
     >
       {children}
