@@ -176,6 +176,57 @@ export function GiftOptionsModal({ open, onClose, selection, onChange, mode = "n
     </div>
   )
 
+  const renderGreetingCardTile = (
+    it: GiftItem,
+    isSelected: boolean,
+    onToggle: () => void,
+    extra?: React.ReactNode,
+  ) => (
+    <div
+      key={it.id}
+      className={`border rounded-sm p-3 flex flex-col bg-background transition-colors ${
+        isSelected ? "border-[#B4336A]" : "border-border"
+      }`}
+    >
+      <div className="relative w-full aspect-[4/5] bg-secondary rounded-sm overflow-hidden">
+        {it.imageUrl ? (
+          <Image
+            src={it.imageUrl}
+            alt={it.name}
+            fill
+            sizes="(min-width: 640px) 33vw, 50vw"
+            className="object-contain"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
+            <ImageIcon className="h-8 w-8" />
+          </div>
+        )}
+      </div>
+      <div className="mt-3 flex-1 min-w-0">
+        <p className="text-sm font-medium leading-snug line-clamp-2">{it.name}</p>
+        <p className="text-sm font-semibold mt-1">{formatPrice(it.price)}</p>
+        {it.description && (
+          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{it.description}</p>
+        )}
+      </div>
+      <Button
+        type="button"
+        variant={isSelected ? "default" : "outline"}
+        size="sm"
+        onClick={onToggle}
+        className={
+          isSelected
+            ? "mt-3 w-full bg-[#B4336A] text-white hover:bg-[#9E2D5E] border-[#B4336A] h-9 text-xs"
+            : "mt-3 w-full bg-transparent h-9 text-xs"
+        }
+      >
+        {isSelected ? "Remove" : "Add to Cart"}
+      </Button>
+      {extra && <div className="mt-3">{extra}</div>}
+    </div>
+  )
+
   return (
     <div
       role="dialog"
@@ -250,11 +301,11 @@ export function GiftOptionsModal({ open, onClose, selection, onChange, mode = "n
             cards.length === 0 ? (
               <EmptyState label="No greeting cards available" />
             ) : (
-              <div className="space-y-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {cards.map((it) => {
                   const chosen = selection.cards.find((c) => c.id === it.id)
                   const selected = !!chosen
-                  return renderProductCard(
+                  return renderGreetingCardTile(
                     it,
                     selected,
                     () => toggleCard(it),
