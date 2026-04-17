@@ -277,10 +277,13 @@ export function AdminPayments() {
             <div>
               <p className="text-sm font-medium">PayHero is not configured</p>
               <p className="text-xs mt-1 leading-relaxed">
-                Add <code className="bg-yellow-100 px-1 py-0.5 rounded font-mono text-[11px]">PAYHERO_API_USERNAME</code>,{" "}
-                <code className="bg-yellow-100 px-1 py-0.5 rounded font-mono text-[11px]">PAYHERO_API_PASSWORD</code>,{" "}
-                <code className="bg-yellow-100 px-1 py-0.5 rounded font-mono text-[11px]">PAYHERO_CHANNEL_ID</code> and{" "}
-                <code className="bg-yellow-100 px-1 py-0.5 rounded font-mono text-[11px]">PAYHERO_CALLBACK_URL</code> in your Netlify environment to start collecting payments. Grab credentials from{" "}
+                Add <code className="bg-yellow-100 px-1 py-0.5 rounded font-mono text-[11px]">PAYHERO_BASIC_AUTH_TOKEN</code>{" "}
+                (or <code className="bg-yellow-100 px-1 py-0.5 rounded font-mono text-[11px]">PAYHERO_API_USERNAME</code> +{" "}
+                <code className="bg-yellow-100 px-1 py-0.5 rounded font-mono text-[11px]">PAYHERO_API_PASSWORD</code>) and{" "}
+                <code className="bg-yellow-100 px-1 py-0.5 rounded font-mono text-[11px]">PAYHERO_CHANNEL_ID</code>{" "}
+                in your Netlify environment, then redeploy. The callback URL is auto-derived from the site URL — set{" "}
+                <code className="bg-yellow-100 px-1 py-0.5 rounded font-mono text-[11px]">PAYHERO_CALLBACK_URL</code>{" "}
+                only if you want to override it. Grab credentials from{" "}
                 <a href="https://payherokenya.com" target="_blank" rel="noopener noreferrer" className="underline font-medium">
                   payherokenya.com
                 </a>.

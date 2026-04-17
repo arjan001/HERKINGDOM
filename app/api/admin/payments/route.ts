@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
       const env = getPayHeroEnv()
       if (!env) {
         return NextResponse.json(
-          { error: "PayHero not configured. Set PAYHERO_API_USERNAME, PAYHERO_API_PASSWORD, PAYHERO_CHANNEL_ID and PAYHERO_CALLBACK_URL." },
+          { error: "PayHero not configured. Set PAYHERO_BASIC_AUTH_TOKEN (or PAYHERO_API_USERNAME + PAYHERO_API_PASSWORD) and PAYHERO_CHANNEL_ID. The callback URL is derived from NEXT_PUBLIC_SITE_URL / URL; set PAYHERO_CALLBACK_URL only to override." },
           { status: 503 },
         )
       }
