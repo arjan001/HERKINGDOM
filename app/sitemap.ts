@@ -11,8 +11,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Static pages — only real, publicly-reachable routes for this jewelry shop.
   // The navbar is dynamic (categories come from Supabase) and links to
-  // /shop?category={slug}, so individual category URLs are filters on /shop
-  // rather than separate pages and are intentionally not listed here.
+  // /shop?category={slug}. Each category-filtered view has its own
+  // generateMetadata + JSON-LD in app/shop/page.tsx, so those URLs are
+  // also included below as dynamic entries derived from the categories table.
   const staticPages: MetadataRoute.Sitemap = [
     {
       url: SITE_URL,
@@ -67,6 +68,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Try to fetch dynamic pages from Supabase, but never let DB errors break the sitemap
   let productPages: MetadataRoute.Sitemap = []
   let policyPages: MetadataRoute.Sitemap = []
+  let categoryPages: MetadataRoute.Sitemap = []
 
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -98,10 +100,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         changeFrequency: "yearly" as const,
         priority: 0.3,
       }))
+
+      // Dynamic category-filtered shop views, driven by the same Supabase
+      // categories table the navbar reads. Each entry corresponds to a
+      // distinct /shop?category={slug} URL whose metadata is produced by
+      // generateMetadata in app/shop/page.tsx.
+      const { data: categories } = await supabase
+        .from("categories")
+        .select("slug, updated_at, created_at, is_active")
+        .eq("is_active", true)
+
+      categoryPages = (categories || []).map((c) => ({
+        url: `${SITE_URL}/shop?category=${c.slug}`,
+        lastModified: new Date(c.updated_at || c.created_at || now),
+        changeFrequency: "daily" as const,
+        priority: 0.7,
+      }))
     }
   } catch {
     // If Supabase is unavailable, return static pages only — never fail the sitemap
   }
 
-  return [...staticPages, ...productPages, ...policyPages]
+  return [...staticPages, ...categoryPages, ...productPages, ...policyPages]
 }

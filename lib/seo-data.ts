@@ -381,3 +381,35 @@ export function generateProductKeywords(name: string, category: string, tags: st
   ]
   return [...new Set(base.filter(Boolean))]
 }
+
+// Generate category-specific keywords for category-filtered shop views
+export function generateCategoryKeywords(name: string): string[] {
+  const lower = name.toLowerCase()
+  const base = [
+    lower,
+    `${lower} Kenya`,
+    `${lower} Nairobi`,
+    `buy ${lower} online`,
+    `${lower} Her Kingdom`,
+    `affordable ${lower} Kenya`,
+    `${lower} delivery Nairobi`,
+    `shop ${lower}`,
+    "jewelry Nairobi",
+    "jewelry Kenya",
+    "Her Kingdom",
+    "HerkingdomBabe",
+  ]
+  return [...new Set(base.filter(Boolean))]
+}
+
+// Build a category-specific page title/description pair
+export function buildCategorySeo(name: string, description: string, productCount: number) {
+  const title = `${name} | Shop ${name} Jewelry & Accessories at Her Kingdom Nairobi`
+  const fallbackDescription = `Shop ${name.toLowerCase()} at Her Kingdom Nairobi. ${
+    productCount > 0 ? `Browse ${productCount} curated ${name.toLowerCase()} pieces. ` : ""
+  }Hypoallergenic, long-lasting jewelry & accessories delivered across Kenya. WhatsApp +254717264422.`
+  return {
+    title,
+    description: (description && description.trim().length > 0 ? description : fallbackDescription).slice(0, 300),
+  }
+}

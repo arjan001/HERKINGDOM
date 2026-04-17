@@ -168,6 +168,69 @@ export async function getCategories(): Promise<Category[]> {
   }))
 }
 
+export interface CategorySeoMeta {
+  id: string
+  name: string
+  slug: string
+  description: string
+  image: string
+  updatedAt: string | null
+  productCount: number
+}
+
+export async function getCategoryBySlug(slug: string): Promise<CategorySeoMeta | null> {
+  const supabase = await createClient()
+  if (!supabase) return null
+
+  const { data: cat } = await supabase
+    .from("categories")
+    .select("*")
+    .eq("slug", slug)
+    .eq("is_active", true)
+    .maybeSingle()
+
+  if (!cat) return null
+
+  const { count } = await supabase
+    .from("products")
+    .select("id", { count: "exact", head: true })
+    .eq("category_id", cat.id)
+
+  return {
+    id: cat.id,
+    name: cat.name,
+    slug: cat.slug,
+    description: (cat.description as string) || "",
+    image: resolveCategoryImage(cat.slug, cat.image_url),
+    updatedAt: cat.updated_at || cat.created_at || null,
+    productCount: count || 0,
+  }
+}
+
+export async function getCategorySeoList(): Promise<CategorySeoMeta[]> {
+  const supabase = await createClient()
+  if (!supabase) return []
+
+  const { data: categories } = await supabase
+    .from("categories")
+    .select("*")
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true })
+    .range(0, 9999)
+
+  if (!categories) return []
+
+  return categories.map((cat) => ({
+    id: cat.id,
+    name: cat.name,
+    slug: cat.slug,
+    description: (cat.description as string) || "",
+    image: resolveCategoryImage(cat.slug, cat.image_url),
+    updatedAt: cat.updated_at || cat.created_at || null,
+    productCount: 0,
+  }))
+}
+
 export async function getDeliveryLocations(): Promise<DeliveryLocation[]> {
   const supabase = await createClient()
   if (!supabase) return []
