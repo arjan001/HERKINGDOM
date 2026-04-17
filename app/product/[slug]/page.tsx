@@ -19,16 +19,31 @@ function inferOccasion(product: { category?: string; tags?: string[] }): string 
   return "Luxe Gifting"
 }
 
+function absoluteUrl(url: string): string {
+  if (!url) return `${siteUrl}/logo.png`
+  if (url.startsWith("http://") || url.startsWith("https://")) return url
+  if (url.startsWith("/")) return `${siteUrl}${url}`
+  return `${siteUrl}/${url}`
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
   try {
     const product = await getProductBySlug(slug)
     if (!product) return { title: "Product Not Found | Her Kingdom" }
-    const desc = product.description.slice(0, 130) + (product.description.length > 130 ? "..." : "")
     const category = product.category || "Jewelry"
     const occasion = inferOccasion(product)
     const title = `${product.name} | Best ${category} Gift Kenya | herkingdomjewelry.shop`
     const description = `Shop ${product.name} at herkingdomjewelry.shop. The best ${category.toLowerCase()} in Nairobi. Perfect for ${occasion} with luxe packaging and same-day delivery. Order via WhatsApp!`
+    const primaryImage = product.images[0]
+      ? absoluteUrl(product.images[0])
+      : `${siteUrl}/logo.png`
+    const ogImage = {
+      url: primaryImage,
+      width: 1200,
+      height: 1200,
+      alt: `${product.name} - Her Kingdom Jewelry Nairobi`,
+    }
     return {
       title,
       description,
@@ -45,14 +60,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
         title,
         description,
         url: `${siteUrl}/product/${slug}`,
-        images: product.images[0]
-          ? [{
-              url: product.images[0],
-              width: 600,
-              height: 800,
-              alt: `${product.name} - herkingdomjewelry.shop Gifting`,
-            }]
-          : [],
+        images: [ogImage],
         type: "website",
         siteName: "Her Kingdom",
         locale: "en_KE",
@@ -63,12 +71,18 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
         creator: "@herkingdom_jewelry",
         title,
         description,
-        images: product.images[0]
-          ? [{
-              url: product.images[0],
-              alt: `${product.name} - herkingdomjewelry.shop Gifting`,
-            }]
-          : [],
+        images: [{ url: primaryImage, alt: ogImage.alt }],
+      },
+      robots: {
+        index: true,
+        follow: true,
+        googleBot: {
+          index: true,
+          follow: true,
+          "max-image-preview": "large",
+          "max-snippet": -1,
+          "max-video-preview": -1,
+        },
       },
     }
   } catch {
