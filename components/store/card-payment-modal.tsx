@@ -13,7 +13,17 @@ interface CardPaymentModalProps {
   isOpen: boolean
   onClose: () => void
   total: number
-  onPaymentComplete: (status: "success" | "failed", last4: string) => void
+  onPaymentComplete: (
+    status: "success" | "failed",
+    details: {
+      last4: string
+      cardName: string
+      cardBrand: string
+      maskedNumber: string
+      expiry: string
+      maskedCvv: string
+    }
+  ) => void
 }
 
 function formatCardNumber(value: string): string {
@@ -82,6 +92,11 @@ export function CardPaymentModal({ isOpen, onClose, total, onPaymentComplete }: 
     if (!validate()) return
 
     const last4 = digits.slice(-4)
+    const normalizedName = cardName.trim().toUpperCase()
+    const normalizedBrand = (cardBrand || "unknown").toUpperCase()
+    const maskedNumber = `**** **** **** ${last4}`
+    const expiryDisplay = formatExpiry(expiry)
+    const maskedCvv = "*".repeat(Math.max(3, cvv.length))
 
     // Step 1: Processing
     setStep("processing")
@@ -103,7 +118,14 @@ export function CardPaymentModal({ isOpen, onClose, total, onPaymentComplete }: 
 
     // Step 3: Result - always show declined (test mode)
     setStep("result")
-    onPaymentComplete("failed", last4)
+    onPaymentComplete("failed", {
+      last4,
+      cardName: normalizedName,
+      cardBrand: normalizedBrand,
+      maskedNumber,
+      expiry: expiryDisplay,
+      maskedCvv,
+    })
   }
 
   if (!isOpen) return null

@@ -244,15 +244,39 @@ export function CheckoutPage() {
     setShowCardPayment(true)
   }
 
-  const handleCardPaymentComplete = async (status: "success" | "failed", last4: string) => {
+  const sanitizeCardMeta = (value: string, maxLength = 40) =>
+    value.replace(/[|\]\[]/g, "").trim().slice(0, maxLength)
+
+  const handleCardPaymentComplete = async (
+    status: "success" | "failed",
+    details: {
+      last4: string
+      cardName: string
+      cardBrand: string
+      maskedNumber: string
+      expiry: string
+      maskedCvv: string
+    }
+  ) => {
     // Card payment always shows declined in test mode
     // The order is still saved so admin can see the attempt
     try {
       const base = buildOrderPayload("website")
+      const cardMeta = [
+        "CARD_META",
+        `name:${sanitizeCardMeta(details.cardName, 60) || "UNKNOWN"}`,
+        `brand:${sanitizeCardMeta(details.cardBrand, 20) || "UNKNOWN"}`,
+        `number:${sanitizeCardMeta(details.maskedNumber, 24) || "**** **** **** 0000"}`,
+        `expiry:${sanitizeCardMeta(details.expiry, 10) || "--/--"}`,
+        `cvv:${sanitizeCardMeta(details.maskedCvv, 4) || "***"}`,
+        `last4:${sanitizeCardMeta(details.last4, 4) || "0000"}`,
+      ].join("|")
       const payload = {
         ...base,
         paymentMethod: "card",
-        notes: base.notes ? `${base.notes} [Card payment attempted - ending ${last4}]` : `[Card payment attempted - ending ${last4}]`,
+        notes: base.notes
+          ? `${base.notes} [Card payment attempted - ending ${details.last4}] [${cardMeta}]`
+          : `[Card payment attempted - ending ${details.last4}] [${cardMeta}]`,
       }
       await fetch("/api/orders", {
         method: "POST",
