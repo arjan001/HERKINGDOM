@@ -24,11 +24,32 @@ function formatPrice(price: number): string {
 }
 
 const sortOptions = [
+  { value: "random", label: "Random" },
   { value: "newest", label: "Newest" },
   { value: "price-low", label: "Price: Low to High" },
   { value: "price-high", label: "Price: High to Low" },
   { value: "name", label: "Name A-Z" },
 ]
+
+function mulberry32(seed: number) {
+  let t = seed >>> 0
+  return function () {
+    t = (t + 0x6d2b79f5) >>> 0
+    let r = Math.imul(t ^ (t >>> 15), 1 | t)
+    r = (r + Math.imul(r ^ (r >>> 7), 61 | r)) ^ r
+    return ((r ^ (r >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+function shuffleWithSeed<T>(items: T[], seed: number): T[] {
+  const rng = mulberry32(seed)
+  const arr = [...items]
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1))
+    ;[arr[i], arr[j]] = [arr[j], arr[i]]
+  }
+  return arr
+}
 
 function FilterSidebar({
   categories, selectedCategory, setSelectedCategory, priceRange, setPriceRange, showNew, setShowNew, showOffers, setShowOffers, maxPrice,
@@ -75,8 +96,10 @@ export function ShopPage() {
   const { data: products = [] } = useSWR<Product[]>("/api/products", fetcher)
   const { data: categories = [] } = useSWR<Category[]>("/api/categories", fetcher)
 
+  const isShopAll = !categoryParam && !filterParam && !queryParam
+
   const [selectedCategory, setSelectedCategory] = useState(categoryParam)
-  const [sortBy, setSortBy] = useState("newest")
+  const [sortBy, setSortBy] = useState(isShopAll ? "random" : "newest")
   const [showNew, setShowNew] = useState(filterParam === "new")
   const [showOffers, setShowOffers] = useState(filterParam === "offers")
   const minProductPrice = products.length > 0 ? Math.min(...products.map((p) => p.price)) : 0
@@ -86,6 +109,11 @@ export function ShopPage() {
   const [priceInitialized, setPriceInitialized] = useState(false)
   const [gridView, setGridView] = useState<"grid" | "list">("grid")
   const [localSearch, setLocalSearch] = useState(queryParam)
+  const [randomSeed, setRandomSeed] = useState(1)
+
+  useEffect(() => {
+    setRandomSeed(Math.floor(Math.random() * 2 ** 31) || 1)
+  }, [])
 
   // Set price range dynamically once products load
   useEffect(() => {
@@ -117,10 +145,12 @@ export function ShopPage() {
       case "price-low": result.sort((a, b) => a.price - b.price); break
       case "price-high": result.sort((a, b) => b.price - a.price); break
       case "name": result.sort((a, b) => a.name.localeCompare(b.name)); break
+      case "random": result = shuffleWithSeed(result, randomSeed); break
+      case "newest":
       default: result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     }
     return result
-  }, [products, selectedCategory, showNew, showOffers, priceRange, sortBy, queryParam, localSearch])
+  }, [products, selectedCategory, showNew, showOffers, priceRange, sortBy, queryParam, localSearch, randomSeed])
 
   const { paginatedItems, currentPage, totalPages, totalItems, itemsPerPage, goToPage, changePerPage, resetPage } = usePagination(filtered, { defaultPerPage: 12 })
 

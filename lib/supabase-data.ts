@@ -52,10 +52,14 @@ export async function getProducts(): Promise<Product[]> {
   if (!supabase) return []
 
   const [productsRes, imagesRes, variationsRes, productTagsRes] = await Promise.all([
-    supabase.from("products").select("*, categories(name, slug)").order("sort_order", { ascending: true }),
-    supabase.from("product_images").select("*").order("sort_order", { ascending: true }),
-    supabase.from("product_variations").select("*"),
-    supabase.from("product_tags").select("product_id, tags(name)"),
+    supabase
+      .from("products")
+      .select("*, categories(name, slug)")
+      .order("sort_order", { ascending: true })
+      .range(0, 9999),
+    supabase.from("product_images").select("*").order("sort_order", { ascending: true }).range(0, 49999),
+    supabase.from("product_variations").select("*").range(0, 49999),
+    supabase.from("product_tags").select("product_id, tags(name)").range(0, 49999),
   ])
 
   if (!productsRes.data) return []
@@ -140,6 +144,7 @@ export async function getCategories(): Promise<Category[]> {
     .select("*")
     .eq("is_active", true)
     .order("sort_order", { ascending: true })
+    .range(0, 9999)
 
   if (!categories) return []
 
@@ -147,6 +152,7 @@ export async function getCategories(): Promise<Category[]> {
   const { data: products } = await supabase
     .from("products")
     .select("category_id")
+    .range(0, 9999)
 
   const countMap: Record<string, number> = {}
   for (const p of products || []) {
