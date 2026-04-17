@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { X, Minus, Plus, ShoppingBag, Gift } from "lucide-react"
+import { X, Minus, Plus, ShoppingBag, Gift, Truck, ChevronDown } from "lucide-react"
 import { useCart } from "@/lib/cart-context"
 import { formatPrice } from "@/lib/format"
 import { Button } from "@/components/ui/button"
@@ -15,6 +15,11 @@ const FREE_SHIPPING_THRESHOLD = 7000
 
 export function CartDrawer() {
   const { items, removeItem, updateQuantity, totalPrice, isCartOpen, setIsCartOpen, gift, setGift } = useCart()
+  const [notesOpen, setNotesOpen] = useState(false)
+  const [specialInstructions, setSpecialInstructions] = useState("")
+  const remaining = Math.max(0, FREE_SHIPPING_THRESHOLD - totalPrice)
+  const reachedFreeShipping = totalPrice >= FREE_SHIPPING_THRESHOLD
+  const progressPct = Math.min(100, Math.round((totalPrice / FREE_SHIPPING_THRESHOLD) * 100))
 
   return (
     <Sheet open={isCartOpen} onOpenChange={setIsCartOpen}>
