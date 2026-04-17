@@ -26,6 +26,7 @@ export async function generateSitemaps() {
     { id: "categories" },
     { id: "products" },
     { id: "policies" },
+    { id: "tags" },
     { id: "keywords-1" },
     { id: "keywords-2" },
     { id: "keywords-3" },
@@ -37,6 +38,7 @@ type SitemapId =
   | "categories"
   | "products"
   | "policies"
+  | "tags"
   | "keywords-1"
   | "keywords-2"
   | "keywords-3"
@@ -61,7 +63,7 @@ function staticPages(now: Date): MetadataRoute.Sitemap {
   ]
 }
 
-async function supabasePages(id: Extract<SitemapId, "categories" | "products" | "policies">, now: Date) {
+async function supabasePages(id: Extract<SitemapId, "categories" | "products" | "policies" | "tags">, now: Date) {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -103,6 +105,27 @@ async function supabasePages(id: Extract<SitemapId, "categories" | "products" | 
         changeFrequency: "daily" as const,
         priority: 0.7,
       }))
+    }
+
+    if (id === "tags") {
+      const { data: tags } = await supabase
+        .from("tags")
+        .select("name, slug, updated_at, created_at")
+      const seen = new Set<string>()
+      const urls: MetadataRoute.Sitemap = []
+      for (const t of tags || []) {
+        const rawSlug = (t.slug as string) || (t.name as string) || ""
+        const slug = slugify(rawSlug)
+        if (!slug || seen.has(slug)) continue
+        seen.add(slug)
+        urls.push({
+          url: `${SITE_URL}/shop?tag=${slug}`,
+          lastModified: new Date((t.updated_at as string) || (t.created_at as string) || now),
+          changeFrequency: "weekly" as const,
+          priority: 0.6,
+        })
+      }
+      return urls
     }
   } catch {
     // Degrade gracefully — sitemap must never 500
@@ -154,6 +177,7 @@ export default async function sitemap({ id }: { id: SitemapId }): Promise<Metada
     case "categories":
     case "products":
     case "policies":
+    case "tags":
       return supabasePages(id, now)
     case "keywords-1":
       return keywordPages(1, now)

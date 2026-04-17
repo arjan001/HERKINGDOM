@@ -21,6 +21,7 @@ type ShopSearchParams = {
   occasion?: string | string[]
   location?: string | string[]
   modifier?: string | string[]
+  tag?: string | string[]
 }
 
 type PageProps = {
@@ -56,6 +57,7 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
   const occasion = matchOccasion(firstParam(params.occasion))
   const location = matchLocation(firstParam(params.location))
   const modifier = matchModifier(firstParam(params.modifier))
+  const tagSlug = firstParam(params.tag)
 
   if (categorySlug) {
     const category = await getCategoryBySlug(categorySlug).catch(() => null)
@@ -123,6 +125,54 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
           images: [{ url: ogImage, alt: `${category.name} at Her Kingdom` }],
         },
       }
+    }
+  }
+
+  // Tag-filtered shop view — every /shop?tag={tag} URL gets a unique
+  // title/description/canonical so product tags become indexable as their own
+  // landing pages rather than collapsing into the generic shop page.
+  if (tagSlug) {
+    const normalized = tagSlug.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
+    const label = normalized
+      .split("-")
+      .filter(Boolean)
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ")
+    const title = `${label} Jewelry & Accessories in Nairobi | Her Kingdom`
+    const description = `Shop ${label.toLowerCase()} jewelry & accessories at Her Kingdom Nairobi. Hypoallergenic, curated pieces tagged #${label}. Same-day Nairobi delivery, nationwide courier and WhatsApp ordering on ${SITE_SEO.phoneDisplay}.`
+    const canonical = `${siteUrl}/shop?tag=${normalized}`
+    return {
+      title,
+      description,
+      alternates: { canonical },
+      keywords: [
+        label,
+        `${label} Nairobi`,
+        `${label} Kenya`,
+        `buy ${label.toLowerCase()} online`,
+        `${label} Her Kingdom`,
+        ...PAGE_KEYWORDS.shop,
+        ...metaKeywordsFor(`shop:tag:${normalized}`, 30),
+      ],
+      authors: [{ name: "Her Kingdom", url: siteUrl }],
+      creator: "Her Kingdom",
+      openGraph: {
+        title,
+        description,
+        url: canonical,
+        type: "website",
+        siteName: "Her Kingdom",
+        locale: "en_KE",
+        images: [{ url: `${siteUrl}/logo.png`, width: 512, height: 512, alt: `${label} jewelry at Her Kingdom Nairobi` }],
+      },
+      twitter: {
+        card: "summary_large_image",
+        site: "@herkingdom_jewelry",
+        creator: "@herkingdom_jewelry",
+        title,
+        description,
+        images: [{ url: `${siteUrl}/logo.png`, alt: `${label} jewelry at Her Kingdom` }],
+      },
     }
   }
 

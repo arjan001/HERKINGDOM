@@ -307,6 +307,11 @@ export const PAGE_SEO = {
     title: "Refund Policy | Her Kingdom",
     description: "Learn about Her Kingdom's refund and exchange policy for jewelry and accessories. Customer satisfaction guaranteed.",
   },
+  paymentsPolicy: {
+    title: "Payments Policy | Her Kingdom — M-PESA, Card & Cash on Delivery",
+    description:
+      "How payments work at Her Kingdom — M-PESA Lipa Na, card payments, processing times, gift packaging, free delivery above KSh 7,000, receipts, and WhatsApp support.",
+  },
   checkout: {
     title: "Checkout | Her Kingdom",
     description: "Complete your Her Kingdom jewelry order. Secure checkout with M-Pesa and cash on delivery options.",
@@ -359,6 +364,12 @@ export const PAGE_KEYWORDS = {
   ],
   wishlist: [
     "jewelry wishlist", "saved jewelry", "Her Kingdom wishlist",
+  ],
+  paymentsPolicy: [
+    "payments policy", "Her Kingdom payments", "M-PESA Lipa Na", "Lipa Na M-PESA Kenya",
+    "Kenya jewelry payments", "pay jewelry online Kenya", "card payment jewelry Kenya",
+    "cash on delivery jewelry Nairobi", "delivery policy Kenya", "free delivery above KSh 7000",
+    "Her Kingdom payment methods", "jewelry receipt Her Kingdom",
   ],
 }
 

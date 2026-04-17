@@ -3,7 +3,7 @@ import Link from "next/link"
 import { TopBar } from "@/components/store/top-bar"
 import { Navbar } from "@/components/store/navbar"
 import { Footer } from "@/components/store/footer"
-import { SITE_SEO } from "@/lib/seo-data"
+import { SITE_SEO, PAGE_SEO, PAGE_KEYWORDS } from "@/lib/seo-data"
 import {
   Clock,
   MapPin,
@@ -17,26 +17,29 @@ import {
 } from "lucide-react"
 
 export const metadata: Metadata = {
-  title: "Payments Policy | Her Kingdom",
-  description:
-    "How payments work at Her Kingdom — M-PESA Lipa Na, processing times, gift packaging, free delivery above KSh 7,000, receipts, and WhatsApp support.",
+  title: PAGE_SEO.paymentsPolicy.title,
+  description: PAGE_SEO.paymentsPolicy.description,
   robots: { index: true, follow: true },
   alternates: { canonical: `${SITE_SEO.siteUrl}/payments-policy` },
-  keywords: [
-    "payments policy",
-    "Her Kingdom payments",
-    "M-PESA Lipa Na",
-    "Kenya jewelry payments",
-    "delivery policy Kenya",
-  ],
+  keywords: PAGE_KEYWORDS.paymentsPolicy,
+  authors: [{ name: SITE_SEO.siteName, url: SITE_SEO.siteUrl }],
+  creator: SITE_SEO.siteName,
   openGraph: {
-    title: "Payments Policy | Her Kingdom",
-    description:
-      "How payments, delivery, gift wrapping, and receipts work at Her Kingdom.",
+    title: PAGE_SEO.paymentsPolicy.title,
+    description: PAGE_SEO.paymentsPolicy.description,
     url: `${SITE_SEO.siteUrl}/payments-policy`,
     siteName: SITE_SEO.siteName,
     type: "website",
     locale: "en_KE",
+    images: [{ url: `${SITE_SEO.siteUrl}/logo.png`, width: 512, height: 512, alt: "Her Kingdom Payments Policy" }],
+  },
+  twitter: {
+    card: "summary",
+    site: "@herkingdom_jewelry",
+    creator: "@herkingdom_jewelry",
+    title: PAGE_SEO.paymentsPolicy.title,
+    description: PAGE_SEO.paymentsPolicy.description,
+    images: [{ url: `${SITE_SEO.siteUrl}/logo.png`, alt: "Her Kingdom Payments Policy" }],
   },
 }
 
