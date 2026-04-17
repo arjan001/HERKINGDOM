@@ -36,6 +36,8 @@ interface BalanceInfo {
   currency?: string
   channelId?: number
   channelName?: string
+  serviceWallet?: { balance?: number; error?: string }
+  paymentWallet?: { balance?: number; error?: string }
   error?: string
 }
 
@@ -180,12 +182,17 @@ function BalanceCard() {
     { refreshInterval: 30000 },
   )
 
+  const serviceBalance = data?.serviceWallet?.balance
+  const paymentBalance = data?.paymentWallet?.balance
+  const serviceError = data?.serviceWallet?.error
+  const paymentError = data?.paymentWallet?.error
+
   return (
-    <div className="p-5 rounded-md border border-border bg-gradient-to-br from-[#00843D]/5 to-background">
+    <div className="p-5 rounded-md border border-border bg-gradient-to-br from-[#00843D]/5 to-background sm:col-span-2">
       <div className="flex items-center justify-between">
         <p className="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-2">
           <Wallet className="h-3.5 w-3.5" />
-          PayHero Wallet
+          PayHero Wallets
         </p>
         <button
           type="button"
@@ -199,17 +206,38 @@ function BalanceCard() {
         <p className="text-sm text-muted-foreground mt-3">Loading balance...</p>
       ) : !data?.configured ? (
         <p className="text-xs text-muted-foreground mt-2">Add PayHero credentials to see your balance.</p>
-      ) : data.error ? (
-        <p className="text-xs text-red-600 mt-2">{data.error}</p>
-      ) : (
-        <>
-          <p className="text-2xl font-bold mt-2 text-[#00843D]">
-            {formatPrice(Number(data.balance) || 0)}
-          </p>
+      ) : data.error && serviceBalance == null && paymentBalance == null ? (
+        <div className="mt-2">
+          <p className="text-xs text-red-600">{data.error}</p>
           <p className="text-[11px] text-muted-foreground mt-1">
-            {data.channelName || `Channel #${data.channelId}`}
+            Sign in to{" "}
+            <a href="https://app.payhero.co.ke" target="_blank" rel="noopener noreferrer" className="underline">
+              app.payhero.co.ke
+            </a>{" "}
+            and confirm the API credentials and channel ID match this account.
           </p>
-        </>
+        </div>
+      ) : (
+        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Service wallet</p>
+            {typeof serviceBalance === "number" ? (
+              <p className="text-2xl font-bold mt-1 text-[#00843D]">{formatPrice(serviceBalance)}</p>
+            ) : (
+              <p className="text-xs text-red-600 mt-1">{serviceError || "Unavailable"}</p>
+            )}
+            <p className="text-[11px] text-muted-foreground mt-1">Funds PayHero deducts STK push fees from.</p>
+          </div>
+          <div>
+            <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Payment wallet</p>
+            {typeof paymentBalance === "number" ? (
+              <p className="text-2xl font-bold mt-1 text-[#00843D]">{formatPrice(paymentBalance)}</p>
+            ) : (
+              <p className="text-xs text-red-600 mt-1">{paymentError || "Unavailable"}</p>
+            )}
+            <p className="text-[11px] text-muted-foreground mt-1">Customer payments available to withdraw.</p>
+          </div>
+        </div>
       )}
     </div>
   )

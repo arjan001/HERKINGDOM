@@ -211,34 +211,99 @@ export interface WalletBalance {
   balance: number
   channelId?: number
   channelName?: string
+  walletType?: "service_wallet" | "payment_wallet"
   raw: unknown
 }
 
-/** Read the wallet (payment channel) balance from PayHero. */
-export async function getWalletBalance(env: PayHeroEnv, walletId?: number): Promise<WalletBalance | null> {
-  const id = walletId ?? env.walletId ?? env.channelId
-  try {
-    const res = await fetch(`${PAYHERO_BASE}/payment_channels/${id}`, {
-      headers: { Authorization: env.authHeader },
-    })
-    const data = await res.json().catch(() => ({}))
-    if (!res.ok) return null
+export interface WalletBalanceError {
+  error: string
+  status?: number
+  raw?: unknown
+}
 
-    const channel = (data.payment_channel || data.data || data) as Record<string, unknown>
-    const balancePlain = channel?.balance_plain as Record<string, unknown> | undefined
-    const balance =
-      (typeof balancePlain?.balance === "number" ? (balancePlain.balance as number) : undefined) ??
-      (typeof channel?.balance === "number" ? (channel.balance as number) : undefined) ??
-      Number(balancePlain?.balance) ??
-      0
+export type WalletType = "service_wallet" | "payment_wallet"
+
+function extractBalance(payload: unknown): number | null {
+  if (!payload || typeof payload !== "object") return null
+  const obj = payload as Record<string, unknown>
+
+  // Try the many field names PayHero has used across doc versions.
+  const candidates = [
+    obj.service_wallet_balance,
+    obj.payment_wallet_balance,
+    obj.wallet_balance,
+    obj.balance,
+    obj.available_balance,
+    obj.amount_available,
+    (obj.data as Record<string, unknown> | undefined)?.balance,
+    (obj.data as Record<string, unknown> | undefined)?.wallet_balance,
+    (obj.wallet as Record<string, unknown> | undefined)?.balance,
+    ((obj.balance_plain as Record<string, unknown> | undefined)?.balance),
+  ]
+
+  for (const raw of candidates) {
+    if (raw == null) continue
+    const n = typeof raw === "number" ? raw : Number(raw)
+    if (Number.isFinite(n)) return n
+  }
+  return null
+}
+
+/**
+ * Read a wallet balance from PayHero.
+ *
+ * Uses the official `/wallets?wallet_type=...` endpoint documented on
+ * docs.payhero.co.ke. Defaults to `service_wallet` — that is the balance that
+ * PayHero deducts STK-push fees from, so it is what gates M-Pesa payouts.
+ *
+ * Returns `null` only when the network call itself throws. On non-2xx
+ * responses we return a `WalletBalanceError` so callers can forward the
+ * actionable PayHero error text to the admin UI instead of a generic message.
+ */
+export async function getWalletBalance(
+  env: PayHeroEnv,
+  walletType: WalletType = "service_wallet",
+): Promise<WalletBalance | WalletBalanceError> {
+  try {
+    const res = await fetch(
+      `${PAYHERO_BASE}/wallets?wallet_type=${encodeURIComponent(walletType)}`,
+      { headers: { Authorization: env.authHeader } },
+    )
+    const data = await res.json().catch(() => ({}))
+
+    if (!res.ok) {
+      const msg =
+        (data && typeof data === "object" &&
+          ((data as Record<string, unknown>).error_message ||
+            (data as Record<string, unknown>).message ||
+            (data as Record<string, unknown>).error)) ||
+        `PayHero responded with HTTP ${res.status}`
+      return { error: String(msg), status: res.status, raw: data }
+    }
+
+    const balance = extractBalance(data)
+    if (balance == null) {
+      return {
+        error: "PayHero returned an unexpected wallet response",
+        status: res.status,
+        raw: data,
+      }
+    }
 
     return {
-      balance: Number.isFinite(balance) ? (balance as number) : 0,
-      channelId: Number(channel?.id) || id,
-      channelName: (channel?.name as string) || undefined,
+      balance,
+      walletType,
       raw: data,
     }
-  } catch {
-    return null
+  } catch (err) {
+    return {
+      error: err instanceof Error ? err.message : "Network error contacting PayHero",
+    }
   }
+}
+
+export function isWalletBalance(
+  v: WalletBalance | WalletBalanceError,
+): v is WalletBalance {
+  return typeof (v as WalletBalance).balance === "number"
 }

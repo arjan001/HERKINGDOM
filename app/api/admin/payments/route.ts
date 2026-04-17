@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { requireAuth, rateLimit, rateLimitResponse, isValidPhone } from "@/lib/security"
 import { createClient } from "@/lib/supabase/server"
-import { getPayHeroEnv, initiateStkPush, getWalletBalance } from "@/lib/payhero"
+import { getPayHeroEnv, initiateStkPush, getWalletBalance, isWalletBalance } from "@/lib/payhero"
 
 /**
  * Admin payments API.
@@ -91,16 +91,34 @@ export async function GET(request: NextRequest) {
     if (!env) {
       return NextResponse.json({ configured: false, error: "PayHero not configured" })
     }
-    const balance = await getWalletBalance(env)
-    if (!balance) {
-      return NextResponse.json({ configured: true, error: "Could not read wallet balance" }, { status: 502 })
+    const [service, payment] = await Promise.all([
+      getWalletBalance(env, "service_wallet"),
+      getWalletBalance(env, "payment_wallet"),
+    ])
+    const serviceOk = isWalletBalance(service)
+    const paymentOk = isWalletBalance(payment)
+
+    if (!serviceOk && !paymentOk) {
+      return NextResponse.json(
+        {
+          configured: true,
+          error: service.error || payment.error || "Could not read wallet balance",
+        },
+        { status: 502 },
+      )
     }
+
     return NextResponse.json({
       configured: true,
-      balance: balance.balance,
       currency: "KES",
-      channelId: balance.channelId,
-      channelName: balance.channelName,
+      serviceWallet: serviceOk
+        ? { balance: service.balance }
+        : { error: service.error },
+      paymentWallet: paymentOk
+        ? { balance: payment.balance }
+        : { error: payment.error },
+      balance: serviceOk ? service.balance : paymentOk ? payment.balance : 0,
+      channelId: env.channelId,
     })
   }
 
