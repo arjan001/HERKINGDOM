@@ -8,9 +8,9 @@ type ProductImageProps = Omit<ImageProps, "onLoad" | "onError"> & {
 }
 
 const loaderSizeClasses: Record<NonNullable<ProductImageProps["loaderSize"]>, string> = {
-  sm: "w-8 h-8",
-  md: "w-16 h-16",
-  lg: "w-24 h-24",
+  sm: "w-full h-full max-w-[120px] max-h-[120px]",
+  md: "w-full h-full",
+  lg: "w-full h-full",
 }
 
 export function ProductImage({ className, alt, loaderSize = "md", ...props }: ProductImageProps) {
@@ -20,7 +20,7 @@ export function ProductImage({ className, alt, loaderSize = "md", ...props }: Pr
     <>
       {!loaded && (
         <div
-          className="absolute inset-0 flex items-center justify-center bg-secondary z-10"
+          className="absolute inset-0 flex items-center justify-center bg-secondary z-10 overflow-hidden"
           aria-hidden="true"
         >
           <img
