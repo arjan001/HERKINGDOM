@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from "next/server"
 import { rateLimit, rateLimitResponse, requireAuth } from "@/lib/security"
-import { getPayHeroEnv, getWalletBalance } from "@/lib/payhero"
+import { getPayHeroEnv, getWalletBalance, isWalletBalance } from "@/lib/payhero"
 
 /**
  * GET /api/admin/payhero/balance
- * Returns the PayHero payment-channel (wallet) balance for the configured
- * channel, so the admin dashboard can show cash available for withdrawal.
+ * Returns the PayHero wallet balances for the admin dashboard.
  *
- * Admin-only. Uses PAYHERO_WALLET_ID when set, otherwise falls back to
- * PAYHERO_CHANNEL_ID.
+ * Reads two wallets in parallel:
+ *   - service_wallet: funds PayHero draws fees from (gates STK pushes)
+ *   - payment_wallet: customer payments available for withdrawal
+ *
+ * Admin-only. When PayHero returns an error we forward its message so the
+ * operator can act on it (e.g. "merchant has insufficient balance").
  */
 export async function GET(request: NextRequest) {
   const rl = rateLimit(request, { limit: 30, windowSeconds: 60 })
@@ -25,19 +28,35 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  const balance = await getWalletBalance(env)
-  if (!balance) {
+  const [service, payment] = await Promise.all([
+    getWalletBalance(env, "service_wallet"),
+    getWalletBalance(env, "payment_wallet"),
+  ])
+
+  const serviceOk = isWalletBalance(service)
+  const paymentOk = isWalletBalance(payment)
+
+  if (!serviceOk && !paymentOk) {
     return NextResponse.json(
-      { configured: true, error: "Failed to read wallet balance from PayHero" },
+      {
+        configured: true,
+        error: service.error || payment.error || "Failed to read wallet balance from PayHero",
+      },
       { status: 502 },
     )
   }
 
   return NextResponse.json({
     configured: true,
-    balance: balance.balance,
     currency: "KES",
-    channelId: balance.channelId,
-    channelName: balance.channelName,
+    serviceWallet: serviceOk
+      ? { balance: service.balance }
+      : { error: service.error },
+    paymentWallet: paymentOk
+      ? { balance: payment.balance }
+      : { error: payment.error },
+    // Back-compat: older UI reads `balance` as the primary (service wallet).
+    balance: serviceOk ? service.balance : paymentOk ? payment.balance : 0,
+    channelId: env.channelId,
   })
 }
