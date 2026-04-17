@@ -33,10 +33,17 @@ SMTP_PASSWORD=your_email_password
 
 ### Payment Integration (Optional - for M-PESA via PayHero)
 ```
+# Option A: supply the pre-computed Basic auth token
+PAYHERO_BASIC_AUTH_TOKEN=your_payhero_basic_auth_token
+
+# Option B (alternative to the token): username + password
 PAYHERO_API_USERNAME=your_payhero_api_username
 PAYHERO_API_PASSWORD=your_payhero_api_password
+
 PAYHERO_CHANNEL_ID=your_payment_channel_id
 PAYHERO_WALLET_ID=your_wallet_channel_id
+# Optional — auto-derived from NEXT_PUBLIC_SITE_URL / Netlify URL when blank.
+# Only set to override, e.g. https://herkingdom.shop/api/payments/payhero/callback
 PAYHERO_CALLBACK_URL=https://your-site.netlify.app/api/payments/payhero/callback
 ```
 

@@ -2,51 +2,91 @@
  * PayHero Kenya integration helpers.
  * Docs: https://docs.payhero.co.ke
  *
- * Auth: PayHero uses HTTP Basic auth. The header is derived from the
- * API username and password provided in your PayHero dashboard:
+ * Auth: PayHero uses HTTP Basic auth. Either supply the pre-computed token or
+ * the raw username/password pair and we derive the header:
  *   Authorization: Basic base64(USERNAME:PASSWORD)
  *
- * Env vars required (add to Netlify > Site > Environment):
- *   PAYHERO_API_USERNAME  - API username issued by PayHero
- *   PAYHERO_API_PASSWORD  - API password issued by PayHero
- *   PAYHERO_CHANNEL_ID    - Numeric payment channel ID (Payment Channels > My Payment Channels)
- *   PAYHERO_WALLET_ID     - (Optional) Payment channel ID used for balance queries
- *   PAYHERO_CALLBACK_URL  - Public URL PayHero posts the STK callback to
- *                           e.g. https://your-site.netlify.app/api/payments/payhero/callback
+ * Env vars (add to Netlify > Site > Environment):
+ *   PAYHERO_BASIC_AUTH_TOKEN - Pre-computed Basic auth value. Accepts either the
+ *                              bare base64 string or the full "Basic xxx" header.
+ *                              Takes precedence over username/password when set.
+ *   PAYHERO_API_USERNAME     - API username issued by PayHero (used when token
+ *                              is not provided)
+ *   PAYHERO_API_PASSWORD     - API password issued by PayHero (used when token
+ *                              is not provided)
+ *   PAYHERO_CHANNEL_ID       - Numeric payment channel ID (Payment Channels >
+ *                              My Payment Channels)
+ *   PAYHERO_WALLET_ID        - (Optional) Payment channel ID used for balance
+ *                              queries
+ *   PAYHERO_CALLBACK_URL     - (Optional) Full public URL PayHero posts the STK
+ *                              callback to. When unset, the callback URL is
+ *                              derived from NEXT_PUBLIC_SITE_URL / URL /
+ *                              DEPLOY_PRIME_URL + /api/payments/payhero/callback.
  */
+
+const CALLBACK_PATH = "/api/payments/payhero/callback"
+
+/** Resolve the public callback URL from explicit env or the site's base URL. */
+export function resolvePayHeroCallbackUrl(): string | null {
+  const explicit = process.env.PAYHERO_CALLBACK_URL?.trim()
+  if (explicit) return explicit
+
+  const base = (
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.URL ||
+    process.env.DEPLOY_PRIME_URL ||
+    ""
+  ).trim()
+  if (!base) return null
+
+  const normalised = base.replace(/\/+$/, "")
+  return `${normalised}${CALLBACK_PATH}`
+}
 
 const PAYHERO_BASE = "https://backend.payhero.co.ke/api/v2"
 
 export interface PayHeroEnv {
-  username: string
-  password: string
+  username?: string
+  password?: string
   channelId: number
   walletId?: number
   callbackUrl: string
   authHeader: string
 }
 
-export function getPayHeroEnv(): PayHeroEnv | null {
+function buildAuthHeader(): string | null {
+  const rawToken = process.env.PAYHERO_BASIC_AUTH_TOKEN?.trim()
+  if (rawToken) {
+    return rawToken.toLowerCase().startsWith("basic ") ? rawToken : `Basic ${rawToken}`
+  }
+
   const username = process.env.PAYHERO_API_USERNAME
   const password = process.env.PAYHERO_API_PASSWORD
+  if (!username || !password) return null
+
+  const token = Buffer.from(`${username}:${password}`).toString("base64")
+  return `Basic ${token}`
+}
+
+export function getPayHeroEnv(): PayHeroEnv | null {
   const channelIdRaw = process.env.PAYHERO_CHANNEL_ID
   const walletIdRaw = process.env.PAYHERO_WALLET_ID
-  const callbackUrl = process.env.PAYHERO_CALLBACK_URL
+  const callbackUrl = resolvePayHeroCallbackUrl()
 
-  if (!username || !password || !channelIdRaw || !callbackUrl) return null
+  const authHeader = buildAuthHeader()
+  if (!authHeader || !channelIdRaw || !callbackUrl) return null
 
   const channelId = Number(channelIdRaw)
   if (!Number.isFinite(channelId)) return null
   const walletId = walletIdRaw ? Number(walletIdRaw) : undefined
 
-  const token = Buffer.from(`${username}:${password}`).toString("base64")
   return {
-    username,
-    password,
+    username: process.env.PAYHERO_API_USERNAME,
+    password: process.env.PAYHERO_API_PASSWORD,
     channelId,
     walletId: Number.isFinite(walletId) ? walletId : undefined,
     callbackUrl,
-    authHeader: `Basic ${token}`,
+    authHeader,
   }
 }
 
