@@ -3,13 +3,15 @@
 import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { ChevronRight, Minus, Plus, Heart, ShoppingBag, Truck, RotateCcw, Shield, Play } from "lucide-react"
+import { ChevronRight, Minus, Plus, Heart, ShoppingBag, Truck, RotateCcw, Shield, Play, Gift } from "lucide-react"
 import { TopBar } from "./top-bar"
 import { Navbar } from "./navbar"
 import { Footer } from "./footer"
 import { ProductCard } from "./product-card"
+import { GiftOptionsModal, giftSelectionTotal, giftSelectionSummary } from "./gift-options-modal"
 import type { Product } from "@/lib/types"
 import { useCart } from "@/lib/cart-context"
+import { useGiftSelection } from "@/lib/gift-context"
 import { useWishlist } from "@/lib/wishlist-context"
 import { isVideoUrl } from "@/lib/media-utils"
 import { Button } from "@/components/ui/button"
@@ -36,11 +38,13 @@ export function ProductDetailPage({ slug }: { slug: string }) {
   const product = data?.product || null
   const related = data?.related || []
   const { addItem } = useCart()
+  const { selection: giftSelection, setSelection: setGiftSelection } = useGiftSelection()
   const { toggleItem, isInWishlist } = useWishlist()
   const wishlisted = product ? isInWishlist(product.id) : false
   const [selectedImage, setSelectedImage] = useState(0)
   const [quantity, setQuantity] = useState(1)
   const [selectedVariations, setSelectedVariations] = useState<Record<string, string>>({})
+  const [showGiftModal, setShowGiftModal] = useState(false)
 
   if (isLoading) {
     return (
@@ -240,6 +244,50 @@ export function ProductDetailPage({ slug }: { slug: string }) {
                 </div>
               ))}
 
+              {/* Is this a gift? */}
+              <div className="mt-6">
+                <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={giftSelection.isGift}
+                    onChange={(e) => {
+                      const nextIsGift = e.target.checked
+                      setGiftSelection({ ...giftSelection, isGift: nextIsGift })
+                      if (nextIsGift) setShowGiftModal(true)
+                    }}
+                    className="h-4 w-4 rounded border-border accent-[#B4336A]"
+                  />
+                  <span className="text-sm underline underline-offset-2 flex items-center gap-1.5">
+                    <Gift className="h-4 w-4 text-[#B4336A]" />
+                    is this a gift?
+                  </span>
+                </label>
+                {giftSelection.isGift && (
+                  <div className="mt-3 border border-border rounded-sm p-3 bg-secondary/30 text-xs flex items-start gap-3 justify-between">
+                    <div className="min-w-0">
+                      <p className="font-medium text-sm">Gifting extras</p>
+                      <p className="text-muted-foreground mt-1 line-clamp-3">
+                        {giftSelectionSummary(giftSelection) || "No add-ons picked yet."}
+                      </p>
+                      {giftSelectionTotal(giftSelection) > 0 && (
+                        <p className="font-semibold mt-1">
+                          Extras total: KSh {giftSelectionTotal(giftSelection).toLocaleString()}
+                        </p>
+                      )}
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="bg-transparent text-xs h-8"
+                      onClick={() => setShowGiftModal(true)}
+                    >
+                      {giftSelectionTotal(giftSelection) > 0 ? "Edit" : "Open options"}
+                    </Button>
+                  </div>
+                )}
+              </div>
+
               {/* Quantity */}
               <div className="mt-6">
                 <p className="text-sm font-medium mb-2">Quantity</p>
@@ -364,6 +412,14 @@ export function ProductDetailPage({ slug }: { slug: string }) {
         </div>
       </main>
       <Footer />
+
+      <GiftOptionsModal
+        open={showGiftModal}
+        onClose={() => setShowGiftModal(false)}
+        selection={giftSelection}
+        onChange={setGiftSelection}
+        mode="save"
+      />
     </div>
   )
 }

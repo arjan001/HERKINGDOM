@@ -4,13 +4,19 @@ import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ChevronRight, Minus, Plus, X, Truck, Loader2, CheckCircle, Package, MapPin } from "lucide-react"
+import { ChevronRight, Minus, Plus, X, Truck, Loader2, CheckCircle, Package, MapPin, Gift } from "lucide-react"
 import { TopBar } from "./top-bar"
 import { Navbar } from "./navbar"
 import { Footer } from "./footer"
 import { MpesaPaymentModal } from "./mpesa-payment-modal"
 import { CardPaymentModal } from "./card-payment-modal"
+import {
+  GiftOptionsModal,
+  giftSelectionTotal,
+  giftSelectionSummary,
+} from "./gift-options-modal"
 import { useCart } from "@/lib/cart-context"
+import { useGiftSelection } from "@/lib/gift-context"
 import { formatPrice } from "@/lib/format"
 import type { DeliveryLocation } from "@/lib/types"
 import { Button } from "@/components/ui/button"
@@ -22,12 +28,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 export function CheckoutPage() {
   const router = useRouter()
   const { items, removeItem, updateQuantity, totalPrice, clearCart } = useCart()
+  const { selection: giftSelection, setSelection: setGiftSelection, resetSelection: resetGiftSelection } = useGiftSelection()
   const [deliveryLocation, setDeliveryLocation] = useState("")
   const [deliveryLocations, setDeliveryLocations] = useState<DeliveryLocation[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [orderResult, setOrderResult] = useState<{ orderNumber: string; paymentMethod?: string } | null>(null)
   const [showMpesa, setShowMpesa] = useState(false)
   const [showCardPayment, setShowCardPayment] = useState(false)
+  const [showGiftModal, setShowGiftModal] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -35,9 +43,7 @@ export function CheckoutPage() {
     address: "",
     notes: "",
   })
-  const [isGift, setIsGift] = useState(false)
-  const [giftMessage, setGiftMessage] = useState("")
-  const GIFT_WRAP_FEE = 250
+  const isGift = giftSelection.isGift
   const FREE_SHIPPING_THRESHOLD = 7000
 
   useEffect(() => {
@@ -51,7 +57,7 @@ export function CheckoutPage() {
 
   const selectedDelivery = deliveryLocations.find((l) => l.id === deliveryLocation)
   const deliveryFee = selectedDelivery?.fee || 0
-  const giftFee = isGift ? GIFT_WRAP_FEE : 0
+  const giftFee = isGift ? giftSelectionTotal(giftSelection) : 0
   const freeShipping = totalPrice >= FREE_SHIPPING_THRESHOLD
   const grandTotal = totalPrice + (freeShipping ? 0 : deliveryFee) + giftFee
 
@@ -63,7 +69,7 @@ export function CheckoutPage() {
 
   const buildOrderPayload = (orderedVia: string) => {
     const giftNote = isGift
-      ? `[GIFT ORDER${giftMessage ? ` - Message: "${giftMessage}"` : ""} - Gift wrap fee KSh ${GIFT_WRAP_FEE}]`
+      ? `[GIFT ORDER - ${giftSelectionSummary(giftSelection) || "no extras selected"} - extras fee KSh ${giftSelectionTotal(giftSelection)}]`
       : ""
     const combinedNotes = [formData.notes, giftNote].filter(Boolean).join(" ")
     return {
@@ -113,6 +119,7 @@ export function CheckoutPage() {
       if (res.ok) {
         setOrderResult(data)
         clearCart()
+        resetGiftSelection()
       } else {
         setFormError(data.error || "Failed to place order. Please try again.")
       }
@@ -160,6 +167,7 @@ export function CheckoutPage() {
 
         window.open(`https://wa.me/254717264422?text=${message}`, "_blank")
     clearCart()
+    resetGiftSelection()
     setIsSubmitting(false)
     setOrderResult({ orderNumber: "WhatsApp", paymentMethod: "whatsapp" })
   }
@@ -196,6 +204,7 @@ export function CheckoutPage() {
 
       setOrderResult({ orderNumber: data.orderNumber, paymentMethod: "mpesa" })
       clearCart()
+      resetGiftSelection()
       setShowMpesa(false)
     } catch (err) {
       console.error("[v0] M-PESA order exception:", err)
@@ -539,26 +548,54 @@ export function CheckoutPage() {
                   <input
                     type="checkbox"
                     checked={isGift}
-                    onChange={(e) => setIsGift(e.target.checked)}
+                    onChange={(e) => {
+                      const nextIsGift = e.target.checked
+                      setGiftSelection({ ...giftSelection, isGift: nextIsGift })
+                      if (nextIsGift) setShowGiftModal(true)
+                    }}
                     className="mt-0.5 h-4 w-4 rounded border-border"
                   />
                   <div className="flex-1">
-                    <p className="text-sm font-medium">Yes, package this order as a gift</p>
+                    <p className="text-sm font-medium flex items-center gap-2">
+                      <Gift className="h-4 w-4 text-[#B4336A]" /> Is this a Gift? Add Gift Wrap & Extras...
+                    </p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      We will place it in a signature box with a decorative gift wrapper. Extra cost: <span className="font-semibold text-foreground">KSh {GIFT_WRAP_FEE}</span>.
+                      Pick add-ons, a gift wrap, greeting card and a personal note. Gifting extras are added to your total.
                     </p>
                   </div>
                 </label>
+
                 {isGift && (
-                  <div className="mt-3">
-                    <Label htmlFor="giftMessage" className="text-sm font-medium mb-1.5 block">Gift message (optional)</Label>
-                    <Textarea
-                      id="giftMessage"
-                      value={giftMessage}
-                      onChange={(e) => setGiftMessage(e.target.value)}
-                      placeholder="To: ... From: ..."
-                      rows={2}
-                    />
+                  <div className="mt-3 space-y-3">
+                    <div className="border border-border rounded-sm p-4 bg-secondary/30">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium">Gifting extras</p>
+                          {giftSelectionTotal(giftSelection) > 0 || giftSelection.messageNote || giftSelection.messageFrom || giftSelection.messageTo ? (
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-3">
+                              {giftSelectionSummary(giftSelection) || "Message added"}
+                            </p>
+                          ) : (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              No add-ons yet. Open the gift options to pick add-ons, a wrap, a card and a note.
+                            </p>
+                          )}
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setShowGiftModal(true)}
+                          className="bg-transparent text-xs h-9 shrink-0"
+                        >
+                          {giftSelectionTotal(giftSelection) > 0 ? "Edit options" : "Open options"}
+                        </Button>
+                      </div>
+                      {giftSelectionTotal(giftSelection) > 0 && (
+                        <p className="text-xs font-semibold mt-3">
+                          Extras total: {formatPrice(giftSelectionTotal(giftSelection))}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -629,9 +666,9 @@ export function CheckoutPage() {
                       {freeShipping ? "FREE" : selectedDelivery ? formatPrice(deliveryFee) : "\u2014"}
                     </span>
                   </div>
-                  {isGift && (
+                  {isGift && giftFee > 0 && (
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Gift wrapping</span>
+                      <span className="text-muted-foreground">Gifting extras</span>
                       <span>{formatPrice(giftFee)}</span>
                     </div>
                   )}
@@ -697,6 +734,13 @@ export function CheckoutPage() {
         onClose={() => setShowCardPayment(false)}
         total={grandTotal}
         onPaymentComplete={handleCardPaymentComplete}
+      />
+
+      <GiftOptionsModal
+        open={showGiftModal}
+        onClose={() => setShowGiftModal(false)}
+        selection={giftSelection}
+        onChange={setGiftSelection}
       />
     </div>
   )

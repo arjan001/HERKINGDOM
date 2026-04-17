@@ -23,12 +23,14 @@ import {
   FileText,
   Megaphone,
   CreditCard,
+  Gift,
 } from "lucide-react"
 
 const navItems = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { label: "Products", href: "/admin/products", icon: Package },
   { label: "Categories", href: "/admin/categories", icon: Tag },
+  { label: "Gifts", href: "/admin/gifts", icon: Gift },
   { label: "Sales & Orders", href: "/admin/orders", icon: ShoppingCart, hasBadge: true },
   { label: "Payments", href: "/admin/payments", icon: CreditCard },
   { label: "Offers & Banners", href: "/admin/banners", icon: ImageIcon },
