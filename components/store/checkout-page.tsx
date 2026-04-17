@@ -21,7 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 export function CheckoutPage() {
   const router = useRouter()
-  const { items, removeItem, updateQuantity, totalPrice, clearCart } = useCart()
+  const { items, removeItem, updateQuantity, totalPrice, clearCart, gift: cartGift, setGift: setCartGift } = useCart()
   const [deliveryLocation, setDeliveryLocation] = useState("")
   const [deliveryLocations, setDeliveryLocations] = useState<DeliveryLocation[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -39,6 +39,15 @@ export function CheckoutPage() {
   const [giftMessage, setGiftMessage] = useState("")
   const GIFT_WRAP_FEE = 250
   const FREE_SHIPPING_THRESHOLD = 7000
+
+  // Hydrate gift state from the cart drawer's "Is this a gift?" toggle so the
+  // customer doesn't have to re-enter wrap/ribbon/card message at checkout.
+  useEffect(() => {
+    if (cartGift.wrap || cartGift.ribbon || cartGift.cardMessage) {
+      setIsGift(true)
+      if (cartGift.cardMessage) setGiftMessage(cartGift.cardMessage)
+    }
+  }, [cartGift.wrap, cartGift.ribbon, cartGift.cardMessage])
 
   useEffect(() => {
     fetch("/api/delivery-locations")
@@ -62,8 +71,9 @@ export function CheckoutPage() {
   const [formError, setFormError] = useState("")
 
   const buildOrderPayload = (orderedVia: string) => {
+    const ribbonNote = cartGift.ribbon ? " + Satin Ribbon Bow" : ""
     const giftNote = isGift
-      ? `[GIFT ORDER${giftMessage ? ` - Message: "${giftMessage}"` : ""} - Gift wrap fee KSh ${GIFT_WRAP_FEE}]`
+      ? `[GIFT ORDER${giftMessage ? ` - Card: "${giftMessage}"` : ""} - Luxe Gift Wrap${ribbonNote} (KSh ${GIFT_WRAP_FEE})]`
       : ""
     const combinedNotes = [formData.notes, giftNote].filter(Boolean).join(" ")
     return {
