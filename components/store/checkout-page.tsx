@@ -28,6 +28,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 export function CheckoutPage() {
   const router = useRouter()
   const { items, removeItem, updateQuantity, totalPrice, clearCart, gift: cartGift, setGift: setCartGift } = useCart()
+  const { selection: giftSelection, setSelection: setGiftSelection, resetSelection: resetGiftSelection } = useGiftSelection()
   const [deliveryLocation, setDeliveryLocation] = useState("")
   const [deliveryLocations, setDeliveryLocations] = useState<DeliveryLocation[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -93,7 +94,7 @@ export function CheckoutPage() {
   const [formError, setFormError] = useState("")
 
   const buildOrderPayload = (orderedVia: string) => {
-    const ribbonNote = cartGift.ribbon ? " + Satin Ribbon Bow" : ""
+    const giftSummary = isGift ? giftSelectionSummary(giftSelection) : ""
     const giftNote = isGift
       ? `[GIFT ORDER${giftMessage ? ` - Card: "${giftMessage}"` : ""} - Luxe Gift Wrap${ribbonNote} (KSh ${giftSelectionTotal(giftSelection)})]`
       : ""
