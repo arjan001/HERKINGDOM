@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ChevronRight, Minus, Plus, X, Truck, Loader2, CheckCircle, Package, MapPin, Gift } from "lucide-react"
+import { ChevronRight, Minus, Plus, X, Truck, Loader2, CheckCircle, Package, MapPin, Gift, ChevronDown } from "lucide-react"
 import { TopBar } from "./top-bar"
 import { Navbar } from "./navbar"
 import { Footer } from "./footer"
@@ -27,7 +27,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 export function CheckoutPage() {
   const router = useRouter()
-  const { items, removeItem, updateQuantity, totalPrice, clearCart } = useCart()
+  const { items, removeItem, updateQuantity, totalPrice, clearCart, specialInstructions, setSpecialInstructions } = useCart()
   const { selection: giftSelection, setSelection: setGiftSelection, resetSelection: resetGiftSelection } = useGiftSelection()
   const [deliveryLocation, setDeliveryLocation] = useState("")
   const [deliveryLocations, setDeliveryLocations] = useState<DeliveryLocation[]>([])
@@ -36,15 +36,19 @@ export function CheckoutPage() {
   const [showMpesa, setShowMpesa] = useState(false)
   const [showCardPayment, setShowCardPayment] = useState(false)
   const [showGiftModal, setShowGiftModal] = useState(false)
+  const [notesOpen, setNotesOpen] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
     email: "",
     address: "",
-    notes: "",
   })
   const isGift = giftSelection.isGift
   const FREE_SHIPPING_THRESHOLD = 7000
+
+  useEffect(() => {
+    if (specialInstructions) setNotesOpen(true)
+  }, [specialInstructions])
 
   useEffect(() => {
     fetch("/api/delivery-locations")
@@ -60,6 +64,8 @@ export function CheckoutPage() {
   const giftFee = isGift ? giftSelectionTotal(giftSelection) : 0
   const freeShipping = totalPrice >= FREE_SHIPPING_THRESHOLD
   const grandTotal = totalPrice + (freeShipping ? 0 : deliveryFee) + giftFee
+  const amountToFreeShipping = Math.max(0, FREE_SHIPPING_THRESHOLD - totalPrice)
+  const freeShippingProgress = Math.min(100, Math.round((totalPrice / FREE_SHIPPING_THRESHOLD) * 100))
 
   // Validate Kenyan phone: +254, 254, 07, 01, 011
   const cleanPhone = formData.phone.replace(/[\s\-()]/g, "")
@@ -71,7 +77,7 @@ export function CheckoutPage() {
     const giftNote = isGift
       ? `[GIFT ORDER - ${giftSelectionSummary(giftSelection) || "no extras selected"} - extras fee KSh ${giftSelectionTotal(giftSelection)}]`
       : ""
-    const combinedNotes = [formData.notes, giftNote].filter(Boolean).join(" ")
+    const combinedNotes = [specialInstructions, giftNote].filter(Boolean).join(" ")
     return {
       customerName: formData.name,
       customerEmail: formData.email || undefined,
@@ -162,7 +168,7 @@ export function CheckoutPage() {
         freeShipping ? "FREE" : selectedDelivery ? `${formatPrice(deliveryFee)} (${selectedDelivery.name})` : "Not selected"
       }\n*Total:* ${formatPrice(freeShipping ? totalPrice : grandTotal)}\n\n*CUSTOMER INFO*\nName: ${formData.name}\nPhone: ${formData.phone}${
         formData.email ? `\nEmail: ${formData.email}` : ""
-      }\nAddress: ${formData.address}${formData.notes ? `\nNotes: ${formData.notes}` : ""}`
+      }\nAddress: ${formData.address}${specialInstructions ? `\nNotes: ${specialInstructions}` : ""}`
     )
 
         window.open(`https://wa.me/254717264422?text=${message}`, "_blank")
@@ -228,7 +234,7 @@ export function CheckoutPage() {
       const payload = {
         ...buildOrderPayload("website"),
         paymentMethod: "card",
-        notes: formData.notes ? `${formData.notes}\n[Card payment attempted - ending ${last4}]` : `[Card payment attempted - ending ${last4}]`,
+        notes: specialInstructions ? `${specialInstructions}\n[Card payment attempted - ending ${last4}]` : `[Card payment attempted - ending ${last4}]`,
       }
       await fetch("/api/orders", {
         method: "POST",
@@ -519,27 +525,54 @@ export function CheckoutPage() {
                       rows={3}
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="notes" className="text-sm font-medium mb-1.5 block">Order Notes (optional)</Label>
-                    <Textarea
-                      id="notes"
-                      value={formData.notes}
-                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                      placeholder="Any special instructions..."
-                      rows={2}
-                    />
-                  </div>
                 </div>
               </div>
 
-              {freeShipping && (
-                <div className="flex items-center gap-3 bg-secondary p-4 rounded-sm">
-                  <Truck className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                  <p className="text-sm">
-                    Your order qualifies for <span className="font-semibold">FREE delivery</span> (orders above KSh {FREE_SHIPPING_THRESHOLD.toLocaleString()})!
+              {/* Free shipping progress */}
+              <div className="text-center">
+                {freeShipping ? (
+                  <p className="text-sm font-medium text-[#00843D] flex items-center justify-center gap-1.5">
+                    <Truck className="h-4 w-4" />
+                    Your order qualifies for <span className="font-semibold">FREE shipping!</span>
                   </p>
+                ) : (
+                  <p className="text-sm text-[#00843D]">
+                    Spend <span className="font-semibold">{formatPrice(amountToFreeShipping)}</span> more to reach free shipping!
+                  </p>
+                )}
+                <div className="mt-2 h-1.5 w-full rounded-full bg-secondary overflow-hidden">
+                  <div
+                    className="h-full bg-[#00843D] rounded-full transition-all duration-500 ease-out"
+                    style={{ width: `${freeShippingProgress}%` }}
+                  />
                 </div>
-              )}
+              </div>
+
+              {/* Special order instructions */}
+              <div className="border border-border rounded-sm bg-secondary/40">
+                <button
+                  type="button"
+                  onClick={() => setNotesOpen((v) => !v)}
+                  className="w-full flex items-center justify-between px-4 py-3 text-left"
+                  aria-expanded={notesOpen}
+                >
+                  <span className="text-sm font-medium">Add Special Order Instructions</span>
+                  <ChevronDown
+                    className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${notesOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
+                {notesOpen && (
+                  <div className="px-4 pb-4">
+                    <Textarea
+                      value={specialInstructions}
+                      onChange={(e) => setSpecialInstructions(e.target.value)}
+                      placeholder="Order special instructions"
+                      rows={4}
+                      className="bg-background resize-none"
+                    />
+                  </div>
+                )}
+              </div>
 
               {/* Gift wrapping */}
               <div>

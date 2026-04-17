@@ -13,9 +13,12 @@ interface CartContextType {
   totalPrice: number
   isCartOpen: boolean
   setIsCartOpen: (open: boolean) => void
+  specialInstructions: string
+  setSpecialInstructions: (notes: string) => void
 }
 
 const CART_KEY = "herkingdom-cart"
+const CART_NOTES_KEY = "herkingdom-cart-notes"
 
 function loadCart(): CartItem[] {
   if (typeof window === "undefined") return []
@@ -41,6 +44,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined)
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([])
   const [isCartOpen, setIsCartOpen] = useState(false)
+  const [specialInstructions, setSpecialInstructionsState] = useState("")
   const [hydrated, setHydrated] = useState(false)
 
   // Hydrate from sessionStorage on mount
@@ -48,6 +52,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const stored = loadCart()
     if (stored.length > 0) {
       setItems(stored)
+    }
+    if (typeof window !== "undefined") {
+      try {
+        const notes = sessionStorage.getItem(CART_NOTES_KEY)
+        if (notes) setSpecialInstructionsState(notes)
+      } catch {
+        // ignore
+      }
     }
     setHydrated(true)
   }, [])
@@ -58,6 +70,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
       saveCart(items)
     }
   }, [items, hydrated])
+
+  useEffect(() => {
+    if (!hydrated || typeof window === "undefined") return
+    try {
+      if (specialInstructions) {
+        sessionStorage.setItem(CART_NOTES_KEY, specialInstructions)
+      } else {
+        sessionStorage.removeItem(CART_NOTES_KEY)
+      }
+    } catch {
+      // ignore
+    }
+  }, [specialInstructions, hydrated])
+
+  const setSpecialInstructions = useCallback((notes: string) => {
+    setSpecialInstructionsState(notes)
+  }, [])
 
   const addItem = useCallback((product: Product, quantity = 1, variations?: Record<string, string>) => {
     setItems((prev) => {
@@ -95,6 +124,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const clearCart = useCallback(() => {
     setItems([])
+    setSpecialInstructionsState("")
   }, [])
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0)
@@ -112,6 +142,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         totalPrice,
         isCartOpen,
         setIsCartOpen,
+        specialInstructions,
+        setSpecialInstructions,
       }}
     >
       {children}
