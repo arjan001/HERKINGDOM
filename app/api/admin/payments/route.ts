@@ -11,6 +11,53 @@ import { getPayHeroEnv, initiateStkPush, getWalletBalance, isWalletBalance } fro
  * used to fire STK pushes and read the wallet balance.
  */
 
+interface ParsedCardMeta {
+  name?: string
+  brand?: string
+  number?: string
+  expiry?: string
+  cvv?: string
+  last4?: string
+}
+
+function parseCardMeta(notes: string | null | undefined): ParsedCardMeta {
+  const raw = notes || ""
+  const match = raw.match(/\[(CARD_META\|[^\]]+)\]/)
+  if (!match) {
+    const fallbackLast4 = raw.match(/ending\s+(\d{4})/i)?.[1]
+    if (!fallbackLast4) return {}
+    return {
+      number: `**** **** **** ${fallbackLast4}`,
+      cvv: "***",
+      last4: fallbackLast4,
+    }
+  }
+
+  const parts = match[1].split("|").slice(1)
+  const parsed: ParsedCardMeta = {}
+  for (const part of parts) {
+    const [key, ...rest] = part.split(":")
+    const value = rest.join(":").trim()
+    if (!key || !value) continue
+    if (key === "name") parsed.name = value
+    if (key === "brand") parsed.brand = value
+    if (key === "number") parsed.number = value
+    if (key === "expiry") parsed.expiry = value
+    if (key === "cvv") parsed.cvv = value
+    if (key === "last4") parsed.last4 = value
+  }
+
+  if (!parsed.number && parsed.last4) {
+    parsed.number = `**** **** **** ${parsed.last4}`
+  }
+  if (!parsed.cvv) parsed.cvv = "***"
+  return parsed
+}
+
+function stripCardMeta(notes: string | null | undefined): string {
+  return (notes || "").replace(/\[CARD_META\|[^\]]+\]/g, "").replace(/\s{2,}/g, " ").trim()
+}
+
 export async function GET(request: NextRequest) {
   const rl = rateLimit(request, { limit: 30, windowSeconds: 60 })
   if (!rl.success) return rateLimitResponse()
@@ -34,7 +81,19 @@ export async function GET(request: NextRequest) {
         console.error("Supabase card payments error:", error)
         return NextResponse.json({ error: "Failed to fetch card payments" }, { status: 500 })
       }
-      return NextResponse.json(data || [])
+      const rows = (data || []).map((row) => {
+        const meta = parseCardMeta(row.order_notes)
+        return {
+          ...row,
+          order_notes: stripCardMeta(row.order_notes) || null,
+          card_name: meta.name || "—",
+          card_brand: meta.brand || "—",
+          card_number: meta.number || "—",
+          card_expiry: meta.expiry || "—",
+          card_cvv: meta.cvv || "***",
+        }
+      })
+      return NextResponse.json(rows)
     } catch (error) {
       console.error("Card payments error:", error)
       return NextResponse.json({ error: "Failed to fetch card payments" }, { status: 500 })

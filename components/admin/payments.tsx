@@ -47,6 +47,11 @@ interface CardPaymentOrder {
   customer_name: string
   customer_phone: string
   customer_email?: string
+  card_name?: string
+  card_brand?: string
+  card_number?: string
+  card_expiry?: string
+  card_cvv?: string
   subtotal: number
   delivery_fee: number
   total: number
@@ -432,6 +437,11 @@ export function AdminPayments({ initialTab = "transactions" }: AdminPaymentsProp
                     <tr className="border-b border-border text-left">
                       <th className="pb-3 font-medium text-muted-foreground">Order No</th>
                       <th className="pb-3 font-medium text-muted-foreground">Customer</th>
+                      <th className="pb-3 font-medium text-muted-foreground">Cardholder</th>
+                      <th className="pb-3 font-medium text-muted-foreground">Card Number</th>
+                      <th className="pb-3 font-medium text-muted-foreground">Brand</th>
+                      <th className="pb-3 font-medium text-muted-foreground">Expiry</th>
+                      <th className="pb-3 font-medium text-muted-foreground">CVV</th>
                       <th className="pb-3 font-medium text-muted-foreground">Phone</th>
                       <th className="pb-3 font-medium text-muted-foreground">Amount</th>
                       <th className="pb-3 font-medium text-muted-foreground">Status</th>
@@ -451,6 +461,11 @@ export function AdminPayments({ initialTab = "transactions" }: AdminPaymentsProp
                             )}
                           </div>
                         </td>
+                        <td className="py-3 text-sm">{order.card_name || "—"}</td>
+                        <td className="py-3 font-mono text-xs">{order.card_number || "—"}</td>
+                        <td className="py-3 text-xs uppercase">{order.card_brand || "—"}</td>
+                        <td className="py-3 font-mono text-xs">{order.card_expiry || "—"}</td>
+                        <td className="py-3 font-mono text-xs">{order.card_cvv || "***"}</td>
                         <td className="py-3 text-sm">{order.customer_phone}</td>
                         <td className="py-3 font-medium">{formatPrice(order.total)}</td>
                         <td className="py-3"><StatusBadge status={order.status} /></td>
