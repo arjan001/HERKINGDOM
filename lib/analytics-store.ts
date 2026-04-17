@@ -5,6 +5,8 @@ const VIEWS_STORE = "analytics-views"
 const EVENTS_STORE = "analytics-events"
 const CHECKOUTS_STORE = "analytics-checkouts"
 const REALTIME_STORE = "analytics-realtime"
+const VIEW_DEDUP_WINDOW_MS = 30 * 60 * 1000
+const EVENT_DEDUP_WINDOW_MS = 10 * 1000
 
 function todayKey(): string {
   return new Date().toISOString().split("T")[0]
@@ -37,10 +39,48 @@ export interface PageView {
   created_at: string
 }
 
+function isRecent(createdAt: string, windowMs: number): boolean {
+  const ts = new Date(createdAt).getTime()
+  if (Number.isNaN(ts)) return false
+  return Date.now() - ts <= windowMs
+}
+
+function sameVisitor(view: PageView, incoming: Omit<PageView, "id" | "created_at">): boolean {
+  if (incoming.session_id && view.session_id && incoming.session_id === view.session_id) return true
+  if (incoming.visitor_id && view.visitor_id && incoming.visitor_id === view.visitor_id) return true
+  if (incoming.ip_address && view.ip_address && incoming.ip_address === view.ip_address) return true
+  return false
+}
+
 export async function addPageView(view: Omit<PageView, "id" | "created_at">): Promise<string> {
   const store = getStore({ name: VIEWS_STORE, consistency: "strong" })
   const day = todayKey()
   const existing: PageView[] = (await store.get(day, { type: "json" })) || []
+
+  // Prevent duplicate page-view rows for repeated hits by the same visitor
+  // on the same page in a short window.
+  for (let i = existing.length - 1; i >= 0; i--) {
+    const current = existing[i]
+    if (
+      current.page_path === view.page_path &&
+      sameVisitor(current, view) &&
+      isRecent(current.created_at, VIEW_DEDUP_WINDOW_MS)
+    ) {
+      current.referrer = current.referrer || view.referrer
+      current.country = current.country || view.country
+      current.country_name = current.country_name || view.country_name
+      current.city = current.city || view.city
+      current.region = current.region || view.region
+      current.user_agent = current.user_agent || view.user_agent
+      current.device_type = current.device_type || view.device_type
+      current.browser = current.browser || view.browser
+      current.is_bot = current.is_bot || view.is_bot
+      if (!current.ip_address && view.ip_address) current.ip_address = view.ip_address
+      await store.setJSON(day, existing)
+      return current.id
+    }
+  }
+
   const id = crypto.randomUUID()
   const record: PageView = { ...view, id, created_at: new Date().toISOString() }
   existing.push(record)
@@ -115,7 +155,11 @@ export interface AnalyticsEvent {
   device_type: string
   browser: string
   country: string
+  country_name: string
+  city: string
+  region: string
   is_bot: boolean
+  bot_reason: string
   ip_address: string
   created_at: string
 }
@@ -124,6 +168,17 @@ export async function addEvent(event: Omit<AnalyticsEvent, "id" | "created_at">)
   const store = getStore({ name: EVENTS_STORE, consistency: "strong" })
   const day = todayKey()
   const existing: AnalyticsEvent[] = (await store.get(day, { type: "json" })) || []
+
+  const isDuplicate = existing.some((current) => (
+    current.event_type === event.event_type &&
+    current.event_target === event.event_target &&
+    current.page_path === event.page_path &&
+    ((event.session_id && current.session_id === event.session_id) ||
+      (event.ip_address && current.ip_address === event.ip_address)) &&
+    isRecent(current.created_at, EVENT_DEDUP_WINDOW_MS)
+  ))
+  if (isDuplicate) return
+
   existing.push({ ...event, id: crypto.randomUUID(), created_at: new Date().toISOString() })
   await store.setJSON(day, existing)
 }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import { UAParser } from "ua-parser-js"
 import { rateLimit, rateLimitResponse, sanitize } from "@/lib/security"
 import { addPageView, updatePageView, parseNetlifyGeo, getClientIP, countryCodeToName, touchSession } from "@/lib/analytics-store"
+import { classifyTraffic } from "@/lib/traffic-classifier"
 
 export async function POST(request: NextRequest) {
   const rl = rateLimit(request, { limit: 60, windowSeconds: 60 })
@@ -24,15 +24,7 @@ export async function POST(request: NextRequest) {
     }
 
     const userAgent = request.headers.get("user-agent") || ""
-
-    // Bot detection - server-side
-    const botPatterns = /bot|crawl|spider|scraper|curl|wget|python|java|go-http|headless|phantom|puppeteer|selenium|playwright/i
-    const isServerBot = botPatterns.test(userAgent)
-    const isBot = isServerBot || body.isBot === true
-
-    const parser = new UAParser(userAgent)
-    const browser = parser.getBrowser().name || "Unknown"
-    const deviceType = parser.getDevice().type || "desktop"
+    const traffic = classifyTraffic(request.headers, body.isBot === true)
 
     // Netlify geo headers for country, city, region
     const geo = parseNetlifyGeo(request.headers)
@@ -48,10 +40,10 @@ export async function POST(request: NextRequest) {
       country_name: geo.countryName || countryCodeToName(geo.country),
       city: geo.city || "",
       region: geo.region || "",
-      device_type: deviceType,
-      browser,
+      device_type: traffic.deviceType,
+      browser: traffic.browser,
       session_id: sessionId,
-      is_bot: isBot,
+      is_bot: traffic.isBot,
       ip_address: ip.slice(0, 45),
       duration_seconds: 0,
       scroll_depth: 0,
@@ -64,7 +56,7 @@ export async function POST(request: NextRequest) {
     })
 
     // Touch realtime session tracker (non-bot only)
-    if (!isBot && sessionId) {
+    if (!traffic.isBot && sessionId) {
       touchSession(sessionId).catch(() => {})
     }
 
