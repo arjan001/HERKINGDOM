@@ -46,6 +46,26 @@ export async function GET(request: NextRequest) {
       })
     }
 
+    // The callback may have already landed with a terminal failure (cancelled
+    // by user, insufficient balance, etc.). Surface it to the UI straight
+    // away so the modal can stop polling and show the real reason.
+    if (order.mpesa_message) {
+      try {
+        const parsed = JSON.parse(order.mpesa_message)
+        const stored = typeof parsed?.status === "string" ? parsed.status.toLowerCase() : ""
+        if (stored === "cancelled" || stored === "failed") {
+          return NextResponse.json({
+            status: stored,
+            orderNumber: order.order_no,
+            phone: order.mpesa_phone,
+            message: parsed?.reason || parsed?.resultDesc || undefined,
+          })
+        }
+      } catch {
+        // Ignore malformed payloads; fall back to live polling below.
+      }
+    }
+
     // Callback hasn't arrived yet — ask PayHero directly if we have the reference.
     const env = getPayHeroEnv()
     const reference = order.mpesa_code || ""
