@@ -6,8 +6,7 @@ import { useMemo } from "react"
 import { ProductCard } from "./product-card"
 import type { Product } from "@/lib/types"
 import useSWR from "swr"
-
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+import { safeFetcher, asArray } from "@/lib/fetcher"
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr]
@@ -21,7 +20,8 @@ function shuffle<T>(arr: T[]): T[] {
 const TARGET = 12
 
 export function OnOfferProducts() {
-  const { data: products = [] } = useSWR<Product[]>("/api/products", fetcher)
+  const { data } = useSWR<Product[]>("/api/products", safeFetcher)
+  const products = asArray<Product>(data)
 
   const displayed = useMemo(() => {
     if (products.length === 0) return []

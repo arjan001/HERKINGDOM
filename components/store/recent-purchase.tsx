@@ -5,8 +5,7 @@ import Image from "next/image"
 import { X, CheckCircle, Eye } from "lucide-react"
 import type { Product } from "@/lib/types"
 import useSWR from "swr"
-
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+import { safeFetcher, asArray } from "@/lib/fetcher"
 
 const buyers = [
   { name: "Amina", location: "Nairobi" },
@@ -17,7 +16,8 @@ const buyers = [
 ]
 
 export function RecentPurchase() {
-  const { data: products = [] } = useSWR<Product[]>("/api/products", fetcher)
+  const { data } = useSWR<Product[]>("/api/products", safeFetcher)
+  const products = asArray<Product>(data)
   const [visible, setVisible] = useState(false)
   const [current, setCurrent] = useState(0)
 
@@ -43,6 +43,8 @@ export function RecentPurchase() {
 
   const buyer = buyers[current]
   const product = products[current % products.length]
+  if (!product) return null
+  const productImage = Array.isArray(product.images) ? product.images[0] : undefined
   const hoursAgo = Math.floor(Math.random() * 12) + 1
 
   return (
@@ -50,7 +52,7 @@ export function RecentPurchase() {
       <div className="bg-background border border-border shadow-lg rounded-sm p-3 max-w-xs flex gap-3">
         <div className="relative w-14 h-16 flex-shrink-0 bg-secondary rounded-sm overflow-hidden">
           <Image
-            src={product.images[0] || "/placeholder.svg"}
+            src={productImage || "/placeholder.svg"}
             alt={product.name}
             fill
             className="object-cover"

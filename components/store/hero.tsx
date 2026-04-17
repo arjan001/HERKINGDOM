@@ -6,8 +6,7 @@ import { useState, useEffect, useCallback } from "react"
 import { ArrowRight } from "lucide-react"
 import type { HeroBanner } from "@/lib/types"
 import useSWR from "swr"
-
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+import { safeFetcher, asArray } from "@/lib/fetcher"
 
 const FALLBACK_BANNERS: HeroBanner[] = [
   {
@@ -132,11 +131,12 @@ function BannerImage({ src, alt, priority = false }: { src: string; alt: string;
 }
 
 export function Hero() {
-  const { data: banners } = useSWR<HeroBanner[]>("/api/hero-banners", fetcher)
+  const { data } = useSWR<HeroBanner[]>("/api/hero-banners", safeFetcher)
+  const banners = asArray<HeroBanner>(data)
 
   // Merge DB banners with fallbacks - always guarantee 3 valid banners
   const items: HeroBanner[] = (() => {
-    if (!banners || banners.length === 0) return FALLBACK_BANNERS
+    if (banners.length === 0) return FALLBACK_BANNERS
 
     return banners.slice(0, 3).map((b) => ({
       ...b,

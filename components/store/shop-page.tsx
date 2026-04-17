@@ -16,8 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import useSWR from "swr"
-
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+import { safeFetcher, asArray } from "@/lib/fetcher"
 
 function formatPrice(price: number): string {
   return `KSh ${price.toLocaleString()}`
@@ -93,8 +92,10 @@ export function ShopPage() {
   const filterParam = searchParams.get("filter") || ""
   const queryParam = searchParams.get("q") || ""
 
-  const { data: products = [] } = useSWR<Product[]>("/api/products", fetcher)
-  const { data: categories = [] } = useSWR<Category[]>("/api/categories", fetcher)
+  const { data: productsData } = useSWR<Product[]>("/api/products", safeFetcher)
+  const { data: categoriesData } = useSWR<Category[]>("/api/categories", safeFetcher)
+  const products = asArray<Product>(productsData)
+  const categories = asArray<Category>(categoriesData)
 
   const isShopAll = !categoryParam && !filterParam && !queryParam
 
