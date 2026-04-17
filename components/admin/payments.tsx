@@ -99,6 +99,7 @@ function StatusBadge({ status }: { status: string }) {
 function StkPushForm() {
   const [phone, setPhone] = useState("")
   const [amount, setAmount] = useState("")
+  const [customerName, setCustomerName] = useState("")
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -123,6 +124,7 @@ function StkPushForm() {
           action: "stk-push",
           phone: phone.trim(),
           amount: numAmount,
+          customerName: customerName.trim() || undefined,
         }),
       })
       const data = await res.json()
@@ -133,6 +135,7 @@ function StkPushForm() {
       toast.success("STK push sent via PayHero. The customer will receive an M-Pesa prompt.")
       setPhone("")
       setAmount("")
+      setCustomerName("")
       mutate("/api/admin/payments?action=transactions")
     } catch {
       toast.error("Failed to initiate STK push")
@@ -143,6 +146,17 @@ function StkPushForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium mb-1.5">Customer Name <span className="text-muted-foreground font-normal">(optional)</span></label>
+        <input
+          type="text"
+          value={customerName}
+          onChange={(e) => setCustomerName(e.target.value)}
+          placeholder="e.g. Jane Wanjiku"
+          className="w-full h-10 px-3 border border-border rounded-md text-sm bg-background"
+        />
+        <p className="text-[11px] text-muted-foreground mt-1">Shown on the M-Pesa prompt. Auto-filled when blank.</p>
+      </div>
       <div>
         <label className="block text-sm font-medium mb-1.5">Phone Number</label>
         <div className="relative">

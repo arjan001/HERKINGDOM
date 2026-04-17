@@ -23,9 +23,10 @@ interface MpesaPaymentModalProps {
   onPaymentConfirmed: (result: { orderNumber: string; mpesaReceipt: string; phone: string }) => void
   /**
    * Creates the pending order on the server and returns its order number.
-   * We initiate the STK push against that order number.
+   * We initiate the STK push against that order number. May return an
+   * error string on failure so the modal can surface the real reason.
    */
-  createPendingOrder: () => Promise<{ orderNumber: string } | null>
+  createPendingOrder: () => Promise<{ orderNumber: string } | { error: string } | null>
   defaultPhone?: string
   customerName?: string
 }
@@ -131,9 +132,10 @@ export function MpesaPaymentModal({
     setStatusMessage("Creating your order...")
 
     const created = await createPendingOrder()
-    if (!created?.orderNumber) {
+    if (!created || "error" in created || !created.orderNumber) {
       setStep("failed")
-      setError("We could not save your order. Please try again.")
+      const reason = created && "error" in created ? created.error : ""
+      setError(reason ? `We could not save your order: ${reason}` : "We could not save your order. Please try again.")
       return
     }
 

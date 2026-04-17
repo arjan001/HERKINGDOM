@@ -16,8 +16,10 @@
  *                              is not provided)
  *   PAYHERO_CHANNEL_ID       - Numeric payment channel ID (Payment Channels >
  *                              My Payment Channels)
- *   PAYHERO_WALLET_ID        - (Optional) Payment channel ID used for balance
- *                              queries
+ *   PAYHERO_WALLET_ID        - Wallet payment channel ID used to read the
+ *                              payments wallet balance
+ *                              (GET /api/v2/payment_channels/{id}). Falls
+ *                              back to PAYHERO_CHANNEL_ID when unset.
  *   PAYHERO_CALLBACK_URL     - (Optional) Full public URL PayHero posts the STK
  *                              callback to. When unset, the callback URL is
  *                              derived from NEXT_PUBLIC_SITE_URL / URL /
@@ -117,13 +119,18 @@ export interface StkPushResult {
 
 /** Initiate a PayHero M-Pesa STK push. Returns the CheckoutRequestID for polling. */
 export async function initiateStkPush(env: PayHeroEnv, input: StkPushInput): Promise<StkPushResult> {
+  const normalizedPhone = normalizePhone(input.phone)
+  // PayHero's backend occasionally returns "sql: no rows in result set" when a
+  // required field (most commonly customer_name) is missing — their downstream
+  // lookup blows up on the empty value. Guarantee every field is present so
+  // their validation never has to guess.
   const payload = {
-    amount: Math.round(input.amount),
-    phone_number: normalizePhone(input.phone),
-    channel_id: env.channelId,
+    amount: Math.max(1, Math.round(input.amount)),
+    phone_number: normalizedPhone,
+    channel_id: Number(env.channelId),
     provider: "m-pesa",
     external_reference: input.externalReference,
-    customer_name: input.customerName || undefined,
+    customer_name: (input.customerName && input.customerName.trim()) || `Customer ${normalizedPhone.slice(-4)}`,
     callback_url: env.callbackUrl,
   }
 
@@ -138,22 +145,54 @@ export async function initiateStkPush(env: PayHeroEnv, input: StkPushInput): Pro
     })
 
     const data = await res.json().catch(() => ({}))
+    const obj = (data && typeof data === "object") ? (data as Record<string, unknown>) : {}
+
+    const extractError = (): string | undefined => {
+      const candidates = [
+        obj.error_message,
+        obj.message,
+        obj.error,
+        (obj.data as Record<string, unknown> | undefined)?.error_message,
+        (obj.data as Record<string, unknown> | undefined)?.message,
+        (obj.response as Record<string, unknown> | undefined)?.error_message,
+        (obj.response as Record<string, unknown> | undefined)?.ResultDesc,
+      ]
+      for (const c of candidates) {
+        if (typeof c === "string" && c.trim()) return c.trim()
+      }
+      return undefined
+    }
 
     if (!res.ok) {
       return {
         success: false,
         raw: data,
-        error:
-          (data && (data.error_message || data.message || data.error)) ||
-          `PayHero responded with HTTP ${res.status}`,
+        error: extractError() || `PayHero responded with HTTP ${res.status}`,
+      }
+    }
+
+    // Some PayHero errors come back as HTTP 200 with { success: false, error: "..." }.
+    // The classic offender is "sql: no rows in result set" — bubble that up to
+    // the caller instead of pretending it succeeded.
+    const succeeded = Boolean(obj.success)
+    if (!succeeded) {
+      const err = extractError()
+      return {
+        success: false,
+        raw: data,
+        error: err
+          ? (err.toLowerCase().includes("sql: no rows in result set")
+              ? "PayHero could not find a matching payment channel — check that PAYHERO_CHANNEL_ID matches an active channel in app.payhero.co.ke."
+              : err)
+          : "PayHero rejected the STK push",
       }
     }
 
     return {
-      success: Boolean(data.success),
-      status: data.status,
-      reference: data.reference,
-      checkoutRequestId: data.CheckoutRequestID,
+      success: true,
+      status: typeof obj.status === "string" ? obj.status : undefined,
+      reference: typeof obj.reference === "string" ? obj.reference : undefined,
+      checkoutRequestId: typeof obj.CheckoutRequestID === "string" ? obj.CheckoutRequestID : undefined,
       raw: data,
     }
   } catch (err) {
@@ -252,23 +291,41 @@ function extractBalance(payload: unknown): number | null {
 /**
  * Read a wallet balance from PayHero.
  *
- * Uses the official `/wallets?wallet_type=...` endpoint documented on
- * docs.payhero.co.ke. Defaults to `service_wallet` — that is the balance that
- * PayHero deducts STK-push fees from, so it is what gates M-Pesa payouts.
+ * PayHero exposes two distinct endpoints (docs.payhero.co.ke):
+ *   - Service wallet — funds STK-push fees are deducted from:
+ *       GET /api/v2/wallets?wallet_type=service_wallet
+ *     Response carries `available_balance`.
+ *   - Payments wallet — customer payments available to withdraw. The
+ *     `wallets?wallet_type=payment_wallet` variant is NOT a valid endpoint
+ *     and returns "wallet not found"; the balance lives on the wallet
+ *     payment channel itself:
+ *       GET /api/v2/payment_channels/{wallet_channel_id}
+ *     Response carries `balance_plain.balance`. `wallet_channel_id` comes
+ *     from PAYHERO_WALLET_ID (fall back to PAYHERO_CHANNEL_ID).
  *
- * Returns `null` only when the network call itself throws. On non-2xx
- * responses we return a `WalletBalanceError` so callers can forward the
- * actionable PayHero error text to the admin UI instead of a generic message.
+ * On non-2xx responses we return a `WalletBalanceError` so callers can
+ * forward the actionable PayHero error text to the admin UI.
  */
 export async function getWalletBalance(
   env: PayHeroEnv,
   walletType: WalletType = "service_wallet",
 ): Promise<WalletBalance | WalletBalanceError> {
+  let url: string
+  if (walletType === "service_wallet") {
+    url = `${PAYHERO_BASE}/wallets?wallet_type=service_wallet`
+  } else {
+    const channelId = env.walletId ?? env.channelId
+    if (!Number.isFinite(channelId)) {
+      return {
+        error:
+          "PAYHERO_WALLET_ID is not set. Add the wallet payment channel ID from app.payhero.co.ke > Payment Channels to read your payments wallet balance.",
+      }
+    }
+    url = `${PAYHERO_BASE}/payment_channels/${encodeURIComponent(String(channelId))}`
+  }
+
   try {
-    const res = await fetch(
-      `${PAYHERO_BASE}/wallets?wallet_type=${encodeURIComponent(walletType)}`,
-      { headers: { Authorization: env.authHeader } },
-    )
+    const res = await fetch(url, { headers: { Authorization: env.authHeader } })
     const data = await res.json().catch(() => ({}))
 
     if (!res.ok) {

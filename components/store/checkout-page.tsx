@@ -208,7 +208,7 @@ export function CheckoutPage() {
 
   // Creates the pending MPESA order server-side so PayHero has something to
   // attach the payment to. The STK push is fired from inside the modal.
-  const createMpesaPendingOrder = async (): Promise<{ orderNumber: string } | null> => {
+  const createMpesaPendingOrder = async (): Promise<{ orderNumber: string } | { error: string } | null> => {
     try {
       const payload = {
         ...buildOrderPayload("mpesa"),
@@ -220,11 +220,16 @@ export function CheckoutPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       })
-      const data = await res.json()
-      if (!res.ok) return null
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        return { error: data?.error || `Server error (${res.status})` }
+      }
+      if (!data?.orderNumber) {
+        return { error: "Server did not return an order number" }
+      }
       return { orderNumber: data.orderNumber }
-    } catch {
-      return null
+    } catch (err) {
+      return { error: err instanceof Error ? err.message : "Network error" }
     }
   }
 

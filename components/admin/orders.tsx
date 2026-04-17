@@ -364,7 +364,8 @@ export function AdminOrders() {
                     {paginatedItems.map((order) => {
                       const config = statusConfig[order.status]
                       return (
-                        <tr key={order.id} className={`hover:bg-secondary/50 transition-colors ${selectedIds.has(order.id) ? "bg-secondary/30" : ""}`}>
+                        <tr key={order.id} className={`group hover:bg-secondary/50 transition-colors ${selectedIds.has(order.id) ? "bg-secondary/30" : ""}`}>
+
                           <td className="px-4 py-3">
                             <Checkbox checked={selectedIds.has(order.id)} onCheckedChange={() => toggleSelect(order.id)} aria-label={`Select ${order.orderNo}`} />
                           </td>
@@ -391,19 +392,27 @@ export function AdminOrders() {
                             </span>
                           </td>
                           <td className="px-4 py-3 text-right">
-                            <div className="inline-flex items-center gap-1 justify-end">
-                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedOrder(order)} aria-label={`View ${order.orderNo}`}>
+                            <div className="inline-flex items-center gap-2 justify-end">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 gap-1.5 bg-transparent"
+                                onClick={() => setSelectedOrder(order)}
+                                aria-label={`View ${order.orderNo}`}
+                              >
                                 <Eye className="h-3.5 w-3.5" />
+                                <span className="hidden sm:inline">View</span>
                               </Button>
                               <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-500/10"
+                                variant="destructive"
+                                size="sm"
+                                className="h-8 gap-1.5 bg-red-600 hover:bg-red-700 text-white"
                                 onClick={() => handleSingleDelete(order)}
                                 disabled={deleting}
                                 aria-label={`Delete ${order.orderNo}`}
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
+                                <span className="hidden sm:inline">Delete</span>
                               </Button>
                             </div>
                           </td>
