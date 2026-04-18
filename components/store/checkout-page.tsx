@@ -245,7 +245,7 @@ export function CheckoutPage() {
   const handleCardPayment = () => {
     if (!validateForm()) return
     // Track abandoned checkout step
-    trackAbandonedCheckout("payment_card")
+    trackAbandonedCheckout("payment_card", "payment_abandoned")
     setShowCardPayment(true)
   }
 
@@ -288,39 +288,79 @@ export function CheckoutPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       })
+      if (status === "failed") {
+        trackAbandonedCheckout("payment_card_failed", "payment_failed")
+      }
     } catch {
       // Silent - order attempt tracked
     }
   }
 
-  // Track abandoned checkouts
-  const trackAbandonedCheckout = (stepReached: string) => {
+  // Track abandoned checkouts with a reason so admin can distinguish payment
+  // failures from checkouts where the customer walked away mid-form.
+  const trackAbandonedCheckout = (stepReached: string, reason = "") => {
     if (items.length === 0) return
     const sid = typeof window !== "undefined" ? sessionStorage.getItem("kf_sid") : null
     if (!sid) return
+    const body = JSON.stringify({
+      sessionId: sid,
+      customerName: formData.name,
+      customerPhone: formData.phone,
+      customerEmail: formData.email,
+      items: items.map(i => ({ name: i.product.name, qty: i.quantity, price: i.product.price })),
+      subtotal: totalPrice,
+      stepReached,
+      reason,
+    })
     fetch("/api/track-abandoned", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        sessionId: sid,
-        customerName: formData.name,
-        customerPhone: formData.phone,
-        customerEmail: formData.email,
-        items: items.map(i => ({ name: i.product.name, qty: i.quantity, price: i.product.price })),
-        subtotal: totalPrice,
-        stepReached,
-      }),
+      body,
     }).catch(() => {})
   }
 
   // Track checkout page visit as potential abandoned checkout
   useEffect(() => {
     if (items.length > 0) {
-      const timer = setTimeout(() => trackAbandonedCheckout("checkout_started"), 3000)
+      const timer = setTimeout(() => trackAbandonedCheckout("checkout_started", "stopped_midway"), 3000)
       return () => clearTimeout(timer)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Capture the "closed browser at checkout without completing" case so we
+  // can distinguish it from orders that completed successfully.
+  useEffect(() => {
+    if (items.length === 0) return
+    const flush = () => {
+      if (orderResult) return
+      const sid = typeof window !== "undefined" ? sessionStorage.getItem("kf_sid") : null
+      if (!sid) return
+      const body = JSON.stringify({
+        sessionId: sid,
+        customerName: formData.name,
+        customerPhone: formData.phone,
+        customerEmail: formData.email,
+        items: items.map(i => ({ name: i.product.name, qty: i.quantity, price: i.product.price })),
+        subtotal: totalPrice,
+        stepReached: "checkout_page",
+        reason: "checkout_abandoned",
+      })
+      if (typeof navigator !== "undefined" && navigator.sendBeacon) {
+        navigator.sendBeacon("/api/track-abandoned", new Blob([body], { type: "application/json" }))
+      } else {
+        fetch("/api/track-abandoned", { method: "POST", headers: { "Content-Type": "application/json" }, body, keepalive: true }).catch(() => {})
+      }
+    }
+    const onVisibility = () => { if (document.visibilityState === "hidden") flush() }
+    window.addEventListener("beforeunload", flush)
+    document.addEventListener("visibilitychange", onVisibility)
+    return () => {
+      window.removeEventListener("beforeunload", flush)
+      document.removeEventListener("visibilitychange", onVisibility)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, formData, orderResult, totalPrice])
 
   // Mark as recovered when order completes
   useEffect(() => {
@@ -810,6 +850,7 @@ export function CheckoutPage() {
         customerName={formData.name}
         createPendingOrder={createMpesaPendingOrder}
         onPaymentConfirmed={handleMpesaConfirmed}
+        onPaymentFailed={(r) => trackAbandonedCheckout(`mpesa_${r}`, "payment_failed")}
       />
 
       <CardPaymentModal

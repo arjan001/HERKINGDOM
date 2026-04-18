@@ -1,8 +1,10 @@
 import { Suspense } from "react"
+import { notFound } from "next/navigation"
 import { ShopPage } from "@/components/store/shop-page"
+import { CategoryIntro } from "@/components/store/category-intro"
 import type { Metadata } from "next"
 import { SITE_SEO, PAGE_SEO, PAGE_KEYWORDS, generateCategoryKeywords, buildCategorySeo } from "@/lib/seo-data"
-import { getCategoryBySlug } from "@/lib/supabase-data"
+import { getCategoryBySlug, getProductsByCategory } from "@/lib/supabase-data"
 import {
   SEO_MODIFIERS,
   SEO_OCCASIONS,
@@ -61,6 +63,14 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
 
   if (categorySlug) {
     const category = await getCategoryBySlug(categorySlug).catch(() => null)
+
+    if (!category) {
+      // Unknown category slug → page will 404; tell crawlers not to index.
+      return {
+        title: `Category not found | Her Kingdom`,
+        robots: { index: false, follow: false },
+      }
+    }
 
     if (category) {
       let { title, description } = buildCategorySeo(
@@ -280,6 +290,19 @@ export default async function Page({ searchParams }: PageProps) {
   const categorySlug = firstParam(params.category)
   const category = categorySlug ? await getCategoryBySlug(categorySlug).catch(() => null) : null
 
+  // Unknown category → return a real 404 rather than serving a thin client
+  // shell that Google flags as Soft 404.
+  if (categorySlug && !category) {
+    notFound()
+  }
+
+  // For known categories we pre-load the product list and render it
+  // server-side so crawlers receive real content (heading, description,
+  // product links, schema) instead of the client-only loading skeleton.
+  const categoryProducts = category
+    ? await getProductsByCategory(category.slug).catch(() => [])
+    : []
+
   const jsonLd = category
     ? {
         "@context": "https://schema.org",
@@ -337,7 +360,17 @@ export default async function Page({ searchParams }: PageProps) {
         />
       )}
       <Suspense>
-        <ShopPage />
+        <ShopPage
+          seoIntro={
+            category ? (
+              <CategoryIntro
+                category={category}
+                products={categoryProducts}
+                siteUrl={siteUrl}
+              />
+            ) : null
+          }
+        />
       </Suspense>
     </>
   )

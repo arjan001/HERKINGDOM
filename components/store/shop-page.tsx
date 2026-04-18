@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, type ReactNode } from "react"
 import { useSearchParams } from "next/navigation"
 import { SlidersHorizontal, Grid3X3, LayoutList, X, Search } from "lucide-react"
 import { usePagination } from "@/hooks/use-pagination"
@@ -86,7 +86,7 @@ function FilterSidebar({
   )
 }
 
-export function ShopPage() {
+export function ShopPage({ seoIntro }: { seoIntro?: ReactNode } = {}) {
   const searchParams = useSearchParams()
   const categoryParam = searchParams.get("category") || ""
   const filterParam = searchParams.get("filter") || ""
@@ -209,6 +209,7 @@ export function ShopPage() {
       <TopBar />
       <Navbar />
       <main className="flex-1">
+        {seoIntro}
         <div className="mx-auto max-w-7xl px-4 py-6">
           <CategoryBreadcrumb
             items={breadcrumbItems}

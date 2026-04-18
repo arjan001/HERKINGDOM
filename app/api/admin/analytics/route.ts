@@ -326,8 +326,11 @@ export async function GET(request: NextRequest) {
   const recoveredCount = abandoned.filter(a => a.recovered).length
   const abandonedValue = abandoned.reduce((sum, a) => sum + (Number(a.subtotal) || 0), 0)
   const abandonedByStep: Record<string, number> = {}
+  const abandonedByReason: Record<string, number> = {}
   abandoned.forEach(a => {
     abandonedByStep[a.step_reached || "cart"] = (abandonedByStep[a.step_reached || "cart"] || 0) + 1
+    const reason = a.reason || "unknown"
+    abandonedByReason[reason] = (abandonedByReason[reason] || 0) + 1
   })
 
   return NextResponse.json({
@@ -363,12 +366,14 @@ export async function GET(request: NextRequest) {
       recovered: recoveredCount,
       value: abandonedValue,
       byStep: abandonedByStep,
+      byReason: abandonedByReason,
       recent: abandoned.slice(0, 10).map(a => ({
         id: a.id,
         customerName: a.customer_name || "Anonymous",
         items: a.items,
         subtotal: a.subtotal,
         stepReached: a.step_reached,
+        reason: a.reason || "",
         recovered: a.recovered,
         createdAt: a.created_at,
       })),

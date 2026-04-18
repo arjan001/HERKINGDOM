@@ -338,7 +338,7 @@ export function ProductDetailPage({ slug }: { slug: string }) {
                   className="h-12 w-12 flex-shrink-0 bg-transparent"
                   onClick={() => product && toggleItem(product)}
                 >
-                  <Heart className={`h-5 w-5 ${wishlisted ? "fill-red-500 text-red-500" : ""}`} />
+                  <Heart className={`h-5 w-5 transition-colors ${wishlisted ? "fill-pink-500 text-pink-500" : "text-pink-500"}`} />
                   <span className="sr-only">{wishlisted ? "Remove from wishlist" : "Add to wishlist"}</span>
                 </Button>
               </div>

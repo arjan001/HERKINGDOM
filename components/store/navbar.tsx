@@ -193,8 +193,8 @@ export function Navbar() {
               <Search className="h-5 w-5" /><span className="sr-only">Search</span>
             </Button>
             <Link href="/wishlist" className="hidden lg:flex relative">
-              <Button variant="ghost" size="icon"><Heart className="h-5 w-5" /><span className="sr-only">Wishlist</span></Button>
-              {wishlistCount > 0 && <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold min-w-[18px] h-[18px]">{wishlistCount}</span>}
+              <Button variant="ghost" size="icon"><Heart className={`h-5 w-5 transition-colors ${wishlistCount > 0 ? "fill-pink-500 text-pink-500" : "text-pink-500"}`} /><span className="sr-only">Wishlist</span></Button>
+              {wishlistCount > 0 && <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center rounded-full bg-pink-500 text-white text-[10px] font-bold min-w-[18px] h-[18px]">{wishlistCount}</span>}
             </Link>
             <button type="button" className="relative p-2" onClick={() => setIsCartOpen(true)}>
               <ShoppingBag className="h-5 w-5" />
