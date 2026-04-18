@@ -149,8 +149,16 @@ export function Navbar() {
               <nav className="flex flex-col px-6 gap-1">
                 <Link href="/" className="py-3 text-sm font-medium border-b border-border">Home</Link>
                 <p className="pt-3 pb-1 text-[10px] tracking-[0.2em] uppercase text-muted-foreground">Categories</p>
-                {categories.slice(0, 4).map((cat) => (
-                  <Link key={cat.id} href={`/shop?category=${cat.slug}`} className="py-2.5 text-sm border-b border-border pl-3">{cat.name}</Link>
+                {categories.slice(0, 4).map((cat, i) => (
+                  <Link
+                    key={cat.id}
+                    href={`/shop?category=${cat.slug}`}
+                    className={`category-glow category-glow-${(i % 4) + 1} relative py-2.5 text-sm font-semibold border-b border-border pl-3`}
+                  >
+                    <span aria-hidden="true" className="category-sparkle category-sparkle-a absolute left-0 top-1 text-[9px] leading-none">✦</span>
+                    <span aria-hidden="true" className="category-sparkle category-sparkle-b absolute right-2 top-1 text-[10px] leading-none">✧</span>
+                    {cat.name}
+                  </Link>
                 ))}
                 <Link href="/track-order" className="py-3 text-sm font-medium border-b border-border">Track My Order</Link>
               </nav>
@@ -183,8 +191,17 @@ export function Navbar() {
                 {categoriesOpen && (
                   <div className="absolute top-full left-0 mt-1 w-52 bg-background border border-border shadow-lg rounded-sm z-50">
                     <p className="px-4 pt-3 pb-1 text-[10px] tracking-[0.2em] uppercase text-muted-foreground">Categories</p>
-                    {categories.map((cat) => (
-                      <Link key={cat.id} href={`/shop?category=${cat.slug}`} className="block px-4 py-2.5 text-sm hover:bg-secondary transition-colors" onClick={() => setCategoriesOpen(false)}>{cat.name}</Link>
+                    {categories.map((cat, i) => (
+                      <Link
+                        key={cat.id}
+                        href={`/shop?category=${cat.slug}`}
+                        className={`category-glow category-glow-${(i % 4) + 1} relative block px-4 py-2.5 text-sm font-semibold hover:bg-secondary transition-colors`}
+                        onClick={() => setCategoriesOpen(false)}
+                      >
+                        <span aria-hidden="true" className="category-sparkle category-sparkle-a absolute left-1 top-1 text-[9px] leading-none">✦</span>
+                        <span aria-hidden="true" className="category-sparkle category-sparkle-b absolute right-2 bottom-1 text-[10px] leading-none">✧</span>
+                        {cat.name}
+                      </Link>
                     ))}
                   </div>
                 )}
@@ -279,8 +296,17 @@ export function Navbar() {
           <div className="flex items-center justify-center h-12">
             <nav className="flex items-center gap-8">
               <Link href="/" className="text-sm font-medium hover:text-muted-foreground transition-colors">Home</Link>
-              {categories.slice(0, 4).map((cat) => (
-                <Link key={cat.id} href={`/shop?category=${cat.slug}`} className="text-sm font-medium hover:text-muted-foreground transition-colors">{cat.name}</Link>
+              {categories.slice(0, 4).map((cat, i) => (
+                <Link
+                  key={cat.id}
+                  href={`/shop?category=${cat.slug}`}
+                  className={`category-glow category-glow-${(i % 4) + 1} relative inline-flex items-center text-sm font-semibold transition-colors`}
+                >
+                  <span aria-hidden="true" className="category-sparkle category-sparkle-a absolute -left-3 -top-2 text-[9px] leading-none">✦</span>
+                  <span aria-hidden="true" className="category-sparkle category-sparkle-b absolute -right-3 -top-1 text-[10px] leading-none">✧</span>
+                  <span aria-hidden="true" className="category-sparkle category-sparkle-c absolute -right-2 -bottom-2 text-[9px] leading-none">★</span>
+                  {cat.name}
+                </Link>
               ))}
               <Link href="/track-order" className="text-sm font-medium hover:text-muted-foreground transition-colors">Track My Order</Link>
             </nav>
