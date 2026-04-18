@@ -55,7 +55,8 @@ interface AnalyticsData {
     recovered: number
     value: number
     byStep: Record<string, number>
-    recent: { id: string; customerName: string; items: unknown[]; subtotal: number; stepReached: string; recovered: boolean; createdAt: string }[]
+    byReason: Record<string, number>
+    recent: { id: string; customerName: string; items: unknown[]; subtotal: number; stepReached: string; reason: string; recovered: boolean; createdAt: string }[]
   }
   // Enhanced real tracking data
   trafficChannels: { channel: string; count: number; percentage: number }[]
@@ -729,6 +730,42 @@ export function AdminAnalytics() {
               </div>
             </div>
 
+            {/* Abandonment by Reason */}
+            {analytics?.abandonedCheckouts.byReason && Object.keys(analytics.abandonedCheckouts.byReason).length > 0 && (
+              <div className="border border-border rounded-sm">
+                <div className="px-5 py-3 border-b border-border">
+                  <h2 className="text-sm font-semibold flex items-center gap-2">
+                    <AlertTriangle className="h-3.5 w-3.5" /> Why Carts Were Abandoned
+                  </h2>
+                </div>
+                <div className="p-5 space-y-4">
+                  {Object.entries(analytics.abandonedCheckouts.byReason)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([reason, count]) => {
+                      const pct = Math.round((count / Math.max(analytics.abandonedCheckouts.total, 1)) * 100)
+                      const label = reason === "payment_failed" ? "Payment failed"
+                        : reason === "payment_abandoned" ? "Opened payment, never confirmed"
+                        : reason === "closed_with_items" ? "Added items, closed site"
+                        : reason === "checkout_abandoned" ? "Left checkout page"
+                        : reason === "stopped_midway" ? "Stopped mid-checkout"
+                        : reason === "unknown" ? "Unknown"
+                        : reason.replace(/_/g, " ")
+                      return (
+                        <div key={reason}>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-sm font-medium capitalize">{label}</span>
+                            <span className="text-xs text-muted-foreground">{count} ({pct}%)</span>
+                          </div>
+                          <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                            <div className="h-full bg-pink-500 rounded-full" style={{ width: `${pct}%` }} />
+                          </div>
+                        </div>
+                      )
+                    })}
+                </div>
+              </div>
+            )}
+
             {/* Abandonment by Step */}
             {analytics?.abandonedCheckouts.byStep && Object.keys(analytics.abandonedCheckouts.byStep).length > 0 && (
               <div className="border border-border rounded-sm">
@@ -772,6 +809,7 @@ export function AdminAnalytics() {
                       <p className="text-sm font-medium">{a.customerName}</p>
                       <p className="text-xs text-muted-foreground">
                         {Array.isArray(a.items) ? a.items.length : 0} item(s) - Step: {a.stepReached}
+                        {a.reason && ` - ${a.reason.replace(/_/g, " ")}`}
                       </p>
                     </div>
                     <div className="text-right">

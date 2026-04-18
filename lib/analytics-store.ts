@@ -211,6 +211,17 @@ export interface AbandonedCheckout {
   items: unknown[]
   subtotal: number
   step_reached: string
+  /**
+   * Why the checkout did not complete. Richer than step_reached because it
+   * answers "what happened?" instead of just "where did they stop?":
+   *   - `payment_failed`        → tried to pay (card/M-PESA) and got a failure
+   *   - `payment_abandoned`     → opened payment modal, never confirmed
+   *   - `closed_with_items`     → added items but never reached checkout
+   *   - `checkout_abandoned`    → on checkout page, closed before submitting
+   *   - `stopped_midway`        → filled some details, walked away
+   * Empty string means "unknown / not yet classified".
+   */
+  reason: string
   device_type: string
   browser: string
   recovered: boolean

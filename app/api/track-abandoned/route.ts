@@ -24,6 +24,7 @@ export async function POST(request: NextRequest) {
       items: body.items || [],
       subtotal: Math.max(0, Number(body.subtotal) || 0),
       step_reached: sanitize(body.stepReached || "cart", 50),
+      reason: sanitize(body.reason || "", 50),
       device_type: deviceType,
       browser,
     })

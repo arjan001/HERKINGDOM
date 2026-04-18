@@ -27,6 +27,11 @@ interface MpesaPaymentModalProps {
    * error string on failure so the modal can surface the real reason.
    */
   createPendingOrder: () => Promise<{ orderNumber: string } | { error: string } | null>
+  /**
+   * Fired when the payment attempt fails/cancels/times out so the parent can
+   * record the specific failure reason for abandoned-cart analytics.
+   */
+  onPaymentFailed?: (reason: string) => void
   defaultPhone?: string
   customerName?: string
 }
@@ -39,6 +44,7 @@ export function MpesaPaymentModal({
   onClose,
   total,
   onPaymentConfirmed,
+  onPaymentFailed,
   createPendingOrder,
   defaultPhone,
   customerName,
@@ -96,6 +102,7 @@ export function MpesaPaymentModal({
         stopPolling()
         setStep("failed")
         setError("We did not receive confirmation in time. If you paid, your order will be confirmed shortly.")
+        onPaymentFailed?.("timeout")
         return
       }
       try {
@@ -115,6 +122,7 @@ export function MpesaPaymentModal({
           stopPolling()
           setStep("failed")
           setError(data.message || "Payment was cancelled or failed. Please try again.")
+          onPaymentFailed?.(data.status)
         }
       } catch {
         // transient errors are fine — keep polling
@@ -136,6 +144,7 @@ export function MpesaPaymentModal({
       setStep("failed")
       const reason = created && "error" in created ? created.error : ""
       setError(reason ? `We could not save your order: ${reason}` : "We could not save your order. Please try again.")
+      onPaymentFailed?.("create_order_failed")
       return
     }
 
@@ -156,6 +165,7 @@ export function MpesaPaymentModal({
       if (!res.ok || !data.success) {
         setStep("failed")
         setError(data.error || "Could not reach M-PESA. Please try again.")
+        onPaymentFailed?.("stk_push_failed")
         return
       }
       setStep("waiting")
@@ -164,6 +174,7 @@ export function MpesaPaymentModal({
     } catch {
       setStep("failed")
       setError("Network error. Please check your connection and try again.")
+      onPaymentFailed?.("network_error")
     }
   }
 

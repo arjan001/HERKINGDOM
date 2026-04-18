@@ -143,6 +143,68 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0)
   const totalPrice = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0)
 
+  // Bounced-cart tracker. A cart is "bounced" when the customer added items
+  // but never reached the checkout page (closed tab / navigated away). On
+  // cart changes we upsert a cart-level record; on tab close we flush a final
+  // snapshot via sendBeacon so the data lands even when the tab is killed.
+  // When the customer reaches /checkout, checkout-page.tsx overwrites the
+  // reason to `checkout_abandoned` / `payment_failed` / etc.
+  useEffect(() => {
+    if (!hydrated || typeof window === "undefined") return
+    if (items.length === 0) return
+    // Treat non-checkout routes as "cart only" — if they've landed on
+    // /checkout, that page's own tracker owns the state.
+    if (window.location.pathname.startsWith("/checkout")) return
+    const sid = sessionStorage.getItem("kf_sid")
+    if (!sid) return
+    const payload = {
+      sessionId: sid,
+      items: items.map(i => ({ name: i.product.name, qty: i.quantity, price: i.product.price })),
+      subtotal: totalPrice,
+      stepReached: "cart",
+      reason: "closed_with_items",
+    }
+    const t = setTimeout(() => {
+      fetch("/api/track-abandoned", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }).catch(() => {})
+    }, 1500)
+    return () => clearTimeout(t)
+  }, [items, totalPrice, hydrated])
+
+  useEffect(() => {
+    if (!hydrated || typeof window === "undefined") return
+    const flushOnExit = () => {
+      if (items.length === 0) return
+      if (window.location.pathname.startsWith("/checkout")) return
+      const sid = sessionStorage.getItem("kf_sid")
+      if (!sid) return
+      const body = JSON.stringify({
+        sessionId: sid,
+        items: items.map(i => ({ name: i.product.name, qty: i.quantity, price: i.product.price })),
+        subtotal: totalPrice,
+        stepReached: "cart",
+        reason: "closed_with_items",
+      })
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon("/api/track-abandoned", new Blob([body], { type: "application/json" }))
+      } else {
+        fetch("/api/track-abandoned", { method: "POST", headers: { "Content-Type": "application/json" }, body, keepalive: true }).catch(() => {})
+      }
+    }
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") flushOnExit()
+    }
+    window.addEventListener("beforeunload", flushOnExit)
+    document.addEventListener("visibilitychange", onVisibility)
+    return () => {
+      window.removeEventListener("beforeunload", flushOnExit)
+      document.removeEventListener("visibilitychange", onVisibility)
+    }
+  }, [items, totalPrice, hydrated])
+
   return (
     <CartContext.Provider
       value={{
