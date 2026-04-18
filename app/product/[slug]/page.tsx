@@ -26,6 +26,19 @@ function absoluteUrl(url: string): string {
   return `${siteUrl}/${url}`
 }
 
+function ogImageUrl(rawUrl: string | undefined): string {
+  const source = rawUrl && rawUrl.length > 0 ? absoluteUrl(rawUrl) : `${siteUrl}/logo.png`
+  const params = new URLSearchParams({
+    url: source,
+    w: "1200",
+    h: "630",
+    fit: "cover",
+    fm: "jpg",
+    q: "82",
+  })
+  return `${siteUrl}/.netlify/images?${params.toString()}`
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
   try {
@@ -35,14 +48,14 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     const occasion = inferOccasion(product)
     const title = `${product.name} | Best ${category} Gift Kenya | herkingdomjewelry.shop`
     const description = `Shop ${product.name} at herkingdomjewelry.shop. The best ${category.toLowerCase()} in Nairobi. Perfect for ${occasion} with luxe packaging and same-day delivery. Order via WhatsApp!`
-    const primaryImage = product.images[0]
-      ? absoluteUrl(product.images[0])
-      : `${siteUrl}/logo.png`
+    const primaryImage = ogImageUrl(product.images[0])
     const ogImage = {
       url: primaryImage,
+      secureUrl: primaryImage,
       width: 1200,
-      height: 1200,
+      height: 630,
       alt: `${product.name} - Her Kingdom Jewelry Nairobi`,
+      type: "image/jpeg",
     }
     return {
       title,
@@ -71,7 +84,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
         creator: "@herkingdom_jewelry",
         title,
         description,
-        images: [{ url: primaryImage, alt: ogImage.alt }],
+        images: [{ url: primaryImage, alt: ogImage.alt, width: 1200, height: 630 }],
       },
       robots: {
         index: true,
