@@ -31,12 +31,18 @@ export const metadata: Metadata = {
     "Shop curated jewelry, necklaces, bracelets, earrings, watches & accessories at Her Kingdom Nairobi. Hypoallergenic, long-lasting pieces that complement your personal style. #HerkingdomBabe",
   icons: {
     icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon-16.png", type: "image/png", sizes: "16x16" },
+      { url: "/favicon-32.png", type: "image/png", sizes: "32x32" },
+      { url: "/favicon-48.png", type: "image/png", sizes: "48x48" },
+      { url: "/favicon-96.png", type: "image/png", sizes: "96x96" },
+      { url: "/favicon-192.png", type: "image/png", sizes: "192x192" },
       { url: "/favicon.png", type: "image/png", sizes: "512x512" },
     ],
     apple: [
-      { url: "/favicon.png", sizes: "512x512", type: "image/png" },
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
     ],
-    shortcut: "/favicon.png",
+    shortcut: "/favicon.ico",
   },
   manifest: "/manifest.json",
   keywords: [...SITE_SEO.allKeywords, ...STATIC_SEO_KEYWORDS_1000],
@@ -117,9 +123,14 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
       <head>
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="/favicon-16.png" type="image/png" sizes="16x16" />
+        <link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32" />
+        <link rel="icon" href="/favicon-48.png" type="image/png" sizes="48x48" />
+        <link rel="icon" href="/favicon-192.png" type="image/png" sizes="192x192" />
         <link rel="icon" href="/favicon.png" type="image/png" sizes="512x512" />
-        <link rel="apple-touch-icon" href="/favicon.png" sizes="512x512" />
-        <link rel="shortcut icon" href="/favicon.png" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+        <link rel="shortcut icon" href="/favicon.ico" />
         <meta name="format-detection" content="telephone=no" />
         <meta name="keywords" content={STATIC_SEO_KEYWORDS_1000_CSV} />
         <meta name="news_keywords" content={STATIC_SEO_KEYWORDS_1000_CSV} />
@@ -129,7 +140,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="msapplication-TileImage" content="/favicon.png" />
+        <meta name="msapplication-TileImage" content="/favicon-192.png" />
         <meta name="msapplication-TileColor" content="#f4a4c0" />
         <meta name="msapplication-config" content="none" />
         <link rel="dns-prefetch" href="//fonts.googleapis.com" />
