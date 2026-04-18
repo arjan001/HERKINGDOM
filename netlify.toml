@@ -2,6 +2,12 @@
   command = "npm run build"
   publish = ".next"
 
+[images]
+  remote_images = [
+    "https://cuoriplmfomxhguikxcv\\.supabase\\.co/.*",
+    "https://hebbkx1anhila5yf\\.public\\.blob\\.vercel-storage\\.com/.*"
+  ]
+
 [[headers]]
   for = "/robots.txt"
   [headers.values]

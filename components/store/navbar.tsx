@@ -106,7 +106,7 @@ export function Navbar() {
     const query = searchQuery.trim()
     if (query) {
       trackSearch(query, "submit")
-      router.push(`/shop?q=${encodeURIComponent(query)}`)
+      router.push(`/search?q=${encodeURIComponent(query)}`)
       setSearchQuery("")
       setShowSuggestions(false)
       setSearchOpen(false)
@@ -243,14 +243,14 @@ export function Navbar() {
                           </div>
                         </button>
                       ))}
-                      <button type="button" onClick={() => { router.push(`/shop?q=${encodeURIComponent(searchQuery.trim())}`); setShowSuggestions(false); setSearchQuery("") }} className="w-full text-left px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors border-t border-border">
+                      <button type="button" onClick={() => { router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`); setShowSuggestions(false); setSearchQuery("") }} className="w-full text-left px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors border-t border-border">
                         {"View all results for \""}{searchQuery}{"\""}
                       </button>
                     </>
                   ) : (
                     <div className="px-4 py-6 text-center">
                       <p className="text-sm text-muted-foreground">{"No products found for \""}{searchQuery}{"\"."}</p>
-                      <button type="button" onClick={() => { router.push(`/shop?q=${encodeURIComponent(searchQuery.trim())}`); setShowSuggestions(false); setSearchQuery("") }} className="text-xs underline mt-2 text-muted-foreground hover:text-foreground">
+                      <button type="button" onClick={() => { router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`); setShowSuggestions(false); setSearchQuery("") }} className="text-xs underline mt-2 text-muted-foreground hover:text-foreground">
                         Search the shop
                       </button>
                     </div>
