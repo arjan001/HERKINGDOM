@@ -79,88 +79,19 @@
 .payments-sparkle-3 { animation-delay: 1s; }
 .payments-sparkle-4 { animation-delay: 1.5s; }
 
-@keyframes category-glow {
+@keyframes necklaces-glow {
   0%, 100% {
-    color: #bfdbfe;
-    text-shadow:
-      0 0 4px rgba(191, 219, 254, 0.95),
-      0 0 10px rgba(96, 165, 250, 0.85),
-      0 0 20px rgba(37, 99, 235, 0.55);
-  }
-  12% {
-    color: #ffffff;
-    text-shadow: 0 0 2px rgba(255, 255, 255, 0.7);
-  }
-  24% {
-    color: #93c5fd;
-    text-shadow:
-      0 0 6px rgba(147, 197, 253, 0.95),
-      0 0 14px rgba(59, 130, 246, 0.9),
-      0 0 24px rgba(29, 78, 216, 0.6);
-  }
-  36% {
-    color: #ffffff;
-    text-shadow: 0 0 2px rgba(255, 255, 255, 0.6);
-  }
-  48% {
-    color: #fbcfe8;
-    text-shadow:
-      0 0 6px rgba(251, 207, 232, 0.95),
-      0 0 14px rgba(236, 72, 153, 0.9),
-      0 0 24px rgba(219, 39, 119, 0.65);
-  }
-  60% {
-    color: #ffffff;
-    text-shadow: 0 0 2px rgba(255, 255, 255, 0.6);
-  }
-  72% {
-    color: #fecdd3;
-    text-shadow:
-      0 0 6px rgba(254, 205, 211, 0.95),
-      0 0 14px rgba(244, 63, 94, 0.9),
-      0 0 26px rgba(225, 29, 72, 0.7);
-  }
-  84% {
-    color: #ffffff;
-    text-shadow: 0 0 2px rgba(255, 255, 255, 0.6);
-  }
-}
-
-.category-glow {
-  animation: category-glow 3.8s infinite;
-}
-
-.category-glow-1 { animation-delay: 0s; }
-.category-glow-2 { animation-delay: 0.45s; }
-.category-glow-3 { animation-delay: 0.9s; }
-.category-glow-4 { animation-delay: 1.35s; }
-
-@keyframes category-sparkle {
-  0%, 100% {
-    opacity: 0;
-    transform: scale(0.3) rotate(0deg);
-  }
-  25% {
-    opacity: 1;
-    transform: scale(1) rotate(90deg);
+    text-shadow: 0 0 4px rgba(236, 72, 153, 0.25);
   }
   50% {
-    opacity: 0.4;
-    transform: scale(0.7) rotate(180deg);
-  }
-  75% {
-    opacity: 1;
-    transform: scale(1.05) rotate(270deg);
+    text-shadow: 0 0 8px rgba(236, 72, 153, 0.45), 0 0 14px rgba(244, 114, 182, 0.25);
   }
 }
 
-.category-sparkle {
-  animation: category-sparkle 2.4s infinite;
+.necklaces-glow {
+  animation: necklaces-glow 2.6s infinite;
 }
 
-.category-sparkle-a { animation-delay: 0s; color: #93c5fd; }
-.category-sparkle-b { animation-delay: 0.8s; color: #f9a8d4; }
-.category-sparkle-c { animation-delay: 1.6s; color: #fda4af; }
 
 @layer base {
   :root {
