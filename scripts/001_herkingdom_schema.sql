@@ -335,8 +335,8 @@ CREATE TABLE IF NOT EXISTS public.site_settings (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
   store_name character varying DEFAULT 'Her Kingdom'::character varying,
   store_email character varying DEFAULT 'herkingdomlive@gmail.com'::character varying,
-  store_phone character varying DEFAULT '+254717264422'::character varying,
-  whatsapp_number character varying DEFAULT '254717264422'::character varying,
+  store_phone character varying DEFAULT '+254780406059'::character varying,
+  whatsapp_number character varying DEFAULT '254780406059'::character varying,
   currency_symbol character varying DEFAULT 'KSh'::character varying,
   free_shipping_threshold numeric DEFAULT 5000,
   order_prefix character varying DEFAULT 'HK'::character varying,
@@ -363,9 +363,9 @@ CREATE TABLE IF NOT EXISTS public.site_settings (
   show_newsletter boolean DEFAULT true,
   footer_description text DEFAULT 'Curated jewelry & accessories that complement your personal style. Hypoallergenic, long-lasting pieces delivered across Kenya.'::text,
   footer_address text DEFAULT 'Nairobi, Kenya'::text,
-  footer_phone character varying DEFAULT '0717 264 422'::character varying,
+  footer_phone character varying DEFAULT '0780 406 059'::character varying,
   footer_email character varying DEFAULT 'herkingdomlive@gmail.com'::character varying,
-  footer_whatsapp character varying DEFAULT '254717264422'::character varying,
+  footer_whatsapp character varying DEFAULT '254780406059'::character varying,
   footer_instagram character varying DEFAULT 'https://www.instagram.com/herkingdom_jewelry/'::character varying,
   footer_tiktok character varying DEFAULT 'https://www.tiktok.com/@herkingdom_jewelry'::character varying,
   footer_twitter character varying,
@@ -556,7 +556,7 @@ ON CONFLICT (slug) DO NOTHING;
 INSERT INTO public.navbar_offers (text, is_active, sort_order) VALUES
   ('Free delivery on orders over KSh 5,000!', true, 1),
   ('New jewelry pieces added every week!', true, 2),
-  ('WhatsApp us: 0717 264 422 for custom orders', true, 3)
+  ('WhatsApp us: 0780 406 059 for custom orders', true, 3)
 ON CONFLICT DO NOTHING;
 
 -- ============================================================

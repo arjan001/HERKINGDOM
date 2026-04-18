@@ -322,7 +322,7 @@ export function ProductDetailPage({ slug }: { slug: string }) {
                   Add to Cart
                 </Button>
                 <a
-                  href={`https://wa.me/254717264422?text=${whatsappMessage}`}
+                  href={`https://wa.me/254780406059?text=${whatsappMessage}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex-1 flex items-center justify-center gap-2 bg-background text-foreground border border-foreground h-12 text-sm font-medium hover:bg-secondary transition-colors"
@@ -415,7 +415,7 @@ export function ProductDetailPage({ slug }: { slug: string }) {
       {/* Sticky "Order via WhatsApp" CTA — persistent on product pages.
          Sits on the left so it never overlaps the global floating chat. */}
       <a
-        href={`https://wa.me/254717264422?text=${whatsappMessage}`}
+        href={`https://wa.me/254780406059?text=${whatsappMessage}`}
         target="_blank"
         rel="noopener noreferrer"
         aria-label={`Order ${product.name} via WhatsApp`}

@@ -7,14 +7,14 @@ export const SITE_SEO = {
   siteUrl: resolvedSiteUrl,
   siteTitle: "Her Kingdom | Curated Jewelry & Accessories for Women in Nairobi, Kenya",
   siteDescription:
-    "Shop curated jewelry, necklaces, bracelets, earrings, watches & accessories at Her Kingdom Nairobi. Hypoallergenic, long-lasting pieces that complement your personal style. Order online or WhatsApp +254717264422.",
-  phone: "+254717264422",
-  phoneDisplay: "0717 264 422",
+    "Shop curated jewelry, necklaces, bracelets, earrings, watches & accessories at Her Kingdom Nairobi. Hypoallergenic, long-lasting pieces that complement your personal style. Order online or WhatsApp +254780406059.",
+  phone: "+254780406059",
+  phoneDisplay: "0780 406 059",
   email: "herkingdomlive@gmail.com",
   instagram: "@herkingdom_jewelry",
   tiktok: "@herkingdom_jewelry",
   twitter: "@herkingdom_jewelry",
-  whatsapp: "254717264422",
+  whatsapp: "254780406059",
   address: "Nairobi, Kenya",
 
   // 500+ SEO Keywords — comprehensive, brand-focused, product-specific for jewelry
@@ -251,7 +251,7 @@ export const PAGE_SEO = {
   home: {
     title: "Her Kingdom | Curated Jewelry & Accessories in Nairobi, Kenya",
     description:
-      "Shop curated jewelry, necklaces, bracelets, earrings, watches & accessories at Her Kingdom Nairobi. Hypoallergenic, long-lasting pieces. Free delivery on orders over KSh 5,000. WhatsApp +254717264422.",
+      "Shop curated jewelry, necklaces, bracelets, earrings, watches & accessories at Her Kingdom Nairobi. Hypoallergenic, long-lasting pieces. Free delivery on orders over KSh 5,000. WhatsApp +254780406059.",
   },
   shop: {
     title: "Shop All Jewelry & Accessories | Her Kingdom Nairobi",
@@ -418,7 +418,7 @@ export function buildCategorySeo(name: string, description: string, productCount
   const title = `${name} | Shop ${name} Jewelry & Accessories at Her Kingdom Nairobi`
   const fallbackDescription = `Shop ${name.toLowerCase()} at Her Kingdom Nairobi. ${
     productCount > 0 ? `Browse ${productCount} curated ${name.toLowerCase()} pieces. ` : ""
-  }Hypoallergenic, long-lasting jewelry & accessories delivered across Kenya. WhatsApp +254717264422.`
+  }Hypoallergenic, long-lasting jewelry & accessories delivered across Kenya. WhatsApp +254780406059.`
   return {
     title,
     description: (description && description.trim().length > 0 ? description : fallbackDescription).slice(0, 300),

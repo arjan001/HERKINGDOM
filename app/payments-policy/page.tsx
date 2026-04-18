@@ -43,7 +43,7 @@ export const metadata: Metadata = {
   },
 }
 
-const WHATSAPP_URL = "https://wa.me/254717264422"
+const WHATSAPP_URL = "https://wa.me/254780406059"
 
 export default function PaymentsPolicyPage() {
   return (

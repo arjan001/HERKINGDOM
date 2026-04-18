@@ -157,7 +157,7 @@ export function Navbar() {
               <div className="px-6 py-4 mt-4 space-y-3">
                 <a href="https://www.instagram.com/herkingdom_jewelry/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">Instagram</a>
                 <a href="https://www.tiktok.com/@herkingdom_jewelry" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">TikTok</a>
-                <a href="tel:+254717264422" className="flex items-center gap-2 text-sm font-medium"><Phone className="h-4 w-4" />0717 264 422</a>
+                <a href="tel:+254780406059" className="flex items-center gap-2 text-sm font-medium"><Phone className="h-4 w-4" />0780 406 059</a>
               </div>
             </SheetContent>
           </Sheet>

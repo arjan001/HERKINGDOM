@@ -32,7 +32,7 @@ export function FaqSection({ faqs }: { faqs: Faq[] }) {
             <Link href="/" className="underline underline-offset-4">
               herkingdom.shop
             </Link>
-            . Still have questions? WhatsApp us on +254 717 264 422.
+            . Still have questions? WhatsApp us on +254 780 406 059.
           </p>
         </div>
         <ul className="divide-y divide-border rounded-xl border border-border bg-background shadow-sm">
