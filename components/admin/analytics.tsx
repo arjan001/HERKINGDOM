@@ -8,7 +8,8 @@ import {
   ArrowUpRight, ArrowDownRight, ChevronLeft, ChevronRight, Globe,
   Monitor, Smartphone, Tablet, Activity, MousePointerClick, Clock,
   BarChart3, Bot, ShieldCheck, ScrollText, ShoppingCart, AlertTriangle,
-  Search, Share2, Mail, Link2, UserPlus, UserCheck, Megaphone, Languages
+  Search, Share2, Mail, Link2, UserPlus, UserCheck, Megaphone, Languages,
+  Flame, Radar, MapPin
 } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
@@ -64,6 +65,19 @@ interface AnalyticsData {
   utmCampaigns: { campaign: string; views: number; source: string; medium: string }[]
   utmSources: { source: string; count: number }[]
   languages: { language: string; count: number; percentage: number }[]
+  searches: {
+    total: number
+    top: { term: string; count: number; uniqueVisitors: number; lastSeen: string }[]
+    byDay: { date: string; count: number }[]
+  }
+  liveHeatmap: {
+    activeVisitors: number
+    windowMinutes: number
+    cells: { country: string; countryName: string; region: string; city: string; visitors: number; views: number; latest: string }[]
+    byCountry: { country: string; countryName: string; visitors: number }[]
+    activityByMinute: { minute: string; visitors: number }[]
+    currentlyViewing: { page: string; views: number; visitors: number }[]
+  }
 }
 
 export function AdminAnalytics() {
@@ -192,14 +206,29 @@ export function AdminAnalytics() {
           ))}
         </div>
 
-        <Tabs defaultValue="traffic">
+        <Tabs defaultValue="live">
           <TabsList className="bg-secondary flex-wrap h-auto gap-1 p-1">
+            <TabsTrigger value="live">Live Visitors</TabsTrigger>
             <TabsTrigger value="traffic">Website Traffic</TabsTrigger>
+            <TabsTrigger value="searches">Searches</TabsTrigger>
             <TabsTrigger value="engagement">Engagement</TabsTrigger>
             <TabsTrigger value="sales">Sales & Orders</TabsTrigger>
             <TabsTrigger value="bots">Bot Detection</TabsTrigger>
             <TabsTrigger value="abandoned">Abandoned Checkouts</TabsTrigger>
           </TabsList>
+
+          {/* ===== LIVE HEAT MAP TAB ===== */}
+          <TabsContent value="live" className="mt-6 space-y-6">
+            <LiveVisitorHeatmap
+              live={analytics?.liveHeatmap}
+              realTimeUsers={realTimeUsers}
+            />
+          </TabsContent>
+
+          {/* ===== SEARCHES TAB ===== */}
+          <TabsContent value="searches" className="mt-6 space-y-6">
+            <SearchAnalytics searches={analytics?.searches} />
+          </TabsContent>
 
           {/* ===== WEBSITE TRAFFIC TAB ===== */}
           <TabsContent value="traffic" className="mt-6 space-y-6">
@@ -964,4 +993,277 @@ function getTimeAgo(date: Date): string {
   const diffDays = Math.floor(diffHours / 24)
   if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`
   return date.toLocaleDateString()
+}
+
+// ===== Live Visitor Heat Map =====
+
+function LiveVisitorHeatmap({
+  live,
+  realTimeUsers,
+}: {
+  live?: AnalyticsData["liveHeatmap"]
+  realTimeUsers: number
+}) {
+  const cells = live?.cells || []
+  const byCountry = live?.byCountry || []
+  const currently = live?.currentlyViewing || []
+  const minutes = live?.activityByMinute || []
+  const activeNow = live?.activeVisitors ?? realTimeUsers
+  const windowMinutes = live?.windowMinutes || 15
+  const maxVisitors = Math.max(1, ...cells.map((c) => c.visitors))
+  const maxMinute = Math.max(1, ...minutes.map((m) => m.visitors))
+  const peakMinute = minutes.reduce((acc, m) => (m.visitors > acc.visitors ? m : acc), { minute: "—", visitors: 0 })
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <div className="border border-border p-5 rounded-sm">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground uppercase tracking-wider mb-2">
+            <Radar className="h-3.5 w-3.5 animate-pulse text-[#00843D]" /> Live Now
+          </div>
+          <p className="text-2xl font-bold">{realTimeUsers}</p>
+          <p className="text-xs text-muted-foreground mt-1">Active in last 5 min</p>
+        </div>
+        <div className="border border-border p-5 rounded-sm">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground uppercase tracking-wider mb-2">
+            <Users className="h-3.5 w-3.5" /> Visitors ({windowMinutes}m)
+          </div>
+          <p className="text-2xl font-bold">{activeNow}</p>
+          <p className="text-xs text-muted-foreground mt-1">Unique sessions — rolling window</p>
+        </div>
+        <div className="border border-border p-5 rounded-sm">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground uppercase tracking-wider mb-2">
+            <Globe className="h-3.5 w-3.5" /> Locations lit up
+          </div>
+          <p className="text-2xl font-bold">{cells.length}</p>
+          <p className="text-xs text-muted-foreground mt-1">Cities with live traffic</p>
+        </div>
+        <div className="border border-border p-5 rounded-sm">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground uppercase tracking-wider mb-2">
+            <Flame className="h-3.5 w-3.5 text-orange-500" /> Peak minute
+          </div>
+          <p className="text-2xl font-bold">{peakMinute.visitors}</p>
+          <p className="text-xs text-muted-foreground mt-1">Busiest minute ({peakMinute.minute})</p>
+        </div>
+      </div>
+
+      {/* Activity over last N minutes */}
+      <div className="border border-border rounded-sm p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-semibold flex items-center gap-2">
+            <Activity className="h-3.5 w-3.5" /> Active Visitors — Last {windowMinutes} minutes
+          </h2>
+          <span className="text-[10px] text-muted-foreground">Auto-refreshes every 30s</span>
+        </div>
+        <div className="flex items-end gap-1 h-32">
+          {minutes.length === 0 ? (
+            <div className="flex-1 text-center text-xs text-muted-foreground py-10">Waiting for live traffic…</div>
+          ) : minutes.map((m, i) => {
+            const h = Math.max(2, Math.round((m.visitors / maxMinute) * 100))
+            return (
+              <div key={`${m.minute}-${i}`} className="flex-1 flex flex-col items-center gap-1 group">
+                <span className="text-[9px] opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground">{m.visitors}</span>
+                <div
+                  className={`w-full rounded-t-sm transition-all ${m.visitors === 0 ? "bg-secondary" : "bg-gradient-to-t from-[#00843D] to-[#00c961]"}`}
+                  style={{ height: `${h}%` }}
+                  title={`${m.minute} — ${m.visitors} visitors`}
+                />
+                {i % 3 === 0 && <span className="text-[9px] text-muted-foreground">{m.minute}</span>}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Heat map grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="border border-border rounded-sm lg:col-span-2">
+          <div className="px-5 py-3 border-b border-border flex items-center justify-between">
+            <h2 className="text-sm font-semibold flex items-center gap-2">
+              <Flame className="h-3.5 w-3.5 text-orange-500" /> Live Heat Map — Cities
+            </h2>
+            <span className="text-[10px] text-muted-foreground">Darker = more visitors</span>
+          </div>
+          <div className="p-4">
+            {cells.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-10">
+                No live visitors yet. As shoppers browse, their city will light up here.
+              </p>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                {cells.map((cell, i) => {
+                  const intensity = cell.visitors / maxVisitors
+                  // Shade from subtle to fiery
+                  const bg = `rgba(234, 88, 12, ${(0.12 + intensity * 0.8).toFixed(2)})`
+                  const border = `rgba(234, 88, 12, ${(0.3 + intensity * 0.6).toFixed(2)})`
+                  return (
+                    <div
+                      key={`${cell.country}-${cell.city}-${i}`}
+                      className="rounded-sm p-3 border transition-transform hover:scale-[1.02]"
+                      style={{ backgroundColor: bg, borderColor: border }}
+                      title={`${cell.city}, ${cell.countryName} — ${cell.visitors} visitors, ${cell.views} views`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[10px] uppercase tracking-wide text-foreground/70">{cell.country}</span>
+                        <span className="text-xs font-bold text-foreground">{cell.visitors}</span>
+                      </div>
+                      <p className="text-sm font-medium truncate text-foreground">{cell.city}</p>
+                      <p className="text-[10px] text-foreground/70 truncate">{cell.countryName}</p>
+                      <p className="text-[10px] text-foreground/60 mt-1">{cell.views} view{cell.views === 1 ? "" : "s"}</p>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          <div className="border border-border rounded-sm">
+            <div className="px-5 py-3 border-b border-border">
+              <h2 className="text-sm font-semibold flex items-center gap-2">
+                <Globe className="h-3.5 w-3.5" /> Top Countries — Live
+              </h2>
+            </div>
+            <div className="divide-y divide-border">
+              {byCountry.length === 0 ? (
+                <div className="px-5 py-6 text-center text-sm text-muted-foreground">No live data</div>
+              ) : byCountry.map((c) => (
+                <div key={c.country} className="flex items-center justify-between px-5 py-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-[10px] uppercase text-muted-foreground w-6">{c.country}</span>
+                    <span className="text-sm truncate">{c.countryName}</span>
+                  </div>
+                  <span className="text-sm font-bold tabular-nums">{c.visitors}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="border border-border rounded-sm">
+            <div className="px-5 py-3 border-b border-border">
+              <h2 className="text-sm font-semibold flex items-center gap-2">
+                <MapPin className="h-3.5 w-3.5" /> Currently viewing
+              </h2>
+            </div>
+            <div className="divide-y divide-border max-h-64 overflow-y-auto">
+              {currently.length === 0 ? (
+                <div className="px-5 py-6 text-center text-sm text-muted-foreground">No one on the site right now</div>
+              ) : currently.map((p) => (
+                <div key={p.page} className="flex items-center justify-between px-5 py-2.5">
+                  <span className="text-xs truncate max-w-[200px]">{p.page}</span>
+                  <span className="text-xs text-muted-foreground">{p.visitors} visitor{p.visitors === 1 ? "" : "s"}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ===== Search Analytics =====
+
+function SearchAnalytics({ searches }: { searches?: AnalyticsData["searches"] }) {
+  const total = searches?.total || 0
+  const top = searches?.top || []
+  const byDay = searches?.byDay || []
+  const maxCount = Math.max(1, ...top.map((t) => t.count))
+  const maxDay = Math.max(1, ...byDay.map((d) => d.count))
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="border border-border p-5 rounded-sm">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground uppercase tracking-wider mb-2">
+            <Search className="h-3.5 w-3.5" /> Total searches
+          </div>
+          <p className="text-2xl font-bold">{total.toLocaleString()}</p>
+          <p className="text-xs text-muted-foreground mt-1">Across the selected period</p>
+        </div>
+        <div className="border border-border p-5 rounded-sm">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground uppercase tracking-wider mb-2">
+            <TrendingUp className="h-3.5 w-3.5" /> Unique terms
+          </div>
+          <p className="text-2xl font-bold">{top.length}</p>
+          <p className="text-xs text-muted-foreground mt-1">Distinct queries tracked</p>
+        </div>
+        <div className="border border-border p-5 rounded-sm">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground uppercase tracking-wider mb-2">
+            <Flame className="h-3.5 w-3.5 text-orange-500" /> Hottest term
+          </div>
+          <p className="text-2xl font-bold truncate">{top[0]?.term || "—"}</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {top[0] ? `${top[0].count} searches · ${top[0].uniqueVisitors} visitor${top[0].uniqueVisitors === 1 ? "" : "s"}` : "No searches yet"}
+          </p>
+        </div>
+      </div>
+
+      <div className="border border-border rounded-sm p-6">
+        <h2 className="text-sm font-semibold mb-4">Searches per day</h2>
+        {byDay.every((d) => d.count === 0) ? (
+          <p className="text-sm text-muted-foreground text-center py-6">
+            Once shoppers start using the search bar, we&apos;ll chart the volume here.
+          </p>
+        ) : (
+          <div className="flex items-end gap-1 h-40">
+            {byDay.map((d) => {
+              const h = d.count === 0 ? 2 : Math.max(4, Math.round((d.count / maxDay) * 100))
+              return (
+                <div key={d.date} className="flex-1 flex flex-col items-center justify-end h-full group">
+                  <span className="text-[9px] text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+                    {d.count}
+                  </span>
+                  <div
+                    className={`w-full rounded-t-sm transition-colors ${d.count === 0 ? "bg-secondary" : "bg-foreground"}`}
+                    style={{ height: `${h}%` }}
+                    title={`${d.date} — ${d.count} searches`}
+                  />
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      <div className="border border-border rounded-sm">
+        <div className="px-5 py-3 border-b border-border">
+          <h2 className="text-sm font-semibold flex items-center gap-2">
+            <Flame className="h-3.5 w-3.5 text-orange-500" /> Most commonly searched terms
+          </h2>
+        </div>
+        <div className="divide-y divide-border">
+          {top.length === 0 ? (
+            <div className="px-5 py-10 text-center text-sm text-muted-foreground">
+              No search data yet. Tip: search is tracked for every query typed in the navbar.
+            </div>
+          ) : top.map((t, i) => {
+            const pct = Math.round((t.count / maxCount) * 100)
+            return (
+              <div key={t.term} className="px-5 py-3">
+                <div className="flex items-center justify-between gap-3 mb-1.5">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="text-xs text-muted-foreground w-5">{i + 1}.</span>
+                    <span className="text-sm font-medium truncate">&ldquo;{t.term}&rdquo;</span>
+                  </div>
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    <span className="text-xs text-muted-foreground">{t.uniqueVisitors} visitor{t.uniqueVisitors === 1 ? "" : "s"}</span>
+                    <span className="text-sm font-semibold tabular-nums w-10 text-right">{t.count}</span>
+                  </div>
+                </div>
+                <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-orange-400 to-red-500 rounded-full transition-all"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1">Last searched {getTimeAgo(new Date(t.lastSeen))}</p>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
 }

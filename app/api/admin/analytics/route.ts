@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getPageViews, getEvents, getAbandonedCheckouts, countryCodeToName } from "@/lib/analytics-store"
+import { getPageViews, getEvents, getAbandonedCheckouts, getRecentPageViews, countryCodeToName } from "@/lib/analytics-store"
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -333,6 +333,134 @@ export async function GET(request: NextRequest) {
     abandonedByReason[reason] = (abandonedByReason[reason] || 0) + 1
   })
 
+  // ---- Search term analytics ----
+  const searchEvents = allEvents.filter(e => e.event_type === "search" && !e.is_bot)
+  const searchTermCounts: Record<string, { count: number; uniqueSessions: Set<string>; lastSeen: string }> = {}
+  searchEvents.forEach(e => {
+    const term = (e.event_target || "").trim().toLowerCase()
+    if (!term) return
+    if (!searchTermCounts[term]) {
+      searchTermCounts[term] = { count: 0, uniqueSessions: new Set(), lastSeen: e.created_at }
+    }
+    searchTermCounts[term].count++
+    if (e.session_id) searchTermCounts[term].uniqueSessions.add(e.session_id)
+    if (e.created_at > searchTermCounts[term].lastSeen) searchTermCounts[term].lastSeen = e.created_at
+  })
+  const topSearches = Object.entries(searchTermCounts)
+    .map(([term, data]) => ({
+      term,
+      count: data.count,
+      uniqueVisitors: data.uniqueSessions.size,
+      lastSeen: data.lastSeen,
+    }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 20)
+  const totalSearches = searchEvents.length
+
+  // Searches over time (last "days" buckets)
+  const searchByDayMap: Record<string, number> = {}
+  searchEvents.forEach(e => {
+    const day = new Date(e.created_at).toISOString().split("T")[0]
+    searchByDayMap[day] = (searchByDayMap[day] || 0) + 1
+  })
+  const searchesByDay: { date: string; count: number }[] = []
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date()
+    d.setDate(d.getDate() - i)
+    const key = d.toISOString().split("T")[0]
+    searchesByDay.push({ date: key, count: searchByDayMap[key] || 0 })
+  }
+
+  // ---- Live visitor heat map (last 15 minutes, human only) ----
+  const liveWindowMinutes = 15
+  const recentViews = await getRecentPageViews(liveWindowMinutes)
+  const recentHumanViews = recentViews.filter(v => !v.is_bot)
+  const liveCutoff = Date.now() - 5 * 60 * 1000
+  const activeSessionIds = new Set<string>()
+  const liveCellMap: Record<string, {
+    country: string
+    countryName: string
+    region: string
+    city: string
+    sessions: Set<string>
+    views: number
+    latest: string
+  }> = {}
+
+  recentHumanViews.forEach(v => {
+    if (new Date(v.created_at).getTime() >= liveCutoff && v.session_id) {
+      activeSessionIds.add(v.session_id)
+    }
+    const country = v.country || "??"
+    const city = v.city || "Unknown"
+    const key = `${country}__${city}`
+    if (!liveCellMap[key]) {
+      liveCellMap[key] = {
+        country,
+        countryName: v.country_name || countryCodeToName(country),
+        region: v.region || "",
+        city,
+        sessions: new Set(),
+        views: 0,
+        latest: v.created_at,
+      }
+    }
+    liveCellMap[key].views++
+    if (v.session_id) liveCellMap[key].sessions.add(v.session_id)
+    if (v.created_at > liveCellMap[key].latest) liveCellMap[key].latest = v.created_at
+  })
+
+  const heatmapCells = Object.values(liveCellMap)
+    .map(c => ({
+      country: c.country,
+      countryName: c.countryName,
+      region: c.region,
+      city: c.city,
+      visitors: c.sessions.size || 1,
+      views: c.views,
+      latest: c.latest,
+    }))
+    .sort((a, b) => b.visitors - a.visitors || b.views - a.views)
+    .slice(0, 25)
+
+  const activeVisitors = activeSessionIds.size
+  const liveByCountryMap: Record<string, { country: string; countryName: string; visitors: number }> = {}
+  heatmapCells.forEach(cell => {
+    if (!liveByCountryMap[cell.country]) {
+      liveByCountryMap[cell.country] = { country: cell.country, countryName: cell.countryName, visitors: 0 }
+    }
+    liveByCountryMap[cell.country].visitors += cell.visitors
+  })
+  const liveByCountry = Object.values(liveByCountryMap).sort((a, b) => b.visitors - a.visitors).slice(0, 10)
+
+  // Minute-by-minute active visitor trend for the last 15 minutes.
+  const activityByMinute: { minute: string; visitors: number }[] = []
+  for (let i = liveWindowMinutes - 1; i >= 0; i--) {
+    const windowStart = Date.now() - (i + 1) * 60 * 1000
+    const windowEnd = Date.now() - i * 60 * 1000
+    const sessions = new Set<string>()
+    recentHumanViews.forEach(v => {
+      const ts = new Date(v.created_at).getTime()
+      if (ts >= windowStart && ts < windowEnd && v.session_id) sessions.add(v.session_id)
+    })
+    const minuteLabel = new Date(windowEnd - 30 * 1000).toISOString().slice(11, 16)
+    activityByMinute.push({ minute: minuteLabel, visitors: sessions.size })
+  }
+
+  // Pages currently being viewed (active within 5 minutes).
+  const currentPageMap: Record<string, { views: number; sessions: Set<string> }> = {}
+  recentHumanViews.forEach(v => {
+    if (new Date(v.created_at).getTime() < liveCutoff) return
+    const path = v.page_path || "/"
+    if (!currentPageMap[path]) currentPageMap[path] = { views: 0, sessions: new Set() }
+    currentPageMap[path].views++
+    if (v.session_id) currentPageMap[path].sessions.add(v.session_id)
+  })
+  const currentlyViewing = Object.entries(currentPageMap)
+    .map(([page, data]) => ({ page, views: data.views, visitors: data.sessions.size }))
+    .sort((a, b) => b.visitors - a.visitors)
+    .slice(0, 10)
+
   return NextResponse.json({
     totalViews,
     humanViewCount,
@@ -383,5 +511,18 @@ export async function GET(request: NextRequest) {
     utmCampaigns,
     utmSources,
     languages,
+    searches: {
+      total: totalSearches,
+      top: topSearches,
+      byDay: searchesByDay,
+    },
+    liveHeatmap: {
+      activeVisitors,
+      cells: heatmapCells,
+      byCountry: liveByCountry,
+      activityByMinute,
+      currentlyViewing,
+      windowMinutes: liveWindowMinutes,
+    },
   })
 }

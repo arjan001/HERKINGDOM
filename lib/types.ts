@@ -67,11 +67,19 @@ export interface Banner {
   sortOrder: number
 }
 
+export type DeliveryLocationType = "delivery" | "pickup"
+export type DeliveryLocationRegion = "nairobi" | "outside_nairobi"
+
 export interface DeliveryLocation {
   id: string
   name: string
   fee: number
   estimatedDays: string
+  type?: DeliveryLocationType
+  region?: DeliveryLocationRegion
+  city?: string
+  description?: string
+  isActive?: boolean
 }
 
 export type GiftItemCategory = "addon" | "gift_wrap" | "greeting_card"

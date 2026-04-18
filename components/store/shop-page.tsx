@@ -117,6 +117,32 @@ export function ShopPage({ seoIntro }: { seoIntro?: ReactNode } = {}) {
     setRandomSeed(Math.floor(Math.random() * 2 ** 31) || 1)
   }, [])
 
+  // Track direct-to-search URLs (e.g. clicking a search suggestion, pasting
+  // a shared link) so admin analytics captures the search term even when the
+  // navbar wasn't used.
+  useEffect(() => {
+    if (!queryParam) return
+    if (typeof window === "undefined") return
+    const normalised = queryParam.trim().toLowerCase().slice(0, 80)
+    if (!normalised) return
+    const key = `hk_search_logged_${normalised}`
+    if (sessionStorage.getItem(key)) return
+    sessionStorage.setItem(key, "1")
+    const sid = sessionStorage.getItem("kf_sid") || ""
+    fetch("/api/track-event", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        eventType: "search",
+        eventTarget: normalised,
+        eventData: { action: "url", raw: queryParam.slice(0, 200) },
+        pagePath: "/shop",
+        sessionId: sid,
+      }),
+      keepalive: true,
+    }).catch(() => {})
+  }, [queryParam])
+
   // Set price range dynamically once products load
   useEffect(() => {
     if (products.length > 0 && !priceInitialized) {

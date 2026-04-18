@@ -239,6 +239,7 @@ export async function getDeliveryLocations(): Promise<DeliveryLocation[]> {
     .from("delivery_locations")
     .select("*")
     .eq("is_active", true)
+    .order("sort_order", { ascending: true })
     .order("fee", { ascending: true })
 
   if (!data) return []
@@ -248,6 +249,10 @@ export async function getDeliveryLocations(): Promise<DeliveryLocation[]> {
     name: loc.name,
     fee: Number(loc.fee),
     estimatedDays: loc.estimated_days || "",
+    type: (loc.type as "delivery" | "pickup") || "delivery",
+    region: (loc.region as "nairobi" | "outside_nairobi") || "nairobi",
+    city: (loc.city as string) || "",
+    description: (loc.description as string) || "",
   }))
 }
 
