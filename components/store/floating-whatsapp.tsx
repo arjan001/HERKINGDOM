@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { X } from "lucide-react"
 
-const WHATSAPP_NUMBER = "254717264422"
+const WHATSAPP_NUMBER = "254780406059"
 const DEFAULT_MESSAGE = "Hi Her Kingdom! I'd like to chat about an order."
 
 export function FloatingWhatsApp() {

@@ -176,7 +176,7 @@ export function TrackOrderForm({ initialOrderNumber }: { initialOrderNumber?: st
               : "Make sure you are using the same phone number you provided when placing your order."}
           </p>
           <a
-            href="https://wa.me/254717264422?text=Hi%2C%20I%20need%20help%20tracking%20my%20order"
+            href="https://wa.me/254780406059?text=Hi%2C%20I%20need%20help%20tracking%20my%20order"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 mt-4 text-sm font-medium text-emerald-700 hover:underline"

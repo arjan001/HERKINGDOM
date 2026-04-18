@@ -54,8 +54,8 @@ export function CategoryIntro({
         </p>
         <p className="mt-2 text-xs text-muted-foreground">
           {products.length > 0
-            ? `${products.length} ${category.name.toLowerCase()} available · Delivered across Kenya · WhatsApp +254 717 264 422`
-            : `New ${category.name.toLowerCase()} arriving soon. Browse the full Her Kingdom catalog or message us on WhatsApp +254 717 264 422 for personal recommendations.`}
+            ? `${products.length} ${category.name.toLowerCase()} available · Delivered across Kenya · WhatsApp +254 780 406 059`
+            : `New ${category.name.toLowerCase()} arriving soon. Browse the full Her Kingdom catalog or message us on WhatsApp +254 780 406 059 for personal recommendations.`}
         </p>
 
         {topProducts.length > 0 && (

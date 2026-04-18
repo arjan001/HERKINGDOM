@@ -173,7 +173,7 @@ function buildOrderEmailHtml(data: OrderEmailData): string {
           <td style="padding:24px 32px;text-align:center;">
             <p style="margin:0 0 8px;font-size:13px;color:#888;">Questions about your order?</p>
             <p style="margin:0;font-size:13px;color:#666;">
-              WhatsApp: <a href="https://wa.me/254717264422" style="color:#1a1a1a;text-decoration:none;font-weight:600;">0717 264 422</a>
+              WhatsApp: <a href="https://wa.me/254780406059" style="color:#1a1a1a;text-decoration:none;font-weight:600;">0780 406 059</a>
               &nbsp;&bull;&nbsp;
               Email: <a href="mailto:herkingdomlive@gmail.com" style="color:#1a1a1a;text-decoration:none;font-weight:600;">herkingdomlive@gmail.com</a>
             </p>

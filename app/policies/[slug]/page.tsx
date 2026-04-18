@@ -111,8 +111,8 @@ export default async function PolicyPage({ params }: { params: Promise<{ slug: s
                 herkingdomlive@gmail.com
               </a>
               {" "}or call{" "}
-              <a href="tel:+254717264422" className="text-foreground font-medium hover:underline">
-                0717 264 422
+              <a href="tel:+254780406059" className="text-foreground font-medium hover:underline">
+                0780 406 059
               </a>
             </p>
             <Link href="/">

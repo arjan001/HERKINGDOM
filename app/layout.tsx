@@ -77,7 +77,7 @@ export const metadata: Metadata = {
     creator: "@herkingdom_jewelry",
     title: "Her Kingdom | Curated Jewelry & Accessories in Nairobi",
     description:
-      "Shop curated necklaces, bracelets, earrings, watches & accessories. Hypoallergenic jewelry delivered across Kenya. WhatsApp +254717264422.",
+      "Shop curated necklaces, bracelets, earrings, watches & accessories. Hypoallergenic jewelry delivered across Kenya. WhatsApp +254780406059.",
     images: [
       {
         url: `${siteUrl}/logo.png`,
@@ -181,9 +181,9 @@ export default function RootLayout({
               contactPoint: {
                 "@type": "ContactPoint",
                 contactType: "Customer Service",
-                telephone: "+254717264422",
+                telephone: "+254780406059",
                 email: "herkingdomlive@gmail.com",
-                url: "https://wa.me/254717264422",
+                url: "https://wa.me/254780406059",
                 availableLanguage: ["English", "Swahili"],
               },
               sameAs: [
@@ -209,7 +209,7 @@ export default function RootLayout({
               name: "Her Kingdom",
               description: "Her Kingdom is a jewelry brand based in Nairobi, Kenya offering curated necklaces, bracelets, earrings, watches, handbags & accessories. Hypoallergenic, long-lasting pieces delivered across Kenya.",
               url: siteUrl,
-              telephone: "+254717264422",
+              telephone: "+254780406059",
               email: "herkingdomlive@gmail.com",
               image: `${siteUrl}/logo.png`,
               logo: `${siteUrl}/logo.png`,

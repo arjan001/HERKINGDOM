@@ -121,7 +121,7 @@ INSERT INTO public.navbar_offers (text, is_active, sort_order) VALUES
   ('Hypoallergenic jewelry, hand-finished in Nairobi',                     true, 4),
   ('FREE gift wrapping on all jewelry sets — perfect for her',             true, 5),
   ('Same-day delivery within Nairobi CBD — order before 2pm',              true, 6),
-  ('WhatsApp 0717 264 422 for custom orders & styling advice',             true, 7),
+  ('WhatsApp 0780 406 059 for custom orders & styling advice',             true, 7),
   ('Flat 15% OFF women''s watches this month',                             true, 8);
 
 -- ============================================================

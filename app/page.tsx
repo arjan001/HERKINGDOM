@@ -40,7 +40,7 @@ const HOME_FAQS = [
   },
   {
     q: "Do you deliver jewelry gifts the same day in Nairobi?",
-    a: "Yes. We offer same-day delivery across Nairobi (CBD, Westlands, Kilimani, Karen, Lavington) and next-day courier delivery to Mombasa, Kisumu, Nakuru and Eldoret. Order via WhatsApp +254 717 264 422 for priority dispatch.",
+    a: "Yes. We offer same-day delivery across Nairobi (CBD, Westlands, Kilimani, Karen, Lavington) and next-day courier delivery to Mombasa, Kisumu, Nakuru and Eldoret. Order via WhatsApp +254 780 406 059 for priority dispatch.",
   },
   {
     q: "Can I buy a Mother's Day or Valentine's gift package?",
@@ -92,7 +92,7 @@ export default function Page() {
                 addressLocality: "Nairobi",
                 addressCountry: "KE",
               },
-              telephone: "+254717264422",
+              telephone: "+254780406059",
               email: "herkingdomlive@gmail.com",
               url: siteUrl,
             },

@@ -119,7 +119,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
                 "@type": "Organization",
                 name: "HerKingdom Jewelry",
                 url: siteUrl,
-                telephone: "+254717264422",
+                telephone: "+254780406059",
               },
               itemCondition: "https://schema.org/NewCondition",
             },

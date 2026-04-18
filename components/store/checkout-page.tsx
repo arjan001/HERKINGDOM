@@ -298,7 +298,7 @@ export function CheckoutPage() {
       }`
     )
 
-        window.open(`https://wa.me/254717264422?text=${message}`, "_blank")
+        window.open(`https://wa.me/254780406059?text=${message}`, "_blank")
     clearCart()
     resetGiftSelection()
     setIsSubmitting(false)
