@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ChevronRight, Minus, Plus, X, Truck, Loader2, CheckCircle, Package, MapPin, Gift, ChevronDown } from "lucide-react"
+import { ChevronRight, Minus, Plus, X, Truck, Loader2, CheckCircle, Package, MapPin, Gift, ChevronDown, Clock } from "lucide-react"
 import { TopBar } from "./top-bar"
 import { Navbar } from "./navbar"
 import { Footer } from "./footer"
@@ -38,6 +38,8 @@ export function CheckoutPage() {
   const [showGiftModal, setShowGiftModal] = useState(false)
   const [notesOpen, setNotesOpen] = useState(false)
   const [specialInstructions, setSpecialInstructions] = useState("")
+  const [fulfilmentMode, setFulfilmentMode] = useState<"delivery" | "pickup">("delivery")
+  const [draftRestored, setDraftRestored] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -47,6 +49,85 @@ export function CheckoutPage() {
   const isGift = giftSelection.isGift
   const giftMessage = giftSelection.messageNote
   const FREE_SHIPPING_THRESHOLD = 7000
+  const DRAFT_KEY = "hk_checkout_draft_v1"
+
+  // Restore in-flight checkout details after a refresh / flaky network so the
+  // customer doesn't have to retype everything if their connection drops.
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY)
+      if (!raw) return
+      const draft = JSON.parse(raw) as Partial<{
+        formData: typeof formData
+        deliveryLocation: string
+        specialInstructions: string
+        fulfilmentMode: "delivery" | "pickup"
+        savedAt: number
+      }>
+      // Ignore stale drafts older than 48h.
+      if (draft.savedAt && Date.now() - draft.savedAt > 48 * 60 * 60 * 1000) {
+        localStorage.removeItem(DRAFT_KEY)
+        return
+      }
+      if (draft.formData) {
+        setFormData((prev) => ({
+          name: draft.formData?.name || prev.name,
+          phone: draft.formData?.phone || prev.phone,
+          email: draft.formData?.email || prev.email,
+          address: draft.formData?.address || prev.address,
+        }))
+      }
+      if (draft.deliveryLocation) setDeliveryLocation(draft.deliveryLocation)
+      if (draft.specialInstructions) setSpecialInstructions(draft.specialInstructions)
+      if (draft.fulfilmentMode) setFulfilmentMode(draft.fulfilmentMode)
+      if (draft.formData?.name || draft.deliveryLocation) setDraftRestored(true)
+    } catch {
+      // Ignore malformed drafts.
+    }
+  }, [])
+
+  // Persist the draft while the customer is still on this page so a reload or
+  // a short connectivity blip doesn't wipe their progress.
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    if (orderResult) return
+    if (!formData.name && !formData.phone && !formData.address && !deliveryLocation) return
+    try {
+      localStorage.setItem(
+        DRAFT_KEY,
+        JSON.stringify({
+          formData,
+          deliveryLocation,
+          specialInstructions,
+          fulfilmentMode,
+          savedAt: Date.now(),
+        })
+      )
+    } catch {
+      // quota exceeded — ignore
+    }
+  }, [formData, deliveryLocation, specialInstructions, fulfilmentMode, orderResult])
+
+  // Also pre-fill from the most recent completed order (if we remembered one)
+  // so returning customers don't retype their name / phone / address.
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    if (formData.name || formData.phone || formData.address) return
+    try {
+      const raw = localStorage.getItem("hk_last_customer")
+      if (!raw) return
+      const last = JSON.parse(raw) as Partial<typeof formData>
+      setFormData((prev) => ({
+        name: last.name || prev.name,
+        phone: last.phone || prev.phone,
+        email: last.email || prev.email,
+        address: last.address || prev.address,
+      }))
+    } catch {
+      // ignore
+    }
+  }, [])
 
   // Hydrate gift state from the cart drawer's "Is this a gift?" toggle so the
   // customer doesn't have to re-enter wrap/ribbon/card message at checkout.
@@ -81,6 +162,29 @@ export function CheckoutPage() {
   const grandTotal = totalPrice + (freeShipping ? 0 : deliveryFee) + giftFee
   const amountToFreeShipping = Math.max(0, FREE_SHIPPING_THRESHOLD - totalPrice)
   const freeShippingProgress = Math.min(100, Math.round((totalPrice / FREE_SHIPPING_THRESHOLD) * 100))
+
+  // Group locations so the checkout dropdown is easy to scan:
+  //   pickup → delivery • inside Nairobi → outside Nairobi
+  // The option list is driven entirely by what admins configure.
+  const locationsByMode = {
+    delivery: deliveryLocations.filter((l) => (l.type || "delivery") === "delivery"),
+    pickup: deliveryLocations.filter((l) => l.type === "pickup"),
+  } as const
+  const visibleLocations = locationsByMode[fulfilmentMode]
+  const groupedLocations = {
+    nairobi: visibleLocations.filter((l) => (l.region || "nairobi") === "nairobi"),
+    outside_nairobi: visibleLocations.filter((l) => l.region === "outside_nairobi"),
+  }
+  const isPickupSelection = selectedDelivery?.type === "pickup"
+
+  // When the mode changes, drop a selection that no longer belongs to it.
+  useEffect(() => {
+    if (!selectedDelivery) return
+    const expectedType = fulfilmentMode
+    if ((selectedDelivery.type || "delivery") !== expectedType) {
+      setDeliveryLocation("")
+    }
+  }, [fulfilmentMode, selectedDelivery])
 
   // Validate Kenyan phone: +254, 254, 07, 01, 011
   const cleanPhone = formData.phone.replace(/[\s\-()]/g, "")
@@ -373,6 +477,24 @@ export function CheckoutPage() {
           body: JSON.stringify({ sessionId: sid }),
         }).catch(() => {})
       }
+      // Drop the in-progress draft now that we've converted, but remember the
+      // customer contact so they can breeze through the next checkout.
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.removeItem(DRAFT_KEY)
+          localStorage.setItem(
+            "hk_last_customer",
+            JSON.stringify({
+              name: formData.name,
+              phone: formData.phone,
+              email: formData.email,
+              address: formData.address,
+            })
+          )
+        } catch {
+          // ignore
+        }
+      }
     }
   }, [orderResult])
 
@@ -586,31 +708,111 @@ export function CheckoutPage() {
               {/* Delivery */}
               <div>
                 <h2 className="text-lg font-semibold mb-4">Delivery</h2>
+
+                {draftRestored && (
+                  <div className="mb-3 flex items-center gap-2 text-xs bg-[#00843D]/10 text-[#00843D] border border-[#00843D]/20 px-3 py-2 rounded-sm">
+                    <CheckCircle className="h-3.5 w-3.5 flex-shrink-0" />
+                    <span>We restored your last checkout details — edit anything that&apos;s changed.</span>
+                  </div>
+                )}
+
+                {/* Fulfilment mode toggle: door delivery vs matatu / SGR pickup */}
+                <div className="grid grid-cols-2 gap-2 mb-4">
+                  {([
+                    { key: "delivery", label: "Deliver to me", icon: Truck, sub: "Door-to-door courier" },
+                    { key: "pickup", label: "Pickup station", icon: Package, sub: "Matatu / SGR collection" },
+                  ] as const).map((opt) => {
+                    const active = fulfilmentMode === opt.key
+                    const disabled = locationsByMode[opt.key].length === 0
+                    return (
+                      <button
+                        key={opt.key}
+                        type="button"
+                        onClick={() => !disabled && setFulfilmentMode(opt.key)}
+                        disabled={disabled}
+                        className={`border rounded-sm px-3 py-3 text-left transition-colors ${
+                          active ? "border-foreground bg-secondary/60" : "border-border hover:bg-secondary/40"
+                        } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
+                      >
+                        <div className="flex items-center gap-2 text-sm font-medium">
+                          <opt.icon className="h-4 w-4" /> {opt.label}
+                        </div>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">
+                          {disabled ? "No options configured" : opt.sub}
+                        </p>
+                      </button>
+                    )
+                  })}
+                </div>
+
                 <div className="space-y-4">
                   <div>
-                    <Label className="text-sm font-medium mb-1.5 block">Delivery Location *</Label>
+                    <Label className="text-sm font-medium mb-1.5 block">
+                      {fulfilmentMode === "pickup" ? "Pickup Station *" : "Delivery Location *"}
+                    </Label>
                     <Select value={deliveryLocation} onValueChange={setDeliveryLocation}>
                       <SelectTrigger className="h-11">
-                        <SelectValue placeholder="Select delivery location" />
+                        <SelectValue placeholder={fulfilmentMode === "pickup" ? "Select a pickup / matatu station" : "Select delivery location"} />
                       </SelectTrigger>
                       <SelectContent>
-                        {deliveryLocations.map((loc) => (
-                          <SelectItem key={loc.id} value={loc.id}>
-                            {loc.name} — {formatPrice(loc.fee)} ({loc.estimatedDays})
-                          </SelectItem>
-                        ))}
+                        {groupedLocations.nairobi.length > 0 && (
+                          <>
+                            <div className="px-2 pt-2 pb-1 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                              Within Nairobi
+                            </div>
+                            {groupedLocations.nairobi.map((loc) => (
+                              <SelectItem key={loc.id} value={loc.id}>
+                                {loc.name} — {loc.fee > 0 ? formatPrice(loc.fee) : "Free"} ({loc.estimatedDays})
+                              </SelectItem>
+                            ))}
+                          </>
+                        )}
+                        {groupedLocations.outside_nairobi.length > 0 && (
+                          <>
+                            <div className="px-2 pt-3 pb-1 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-t border-border mt-1">
+                              Outside Nairobi — specify town
+                            </div>
+                            {groupedLocations.outside_nairobi.map((loc) => (
+                              <SelectItem key={loc.id} value={loc.id}>
+                                {loc.city ? `${loc.city} — ` : ""}{loc.name} — {loc.fee > 0 ? formatPrice(loc.fee) : "Free"} ({loc.estimatedDays})
+                              </SelectItem>
+                            ))}
+                          </>
+                        )}
+                        {visibleLocations.length === 0 && (
+                          <div className="px-3 py-6 text-xs text-muted-foreground text-center">
+                            No {fulfilmentMode === "pickup" ? "pickup stations" : "delivery areas"} configured yet.
+                          </div>
+                        )}
                       </SelectContent>
                     </Select>
+                    {selectedDelivery?.description && (
+                      <p className="mt-2 text-xs text-muted-foreground flex items-start gap-1.5">
+                        <Clock className="h-3 w-3 mt-0.5 flex-shrink-0" /> {selectedDelivery.description}
+                      </p>
+                    )}
                   </div>
+
                   <div>
-                    <Label htmlFor="address" className="text-sm font-medium mb-1.5 block">Delivery Address *</Label>
+                    <Label htmlFor="address" className="text-sm font-medium mb-1.5 block">
+                      {isPickupSelection
+                        ? "Pickup contact details (name at counter, landmarks)"
+                        : "Delivery Address *"}
+                    </Label>
                     <Textarea
                       id="address"
                       value={formData.address}
                       onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                      placeholder="Building name, street, area..."
+                      placeholder={isPickupSelection
+                        ? "Who will collect + any station notes (e.g. 'Ask for Jane at the counter')"
+                        : "Building name, street, nearest landmark…"}
                       rows={3}
                     />
+                    {isPickupSelection && (
+                      <p className="text-[11px] text-muted-foreground mt-1">
+                        We&apos;ll send parcel tracking details to your phone number.
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>

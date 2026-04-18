@@ -19,6 +19,39 @@ function formatPrice(price: number): string {
   return `KSh ${price.toLocaleString()}`
 }
 
+function getSessionId(): string {
+  if (typeof window === "undefined") return ""
+  let sid = sessionStorage.getItem("kf_sid")
+  if (!sid) {
+    sid = crypto.randomUUID()
+    sessionStorage.setItem("kf_sid", sid)
+  }
+  return sid
+}
+
+/** Fire-and-forget search tracking so admin analytics can surface most-searched terms. */
+function trackSearch(query: string, action: "submit" | "suggestion_click", suggestion?: string) {
+  if (typeof window === "undefined") return
+  const normalised = query.trim().toLowerCase().slice(0, 80)
+  if (!normalised) return
+  try {
+    fetch("/api/track-event", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        eventType: "search",
+        eventTarget: normalised,
+        eventData: { action, suggestion: suggestion || null, raw: query.slice(0, 200) },
+        pagePath: window.location.pathname,
+        sessionId: getSessionId(),
+      }),
+      keepalive: true,
+    }).catch(() => {})
+  } catch {
+    // ignore
+  }
+}
+
 export function Navbar() {
   const router = useRouter()
   const { totalItems, setIsCartOpen } = useCart()
@@ -70,8 +103,10 @@ export function Navbar() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    if (searchQuery.trim()) {
-      router.push(`/shop?q=${encodeURIComponent(searchQuery.trim())}`)
+    const query = searchQuery.trim()
+    if (query) {
+      trackSearch(query, "submit")
+      router.push(`/shop?q=${encodeURIComponent(query)}`)
       setSearchQuery("")
       setShowSuggestions(false)
       setSearchOpen(false)
@@ -79,6 +114,8 @@ export function Navbar() {
   }
 
   const handleSuggestionClick = (slug: string) => {
+    const query = searchQuery.trim()
+    if (query) trackSearch(query, "suggestion_click", slug)
     setShowSuggestions(false)
     setSearchQuery("")
     setSearchOpen(false)
