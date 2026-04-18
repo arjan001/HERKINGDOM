@@ -16,6 +16,7 @@ import {
   Wallet,
 } from "lucide-react"
 
+
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
 interface Transaction {
@@ -194,74 +195,6 @@ function StkPushForm() {
   )
 }
 
-function BalanceCard() {
-  const { data, isLoading } = useSWR<BalanceInfo>(
-    "/api/admin/payments?action=balance",
-    fetcher,
-    { refreshInterval: 30000 },
-  )
-
-  const serviceBalance = data?.serviceWallet?.balance
-  const paymentBalance = data?.paymentWallet?.balance
-  const serviceError = data?.serviceWallet?.error
-  const paymentError = data?.paymentWallet?.error
-
-  return (
-    <div className="p-5 rounded-md border border-border bg-gradient-to-br from-[#00843D]/5 to-background sm:col-span-2">
-      <div className="flex items-center justify-between">
-        <p className="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-          <Wallet className="h-3.5 w-3.5" />
-          PayHero Wallets
-        </p>
-        <button
-          type="button"
-          onClick={() => mutate("/api/admin/payments?action=balance")}
-          className="text-[11px] text-muted-foreground hover:text-foreground"
-        >
-          Refresh
-        </button>
-      </div>
-      {isLoading ? (
-        <p className="text-sm text-muted-foreground mt-3">Loading balance...</p>
-      ) : !data?.configured ? (
-        <p className="text-xs text-muted-foreground mt-2">Add PayHero credentials to see your balance.</p>
-      ) : data.error && serviceBalance == null && paymentBalance == null ? (
-        <div className="mt-2">
-          <p className="text-xs text-red-600">{data.error}</p>
-          <p className="text-[11px] text-muted-foreground mt-1">
-            Sign in to{" "}
-            <a href="https://app.payhero.co.ke" target="_blank" rel="noopener noreferrer" className="underline">
-              app.payhero.co.ke
-            </a>{" "}
-            and confirm the API credentials and channel ID match this account.
-          </p>
-        </div>
-      ) : (
-        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Service wallet</p>
-            {typeof serviceBalance === "number" ? (
-              <p className="text-2xl font-bold mt-1 text-[#00843D]">{formatPrice(serviceBalance)}</p>
-            ) : (
-              <p className="text-xs text-red-600 mt-1">{serviceError || "Unavailable"}</p>
-            )}
-            <p className="text-[11px] text-muted-foreground mt-1">Funds PayHero deducts STK push fees from.</p>
-          </div>
-          <div>
-            <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Payment wallet</p>
-            {typeof paymentBalance === "number" ? (
-              <p className="text-2xl font-bold mt-1 text-[#00843D]">{formatPrice(paymentBalance)}</p>
-            ) : (
-              <p className="text-xs text-red-600 mt-1">{paymentError || "Unavailable"}</p>
-            )}
-            <p className="text-[11px] text-muted-foreground mt-1">Customer payments available to withdraw.</p>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
 type PaymentsTab = "transactions" | "stk-push" | "card-payments"
 
 interface AdminPaymentsProps {
@@ -306,7 +239,7 @@ export function AdminPayments({ initialTab = "transactions" }: AdminPaymentsProp
           <div>
             <h1 className="text-2xl font-serif font-bold">Payments</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Accept M-Pesa via PayHero, monitor your wallet balance, send STK push requests, and review card payment orders.
+              Accept M-Pesa via PayHero, send STK push requests, and review card payment orders.
             </p>
           </div>
           <button
@@ -345,9 +278,8 @@ export function AdminPayments({ initialTab = "transactions" }: AdminPaymentsProp
           </div>
         )}
 
-        {/* Stats + wallet balance */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          <BalanceCard />
+        {/* Stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="p-4 rounded-md border border-border">
             <p className="text-xs text-muted-foreground uppercase tracking-wider">M-Pesa Revenue</p>
             <p className="text-2xl font-bold mt-1">{formatPrice(totalRevenue)}</p>
