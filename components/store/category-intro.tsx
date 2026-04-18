@@ -29,9 +29,9 @@ export function CategoryIntro({
   return (
     <section
       aria-label={`${category.name} — category summary`}
-      className="bg-background border-b border-border"
+      className="sr-only"
     >
-      <div className="container mx-auto px-4 py-10">
+      <div>
         <nav aria-label="Breadcrumb" className="text-xs text-muted-foreground mb-4">
           <ol className="flex items-center gap-2 flex-wrap">
             <li>
