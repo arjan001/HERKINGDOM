@@ -206,9 +206,6 @@ export function GiftOptionsModal({ open, onClose, selection, onChange, mode = "n
       <div className="mt-3 flex-1 min-w-0">
         <p className="text-sm font-medium leading-snug line-clamp-2">{it.name}</p>
         <p className="text-sm font-semibold mt-1">{formatPrice(it.price)}</p>
-        {it.description && (
-          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{it.description}</p>
-        )}
       </div>
       <Button
         type="button"
