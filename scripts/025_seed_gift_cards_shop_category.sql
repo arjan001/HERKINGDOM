@@ -25,44 +25,48 @@
 -- and 023_seed_greeting_cards_all.sql must have been applied first
 -- (the card image assets live under /public/images/products/gift-cards/).
 -- ============================================================
+-- Run this SQL in Supabase SQL Editor.
+-- ============================================================
 
+-- ------------------------------------------------------------
+-- 1. "Gift Cards" category (image powers breadcrumb hero too)
+-- ------------------------------------------------------------
+INSERT INTO public.categories (name, slug, description, image_url, sort_order, is_active)
+VALUES (
+  'Gift Cards',
+  'gift-cards',
+  'Handcrafted greeting cards for every milestone - love notes, birthdays, anniversaries, baby reveals, thank-yous and the quiet in-between moments. Each card is a keepsake in its own right, printed on premium matte cardstock with an envelope included.',
+  '/images/products/gift-cards/happy-anniversary-assorted-box.webp',
+  16,
+  true
+)
+ON CONFLICT (slug) DO UPDATE SET
+  name        = EXCLUDED.name,
+  description = EXCLUDED.description,
+  image_url   = EXCLUDED.image_url,
+  sort_order  = EXCLUDED.sort_order,
+  is_active   = EXCLUDED.is_active,
+  updated_at  = now();
+
+-- ------------------------------------------------------------
+-- 2. Seed all 33 greeting cards as products under the
+--    "Gift Cards" category, plus product_images and tags.
+-- ------------------------------------------------------------
 DO $$
 DECLARE
-  cat_id uuid;
-  prod_id uuid;
-  tag_gift_idea    uuid;
-  tag_new_arrival  uuid;
-  tag_valentine    uuid;
-  tag_anniversary  uuid;
-  tag_birthday     uuid;
-  tag_trending     uuid;
-  tag_best_seller  uuid;
-  rec record;
+  v_cat_id        uuid;
+  v_prod_id       uuid;
+  tag_gift_idea   uuid;
+  tag_new_arrival uuid;
+  tag_valentine   uuid;
+  tag_anniversary uuid;
+  tag_birthday    uuid;
+  tag_trending    uuid;
+  tag_best_seller uuid;
+  rec             record;
 BEGIN
-
-  -- ------------------------------------------------------------
-  -- 1. "Gift Cards" category (image powers breadcrumb hero too)
-  -- ------------------------------------------------------------
-  INSERT INTO public.categories (name, slug, description, image_url, sort_order, is_active)
-  VALUES (
-    'Gift Cards',
-    'gift-cards',
-    'Handcrafted greeting cards for every milestone - love notes, birthdays, anniversaries, baby reveals, thank-yous and the quiet in-between moments. Each card is a keepsake in its own right, printed on premium matte cardstock with an envelope included.',
-    '/images/products/gift-cards/happy-anniversary-assorted-box.webp',
-    16,
-    true
-  )
-  ON CONFLICT (slug) DO UPDATE SET
-    name        = EXCLUDED.name,
-    description = EXCLUDED.description,
-    image_url   = EXCLUDED.image_url,
-    sort_order  = EXCLUDED.sort_order,
-    is_active   = EXCLUDED.is_active,
-    updated_at  = now();
-
-  SELECT id INTO cat_id FROM public.categories WHERE slug = 'gift-cards';
-
-  IF cat_id IS NULL THEN
+  SELECT id INTO v_cat_id FROM public.categories WHERE slug = 'gift-cards';
+  IF v_cat_id IS NULL THEN
     RAISE EXCEPTION 'Gift Cards category could not be created.';
   END IF;
 
@@ -74,9 +78,6 @@ BEGIN
   SELECT id INTO tag_trending     FROM public.tags WHERE slug = 'trending';
   SELECT id INTO tag_best_seller  FROM public.tags WHERE slug = 'best-seller';
 
-  -- ------------------------------------------------------------
-  -- 2. Seed all 33 greeting cards as products
-  -- ------------------------------------------------------------
   FOR rec IN
     SELECT * FROM (VALUES
       -- 1
@@ -287,7 +288,7 @@ BEGIN
     )
     VALUES (
       rec.name, rec.slug, rec.description, rec.price,
-      cat_id, true, false, 0,
+      v_cat_id, true, false, 0,
       true, (rec.sort_order <= 6), 'women',
       ARRAY[rec.image_url]::text[], rec.sort_order,
       '250gsm premium matte cardstock',
@@ -308,45 +309,43 @@ BEGIN
       sort_order        = EXCLUDED.sort_order,
       material          = EXCLUDED.material,
       care_instructions = EXCLUDED.care_instructions,
-      updated_at        = now()
-    RETURNING id INTO prod_id;
+      updated_at        = now();
 
-    IF prod_id IS NULL THEN
-      SELECT id INTO prod_id FROM public.products WHERE slug = rec.slug;
-    END IF;
+    SELECT id INTO v_prod_id FROM public.products WHERE slug = rec.slug;
 
-    IF prod_id IS NOT NULL THEN
+    IF v_prod_id IS NOT NULL THEN
       -- Re-seed the primary product image idempotently so re-runs do
       -- not accumulate duplicate rows in product_images.
-      DELETE FROM public.product_images WHERE product_id = prod_id;
+      DELETE FROM public.product_images WHERE product_id = v_prod_id;
       INSERT INTO public.product_images (product_id, image_url, alt_text, sort_order, is_primary)
-      VALUES (prod_id, rec.image_url, rec.name, 0, true);
+      VALUES (v_prod_id, rec.image_url, rec.name, 0, true);
 
       -- Attach tags declared in the VALUES row.
-      IF 'gift-idea'   = ANY(rec.tags) AND tag_gift_idea   IS NOT NULL THEN INSERT INTO public.product_tags(product_id, tag_id) VALUES (prod_id, tag_gift_idea)   ON CONFLICT DO NOTHING; END IF;
-      IF 'new-arrival' = ANY(rec.tags) AND tag_new_arrival IS NOT NULL THEN INSERT INTO public.product_tags(product_id, tag_id) VALUES (prod_id, tag_new_arrival) ON CONFLICT DO NOTHING; END IF;
-      IF 'valentine'   = ANY(rec.tags) AND tag_valentine   IS NOT NULL THEN INSERT INTO public.product_tags(product_id, tag_id) VALUES (prod_id, tag_valentine)   ON CONFLICT DO NOTHING; END IF;
-      IF 'anniversary' = ANY(rec.tags) AND tag_anniversary IS NOT NULL THEN INSERT INTO public.product_tags(product_id, tag_id) VALUES (prod_id, tag_anniversary) ON CONFLICT DO NOTHING; END IF;
-      IF 'birthday'    = ANY(rec.tags) AND tag_birthday    IS NOT NULL THEN INSERT INTO public.product_tags(product_id, tag_id) VALUES (prod_id, tag_birthday)    ON CONFLICT DO NOTHING; END IF;
-      IF 'trending'    = ANY(rec.tags) AND tag_trending    IS NOT NULL THEN INSERT INTO public.product_tags(product_id, tag_id) VALUES (prod_id, tag_trending)    ON CONFLICT DO NOTHING; END IF;
-      IF 'best-seller' = ANY(rec.tags) AND tag_best_seller IS NOT NULL THEN INSERT INTO public.product_tags(product_id, tag_id) VALUES (prod_id, tag_best_seller) ON CONFLICT DO NOTHING; END IF;
+      IF 'gift-idea'   = ANY(rec.tags) AND tag_gift_idea   IS NOT NULL THEN INSERT INTO public.product_tags(product_id, tag_id) VALUES (v_prod_id, tag_gift_idea)   ON CONFLICT DO NOTHING; END IF;
+      IF 'new-arrival' = ANY(rec.tags) AND tag_new_arrival IS NOT NULL THEN INSERT INTO public.product_tags(product_id, tag_id) VALUES (v_prod_id, tag_new_arrival) ON CONFLICT DO NOTHING; END IF;
+      IF 'valentine'   = ANY(rec.tags) AND tag_valentine   IS NOT NULL THEN INSERT INTO public.product_tags(product_id, tag_id) VALUES (v_prod_id, tag_valentine)   ON CONFLICT DO NOTHING; END IF;
+      IF 'anniversary' = ANY(rec.tags) AND tag_anniversary IS NOT NULL THEN INSERT INTO public.product_tags(product_id, tag_id) VALUES (v_prod_id, tag_anniversary) ON CONFLICT DO NOTHING; END IF;
+      IF 'birthday'    = ANY(rec.tags) AND tag_birthday    IS NOT NULL THEN INSERT INTO public.product_tags(product_id, tag_id) VALUES (v_prod_id, tag_birthday)    ON CONFLICT DO NOTHING; END IF;
+      IF 'trending'    = ANY(rec.tags) AND tag_trending    IS NOT NULL THEN INSERT INTO public.product_tags(product_id, tag_id) VALUES (v_prod_id, tag_trending)    ON CONFLICT DO NOTHING; END IF;
+      IF 'best-seller' = ANY(rec.tags) AND tag_best_seller IS NOT NULL THEN INSERT INTO public.product_tags(product_id, tag_id) VALUES (v_prod_id, tag_best_seller) ON CONFLICT DO NOTHING; END IF;
     END IF;
   END LOOP;
 
-  -- ------------------------------------------------------------
-  -- 3. Mirror rich shop descriptions back into the checkout
-  --    gift_items catalogue so the admin only edits copy in one
-  --    place. The modal itself only renders name + price, so the
-  --    richer description simply stays available for other surfaces
-  --    (admin table, order receipts) without leaking into the modal.
-  -- ------------------------------------------------------------
-  UPDATE public.gift_items g
-     SET description = p.description,
-         updated_at  = now()
-    FROM public.products p
-   WHERE g.category   = 'greeting_card'
-     AND p.category_id = cat_id
-     AND g.name       = p.name;
-
   RAISE NOTICE 'Success: Gift Cards category created and 33 greeting cards seeded into public.products (category = gift-cards).';
 END $$;
+
+-- ------------------------------------------------------------
+-- 3. Mirror rich shop descriptions back into the checkout
+--    gift_items catalogue so the admin only edits copy in one
+--    place. The modal itself only renders name + price, so the
+--    richer description simply stays available for other surfaces
+--    (admin table, order receipts) without leaking into the modal.
+-- ------------------------------------------------------------
+UPDATE public.gift_items g
+   SET description = p.description,
+       updated_at  = now()
+  FROM public.products p
+  JOIN public.categories c ON c.id = p.category_id
+ WHERE g.category = 'greeting_card'
+   AND c.slug     = 'gift-cards'
+   AND g.name     = p.name;
