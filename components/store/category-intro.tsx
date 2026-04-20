@@ -16,15 +16,18 @@ export function CategoryIntro({
   category,
   products,
   siteUrl,
+  contactPhone,
 }: {
   category: CategorySeoMeta
   products: Product[]
   siteUrl: string
+  contactPhone?: string
 }) {
   const topProducts = products.slice(0, 24)
   const description =
     category.description ||
     `Shop ${category.name.toLowerCase()} at Her Kingdom Nairobi. Hypoallergenic, long-lasting ${category.name.toLowerCase()} delivered across Kenya. Same-day Nairobi delivery, nationwide courier and WhatsApp ordering.`
+  const phoneDisplay = contactPhone && contactPhone.trim() ? contactPhone : "+254 780 406 059"
 
   return (
     <section
@@ -54,8 +57,8 @@ export function CategoryIntro({
         </p>
         <p className="mt-2 text-xs text-muted-foreground">
           {products.length > 0
-            ? `${products.length} ${category.name.toLowerCase()} available · Delivered across Kenya · WhatsApp +254 780 406 059`
-            : `New ${category.name.toLowerCase()} arriving soon. Browse the full Her Kingdom catalog or message us on WhatsApp +254 780 406 059 for personal recommendations.`}
+            ? `${products.length} ${category.name.toLowerCase()} available · Delivered across Kenya · WhatsApp ${phoneDisplay}`
+            : `New ${category.name.toLowerCase()} arriving soon. Browse the full Her Kingdom catalog or message us on WhatsApp ${phoneDisplay} for personal recommendations.`}
         </p>
 
         {topProducts.length > 0 && (

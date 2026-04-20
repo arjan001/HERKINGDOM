@@ -40,13 +40,17 @@ export function useStoreContact() {
 
   const s = data?.settings || {}
 
+  // Admin UI writes to `whatsapp_number` and `store_phone` only. `footer_whatsapp`
+  // and `footer_phone` are legacy columns that are never updated via the admin
+  // form, so prefer the admin-editable fields and fall back to the legacy ones
+  // only when the admin-editable values are empty.
   const whatsappDigits =
-    onlyDigits(s.footer_whatsapp) ||
     onlyDigits(s.whatsapp_number) ||
     onlyDigits(s.store_phone) ||
+    onlyDigits(s.footer_whatsapp) ||
     FALLBACK_WHATSAPP
 
-  const phoneSource = s.footer_phone || s.store_phone || s.whatsapp_number || ""
+  const phoneSource = s.store_phone || s.whatsapp_number || s.footer_phone || ""
   const phoneDisplay = formatPhoneDisplay(phoneSource, FALLBACK_PHONE_DISPLAY)
 
   const phoneDialDigits = onlyDigits(phoneSource) || whatsappDigits

@@ -58,9 +58,12 @@ export function Footer() {
   const tiktok = s.footer_tiktok || DEFAULTS.footer_tiktok
   const twitter = s.footer_twitter || DEFAULTS.footer_twitter
   const description = s.footer_description || DEFAULTS.footer_description
-  const phone = s.footer_phone || s.store_phone || DEFAULTS.footer_phone
-  const email = s.footer_email || s.store_email || DEFAULTS.footer_email
-  const whatsappNumber = s.footer_whatsapp || s.whatsapp_number || DEFAULTS.footer_whatsapp
+  // Admin general settings saves to `store_phone` and `whatsapp_number`. Prefer
+  // those over the legacy `footer_phone` / `footer_whatsapp` columns that the
+  // admin form does not currently edit.
+  const phone = s.store_phone || s.footer_phone || DEFAULTS.footer_phone
+  const email = s.store_email || s.footer_email || DEFAULTS.footer_email
+  const whatsappNumber = s.whatsapp_number || s.store_phone || s.footer_whatsapp || DEFAULTS.footer_whatsapp
   const copyright = s.copyright_text || DEFAULTS.copyright_text
   const dispatchDays = s.footer_dispatch_days || DEFAULTS.footer_dispatch_days
   const waHref = whatsappHref(whatsappNumber)

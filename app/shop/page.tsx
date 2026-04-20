@@ -4,7 +4,7 @@ import { ShopPage } from "@/components/store/shop-page"
 import { CategoryIntro } from "@/components/store/category-intro"
 import type { Metadata } from "next"
 import { SITE_SEO, PAGE_SEO, PAGE_KEYWORDS, generateCategoryKeywords, buildCategorySeo } from "@/lib/seo-data"
-import { getCategoryBySlug, getProductsByCategory } from "@/lib/supabase-data"
+import { getCategoryBySlug, getProductsByCategory, getSiteSettings } from "@/lib/supabase-data"
 import {
   SEO_MODIFIERS,
   SEO_OCCASIONS,
@@ -303,6 +303,21 @@ export default async function Page({ searchParams }: PageProps) {
     ? await getProductsByCategory(category.slug).catch(() => [])
     : []
 
+  const siteSettings = category ? await getSiteSettings().catch(() => null) : null
+  const onlyDigits = (v: unknown) => String(v ?? "").replace(/[^\d]/g, "")
+  const formatWhatsapp = (raw: unknown): string => {
+    const d = onlyDigits(raw)
+    if (!d) return ""
+    if (d.length === 12 && d.startsWith("254")) return `+${d.slice(0, 3)} ${d.slice(3, 6)} ${d.slice(6, 9)} ${d.slice(9)}`
+    if (d.length === 10 && d.startsWith("0")) return `${d.slice(0, 4)} ${d.slice(4, 7)} ${d.slice(7)}`
+    return String(raw ?? "").trim()
+  }
+  const categoryContactPhone = formatWhatsapp(
+    (siteSettings as any)?.whatsapp_number ||
+      (siteSettings as any)?.store_phone ||
+      (siteSettings as any)?.footer_whatsapp,
+  )
+
   const jsonLd = category
     ? {
         "@context": "https://schema.org",
@@ -367,6 +382,7 @@ export default async function Page({ searchParams }: PageProps) {
                 category={category}
                 products={categoryProducts}
                 siteUrl={siteUrl}
+                contactPhone={categoryContactPhone}
               />
             ) : null
           }
