@@ -1,21 +1,40 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import useSWR from "swr"
 import { X } from "lucide-react"
 
-const WHATSAPP_NUMBER = "254780406059"
+const FALLBACK_WHATSAPP_NUMBER = "254780406059"
 const DEFAULT_MESSAGE = "Hi Her Kingdom! I'd like to chat about an order."
+
+const fetcher = (url: string) => fetch(url).then((r) => r.json())
+
+type SiteDataResponse = {
+  settings?: {
+    whatsapp_number?: string
+    footer_whatsapp?: string
+    store_phone?: string
+  }
+}
 
 export function FloatingWhatsApp() {
   const [open, setOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const { data } = useSWR<SiteDataResponse>("/api/site-data", fetcher)
 
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 400)
     return () => clearTimeout(t)
   }, [])
 
-  const href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(DEFAULT_MESSAGE)}`
+  const rawNumber =
+    data?.settings?.footer_whatsapp ||
+    data?.settings?.whatsapp_number ||
+    data?.settings?.store_phone ||
+    FALLBACK_WHATSAPP_NUMBER
+  const whatsappNumber = rawNumber.replace(/[^\d]/g, "") || FALLBACK_WHATSAPP_NUMBER
+
+  const href = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(DEFAULT_MESSAGE)}`
 
   return (
     <div
