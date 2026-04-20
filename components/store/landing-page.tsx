@@ -1,5 +1,6 @@
 "use client"
 
+import useSWR from "swr"
 import { TopBar } from "./top-bar"
 import { Navbar } from "./navbar"
 import { Hero } from "./hero"
@@ -14,7 +15,12 @@ import { Footer } from "./footer"
 import { OfferModal } from "./offer-modal"
 import { RecentPurchase } from "./recent-purchase"
 
+const fetcher = (url: string) => fetch(url).then((r) => r.json())
+
 export function LandingPage({ faqs }: { faqs?: Faq[] }) {
+  const { data } = useSWR<{ settings?: { show_newsletter?: boolean } }>("/api/site-data", fetcher)
+  const showNewsletter = data?.settings?.show_newsletter ?? true
+
   return (
     <div className="min-h-screen flex flex-col">
       <TopBar />
@@ -26,7 +32,7 @@ export function LandingPage({ faqs }: { faqs?: Faq[] }) {
         <NewArrivals />
         <OnOfferProducts />
         {faqs && faqs.length > 0 && <FaqSection faqs={faqs} />}
-        <Newsletter />
+        {showNewsletter && <Newsletter />}
       </main>
       <Footer />
       <OfferModal />

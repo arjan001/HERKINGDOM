@@ -1,10 +1,74 @@
+"use client"
+
 import Link from "next/link"
 import Image from "next/image"
+import useSWR from "swr"
 import { Phone, Mail, Clock, MapPin } from "lucide-react"
 import { FloatingWhatsApp } from "./floating-whatsapp"
 import { SeoLinkCloud } from "./seo-link-cloud"
 
+const fetcher = (url: string) => fetch(url).then((r) => r.json())
+
+type FooterSettings = {
+  store_email?: string
+  store_phone?: string
+  whatsapp_number?: string
+  footer_description?: string
+  footer_instagram?: string
+  footer_tiktok?: string
+  footer_twitter?: string
+  footer_phone?: string
+  footer_email?: string
+  footer_whatsapp?: string
+  copyright_text?: string
+  footer_dispatch_days?: string
+}
+
+const DEFAULTS: Required<FooterSettings> = {
+  store_email: "herkingdomlive@gmail.com",
+  store_phone: "+254780406059",
+  whatsapp_number: "254780406059",
+  footer_description:
+    "Curated jewelry & accessories that complement your personal style and embody individuality. Hypoallergenic, long-lasting pieces delivered across Kenya.",
+  footer_instagram: "https://www.instagram.com/herkingdom_jewelry/",
+  footer_tiktok: "https://www.tiktok.com/@herkingdom_jewelry",
+  footer_twitter: "",
+  footer_phone: "0780 406 059",
+  footer_email: "herkingdomlive@gmail.com",
+  footer_whatsapp: "254780406059",
+  copyright_text: "© 2026 Her Kingdom. All rights reserved.",
+  footer_dispatch_days: "Tuesdays & Fridays",
+}
+
+function extractHandle(url: string, fallback = ""): string {
+  if (!url) return fallback
+  const match = url.match(/@([A-Za-z0-9._-]+)/) || url.match(/\/([A-Za-z0-9._-]+)\/?$/)
+  return match ? `@${match[1]}` : fallback
+}
+
+function whatsappHref(number: string): string {
+  const digits = (number || "").replace(/[^\d]/g, "")
+  return digits ? `https://wa.me/${digits}` : "#"
+}
+
 export function Footer() {
+  const { data } = useSWR<{ settings?: FooterSettings }>("/api/site-data", fetcher)
+  const s = data?.settings || {}
+  const instagram = s.footer_instagram || DEFAULTS.footer_instagram
+  const tiktok = s.footer_tiktok || DEFAULTS.footer_tiktok
+  const twitter = s.footer_twitter || DEFAULTS.footer_twitter
+  const description = s.footer_description || DEFAULTS.footer_description
+  const phone = s.footer_phone || s.store_phone || DEFAULTS.footer_phone
+  const email = s.footer_email || s.store_email || DEFAULTS.footer_email
+  const whatsappNumber = s.footer_whatsapp || s.whatsapp_number || DEFAULTS.footer_whatsapp
+  const copyright = s.copyright_text || DEFAULTS.copyright_text
+  const dispatchDays = s.footer_dispatch_days || DEFAULTS.footer_dispatch_days
+  const waHref = whatsappHref(whatsappNumber)
+  const phoneHref = `tel:${phone.replace(/\s+/g, "")}`
+  const emailHref = `mailto:${email}`
+  const instagramHandle = extractHandle(instagram, "@herkingdom_jewelry")
+  const tiktokHandle = extractHandle(tiktok, "@herkingdom_jewelry")
+
   return (
     <footer className="bg-foreground text-background">
       <div className="mx-auto max-w-7xl px-4 py-14 lg:py-16">
@@ -21,11 +85,11 @@ export function Footer() {
               />
             </Link>
             <p className="text-background/60 text-sm mt-4 leading-relaxed max-w-xs">
-              Curated jewelry & accessories that complement your personal style and embody individuality. Hypoallergenic, long-lasting pieces delivered across Kenya.
+              {description}
             </p>
             <div className="flex items-center gap-3 mt-6">
               <a
-                href="https://www.instagram.com/herkingdom_jewelry/"
+                href={instagram}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 flex items-center justify-center bg-primary hover:bg-secondary rounded-lg transition-colors"
@@ -36,7 +100,7 @@ export function Footer() {
                 </svg>
               </a>
               <a
-                href="https://www.tiktok.com/@herkingdom_jewelry"
+                href={tiktok}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 flex items-center justify-center bg-primary hover:bg-secondary rounded-lg transition-colors"
@@ -46,8 +110,21 @@ export function Footer() {
                   <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 00-.79-.05A6.34 6.34 0 003.15 15.2a6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.34-6.34V8.87a8.16 8.16 0 004.77 1.52V6.94a4.85 4.85 0 01-1.01-.25z" />
                 </svg>
               </a>
+              {twitter && (
+                <a
+                  href={twitter}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 flex items-center justify-center bg-primary hover:bg-secondary rounded-lg transition-colors"
+                  aria-label="Follow us on X"
+                >
+                  <svg className="h-5 w-5 text-primary-foreground" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M18.244 2H21.5l-7.51 8.583L22.5 22h-6.844l-5.36-6.72L4.1 22H.84l8.03-9.183L.5 2h6.97l4.846 6.142L18.244 2zm-1.2 18h1.82L7.04 4h-1.9l11.904 16z" />
+                  </svg>
+                </a>
+              )}
               <a
-                href="https://wa.me/254780406059"
+                href={waHref}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 flex items-center justify-center bg-[#25D366] rounded-lg hover:opacity-80 transition-opacity"
@@ -131,14 +208,14 @@ export function Footer() {
             <div className="flex flex-col gap-4">
               <div className="flex items-center gap-3">
                 <Phone className="h-4 w-4 text-background/40 flex-shrink-0" />
-                <a href="tel:+254780406059" className="text-background/60 text-sm hover:text-background transition-colors">
-                  0780 406 059
+                <a href={phoneHref} className="text-background/60 text-sm hover:text-background transition-colors">
+                  {phone}
                 </a>
               </div>
               <div className="flex items-center gap-3">
                 <Mail className="h-4 w-4 text-background/40 flex-shrink-0" />
-                <a href="mailto:herkingdomlive@gmail.com" className="text-background/60 text-sm hover:text-background transition-colors">
-                  herkingdomlive@gmail.com
+                <a href={emailHref} className="text-background/60 text-sm hover:text-background transition-colors">
+                  {email}
                 </a>
               </div>
               <div className="flex items-start gap-3">
@@ -146,7 +223,7 @@ export function Footer() {
                 <p className="text-background/60 text-sm leading-relaxed">
                   Available for orders online
                   <br />
-                  Dispatch: Tuesdays & Fridays
+                  Dispatch: {dispatchDays}
                 </p>
               </div>
               <div className="flex items-start gap-3">
@@ -167,7 +244,7 @@ export function Footer() {
             </h3>
             <div className="flex flex-col gap-3">
               <a
-                href="https://www.instagram.com/herkingdom_jewelry/"
+                href={instagram}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 text-background/60 text-sm hover:text-background transition-colors group"
@@ -175,10 +252,10 @@ export function Footer() {
                 <span className="w-8 h-8 flex items-center justify-center bg-background/10 rounded-md group-hover:bg-background/20 transition-colors flex-shrink-0">
                   <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" /></svg>
                 </span>
-                @herkingdom_jewelry
+                {instagramHandle}
               </a>
               <a
-                href="https://www.tiktok.com/@herkingdom_jewelry"
+                href={tiktok}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 text-background/60 text-sm hover:text-background transition-colors group"
@@ -186,10 +263,10 @@ export function Footer() {
                 <span className="w-8 h-8 flex items-center justify-center bg-background/10 rounded-md group-hover:bg-background/20 transition-colors flex-shrink-0">
                   <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 00-.79-.05A6.34 6.34 0 003.15 15.2a6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.34-6.34V8.87a8.16 8.16 0 004.77 1.52V6.94a4.85 4.85 0 01-1.01-.25z" /></svg>
                 </span>
-                @herkingdom_jewelry
+                {tiktokHandle}
               </a>
               <a
-                href="https://wa.me/254780406059"
+                href={waHref}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 text-background/60 text-sm hover:text-background transition-colors group"
@@ -207,7 +284,7 @@ export function Footer() {
         <div className="mt-12 pt-8 border-t border-background/10">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-background/40 text-xs">
-              {"© 2026 Her Kingdom. All rights reserved."}
+              {copyright}
             </p>
             <div className="flex items-center gap-6">
               <Link href="/privacy-policy" className="text-background/40 text-xs hover:text-background transition-colors">

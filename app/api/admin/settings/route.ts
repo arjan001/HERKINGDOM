@@ -27,29 +27,39 @@ export async function PUT(request: NextRequest) {
   const { data: current } = await supabase.from("site_settings").select("id").limit(1).single()
   if (!current) return NextResponse.json({ error: "No settings row found" }, { status: 404 })
 
+  const updates: Record<string, unknown> = {}
+  const assign = (key: string, value: unknown) => {
+    if (value !== undefined) updates[key] = value
+  }
+
+  assign("store_name", body.storeName)
+  assign("store_email", body.storeEmail)
+  assign("store_phone", body.storePhone)
+  assign("whatsapp_number", body.whatsappNumber)
+  assign("currency_symbol", body.currency)
+  if (body.freeShippingThreshold !== undefined) {
+    const n = Number(body.freeShippingThreshold)
+    updates.free_shipping_threshold = Number.isFinite(n) ? n : 0
+  }
+  assign("enable_whatsapp_checkout", body.enableWhatsappCheckout)
+  assign("maintenance_mode", body.maintenanceMode)
+  assign("site_title", body.metaTitle)
+  assign("site_description", body.metaDescription)
+  assign("meta_keywords", body.metaKeywords)
+  assign("primary_color", body.primaryColor)
+  assign("logo_image_url", body.logoUrl)
+  assign("favicon_url", body.faviconUrl)
+  assign("footer_description", body.footerText)
+  assign("footer_instagram", body.socialInstagram)
+  assign("footer_tiktok", body.socialTiktok)
+  assign("footer_twitter", body.socialTwitter)
+  assign("show_newsletter", body.enableNewsletter)
+
+  updates.updated_at = new Date().toISOString()
+
   const { error } = await supabase
     .from("site_settings")
-    .update({
-      store_name: body.storeName,
-      store_email: body.storeEmail,
-      store_phone: body.storePhone,
-      whatsapp_number: body.whatsappNumber,
-      currency_symbol: body.currency,
-      free_shipping_threshold: body.freeShippingThreshold,
-      enable_whatsapp_checkout: body.enableWhatsappCheckout,
-      maintenance_mode: body.maintenanceMode,
-      site_title: body.metaTitle,
-      site_description: body.metaDescription,
-      meta_keywords: body.metaKeywords,
-      primary_color: body.primaryColor,
-      logo_image_url: body.logoUrl,
-      favicon_url: body.faviconUrl,
-      footer_description: body.footerText,
-      footer_instagram: body.socialInstagram,
-      footer_tiktok: body.socialTiktok,
-      footer_twitter: body.socialTwitter,
-      show_newsletter: body.enableNewsletter,
-    })
+    .update(updates)
     .eq("id", current.id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

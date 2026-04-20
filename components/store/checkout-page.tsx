@@ -48,7 +48,7 @@ export function CheckoutPage() {
   })
   const isGift = giftSelection.isGift
   const giftMessage = giftSelection.messageNote
-  const FREE_SHIPPING_THRESHOLD = 7000
+  const [freeShippingThreshold, setFreeShippingThreshold] = useState(5000)
   const DRAFT_KEY = "hk_checkout_draft_v1"
 
   // Restore in-flight checkout details after a refresh / flaky network so the
@@ -155,13 +155,23 @@ export function CheckoutPage() {
       .catch(() => {})
   }, [])
 
+  useEffect(() => {
+    fetch("/api/site-data")
+      .then((r) => r.json())
+      .then((data) => {
+        const n = Number(data?.settings?.free_shipping_threshold)
+        if (Number.isFinite(n) && n > 0) setFreeShippingThreshold(n)
+      })
+      .catch(() => {})
+  }, [])
+
   const selectedDelivery = deliveryLocations.find((l) => l.id === deliveryLocation)
   const deliveryFee = selectedDelivery?.fee || 0
   const giftFee = isGift ? giftSelectionTotal(giftSelection) : 0
-  const freeShipping = totalPrice >= FREE_SHIPPING_THRESHOLD
+  const freeShipping = totalPrice >= freeShippingThreshold
   const grandTotal = totalPrice + (freeShipping ? 0 : deliveryFee) + giftFee
-  const amountToFreeShipping = Math.max(0, FREE_SHIPPING_THRESHOLD - totalPrice)
-  const freeShippingProgress = Math.min(100, Math.round((totalPrice / FREE_SHIPPING_THRESHOLD) * 100))
+  const amountToFreeShipping = Math.max(0, freeShippingThreshold - totalPrice)
+  const freeShippingProgress = Math.min(100, Math.round((totalPrice / freeShippingThreshold) * 100))
 
   // Group locations so the checkout dropdown is easy to scan:
   //   pickup → delivery • inside Nairobi → outside Nairobi

@@ -18,6 +18,7 @@ export function AdminSettings() {
   const { data: settings, mutate } = useSWR("/api/admin/settings", fetcher)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const [form, setForm] = useState({
     storeName: "", storeEmail: "", storePhone: "",
@@ -26,7 +27,7 @@ export function AdminSettings() {
     logoUrl: "", faviconUrl: "",
     footerText: "",
     socialInstagram: "", socialTiktok: "", socialTwitter: "",
-    freeShippingThreshold: 5000,
+    freeShippingThreshold: "5000",
     enableWhatsappCheckout: true, enableNewsletter: true, maintenanceMode: false,
   })
 
@@ -47,7 +48,7 @@ export function AdminSettings() {
         socialInstagram: settings.footer_instagram || "",
         socialTiktok: settings.footer_tiktok || "",
         socialTwitter: settings.footer_twitter || "",
-        freeShippingThreshold: settings.free_shipping_threshold ?? 5000,
+        freeShippingThreshold: String(settings.free_shipping_threshold ?? 5000),
         enableWhatsappCheckout: settings.enable_whatsapp_checkout ?? true,
         enableNewsletter: settings.show_newsletter ?? true,
         maintenanceMode: settings.maintenance_mode ?? false,
@@ -57,15 +58,29 @@ export function AdminSettings() {
 
   const handleSave = async () => {
     setSaving(true)
-    await fetch("/api/admin/settings", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    })
-    mutate()
-    setSaving(false)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+    setError(null)
+    try {
+      const threshold = form.freeShippingThreshold.trim()
+      const res = await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...form,
+          freeShippingThreshold: threshold === "" ? 0 : Number(threshold),
+        }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || `Save failed (${res.status})`)
+      }
+      await mutate()
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Failed to save settings")
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -81,6 +96,17 @@ export function AdminSettings() {
             {saved ? "Saved!" : saving ? "Saving..." : "Save Changes"}
           </Button>
         </div>
+
+        {error && (
+          <div className="border border-destructive/40 bg-destructive/10 text-destructive text-sm rounded-sm p-3 flex items-start gap-2">
+            <AlertTriangle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="font-medium">Could not save settings</p>
+              <p className="text-xs mt-0.5 opacity-80">{error}</p>
+            </div>
+            <button onClick={() => setError(null)} className="text-xs underline" type="button">Dismiss</button>
+          </div>
+        )}
 
         <Tabs defaultValue="general">
           <TabsList className="bg-secondary flex-wrap h-auto gap-1 p-1">
@@ -104,7 +130,7 @@ export function AdminSettings() {
 
               <div className="border border-border rounded-sm p-6 space-y-5">
                 <h3 className="text-sm font-semibold uppercase tracking-wider">Checkout & Features</h3>
-                <div><Label className="text-sm font-medium mb-1.5 block">Free Shipping Threshold (KSh)</Label><Input type="number" value={form.freeShippingThreshold} onChange={(e) => setForm({ ...form, freeShippingThreshold: Number(e.target.value) })} /></div>
+                <div><Label className="text-sm font-medium mb-1.5 block">Free Shipping Threshold (KSh)</Label><Input type="number" inputMode="numeric" min={0} value={form.freeShippingThreshold} onChange={(e) => setForm({ ...form, freeShippingThreshold: e.target.value })} /></div>
                 <div className="flex flex-col gap-4 pt-2">
                   <div className="flex items-center justify-between">
                     <div><p className="text-sm font-medium">WhatsApp Checkout</p><p className="text-xs text-muted-foreground">Enable ordering via WhatsApp</p></div>
