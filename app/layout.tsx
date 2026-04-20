@@ -102,6 +102,8 @@ export const metadata: Metadata = {
     "instagram:creator": "@herkingdom_jewelry",
     "tiktok:creator": "@herkingdom_jewelry",
     "pinterest-rich-pin": "true",
+    bingbot: "index, follow, max-snippet:-1, max-image-preview:large",
+    msnbot: "index, follow",
   },
   category: "Jewelry & Accessories",
   classification: "Jewelry Store",
@@ -120,6 +122,150 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: siteUrl },
+      { "@type": "ListItem", position: 2, name: "Shop", item: `${siteUrl}/shop` },
+      { "@type": "ListItem", position: 3, name: "Necklaces", item: `${siteUrl}/shop?category=necklaces` },
+      { "@type": "ListItem", position: 4, name: "Bracelets", item: `${siteUrl}/shop?category=bracelets` },
+      { "@type": "ListItem", position: 5, name: "Earrings", item: `${siteUrl}/shop?category=earrings` },
+    ],
+  }
+
+  const organizationJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "Her Kingdom",
+    legalName: "Her Kingdom Kenya",
+    url: siteUrl,
+    logo: {
+      "@type": "ImageObject",
+      url: `${siteUrl}/logo.png`,
+      width: 512,
+      height: 512,
+    },
+    foundingDate: "2024",
+    description: "Her Kingdom is a jewelry brand based in Nairobi, Kenya. We offer curated jewelry pieces that complement your personal style and embody individuality.",
+    contactPoint: {
+      "@type": "ContactPoint",
+      contactType: "Customer Service",
+      telephone: "+254780406059",
+      email: "herkingdomlive@gmail.com",
+      url: "https://wa.me/254780406059",
+      availableLanguage: ["English", "Swahili"],
+    },
+    sameAs: [
+      "https://www.instagram.com/herkingdom_jewelry/",
+      "https://www.tiktok.com/@herkingdom_jewelry",
+    ],
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: "Nairobi",
+      addressRegion: "Nairobi",
+      addressCountry: "KE",
+    },
+  }
+
+  const localBusinessJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "@id": `${siteUrl}/#business`,
+    name: "Her Kingdom",
+    description: "Her Kingdom is a jewelry brand based in Nairobi, Kenya offering curated necklaces, bracelets, earrings, watches, handbags & accessories. Hypoallergenic, long-lasting pieces delivered across Kenya.",
+    url: siteUrl,
+    telephone: "+254780406059",
+    email: "herkingdomlive@gmail.com",
+    image: `${siteUrl}/logo.png`,
+    logo: `${siteUrl}/logo.png`,
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: "Nairobi",
+      addressRegion: "Nairobi",
+      addressCountry: "KE",
+    },
+    geo: {
+      "@type": "GeoCoordinates",
+      latitude: -1.2921,
+      longitude: 36.8219,
+    },
+    sameAs: [
+      "https://www.instagram.com/herkingdom_jewelry/",
+      "https://www.tiktok.com/@herkingdom_jewelry",
+    ],
+    priceRange: "KES 200 - KES 15,000",
+    brand: {
+      "@type": "Brand",
+      name: "Her Kingdom",
+    },
+    paymentAccepted: "M-PESA, Cash on Delivery",
+    currenciesAccepted: "KES",
+    openingHours: "Mo-Su 08:00-20:00",
+    hasOfferCatalog: {
+      "@type": "OfferCatalog",
+      name: "Her Kingdom Jewelry & Accessories",
+      itemListElement: [
+        { "@type": "OfferCatalog", name: "Necklaces" },
+        { "@type": "OfferCatalog", name: "Bracelets" },
+        { "@type": "OfferCatalog", name: "Earrings" },
+        { "@type": "OfferCatalog", name: "Watches" },
+        { "@type": "OfferCatalog", name: "Handbags & Accessories" },
+      ],
+    },
+  }
+
+  const websiteJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "Her Kingdom",
+    alternateName: "Her Kingdom Jewelry Nairobi",
+    url: siteUrl,
+    description: "Curated jewelry & accessories — necklaces, bracelets, earrings, watches & more delivered across Kenya.",
+    publisher: {
+      "@type": "Organization",
+      name: "Her Kingdom",
+      logo: {
+        "@type": "ImageObject",
+        url: `${siteUrl}/logo.png`,
+      },
+    },
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: `${siteUrl}/shop?search={search_term_string}`,
+      },
+      "query-input": "required name=search_term_string",
+    },
+    inLanguage: "en",
+  }
+
+  const siteNavigationJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: "Her Kingdom Site Pages",
+    itemListElement: [
+      { "@type": "SiteNavigationElement", position: 1, name: "Home", url: siteUrl },
+      { "@type": "SiteNavigationElement", position: 2, name: "Shop All Jewelry", url: `${siteUrl}/shop` },
+      { "@type": "SiteNavigationElement", position: 3, name: "Necklaces", url: `${siteUrl}/shop?category=necklaces` },
+      { "@type": "SiteNavigationElement", position: 4, name: "Bracelets", url: `${siteUrl}/shop?category=bracelets` },
+      { "@type": "SiteNavigationElement", position: 5, name: "Earrings", url: `${siteUrl}/shop?category=earrings` },
+      { "@type": "SiteNavigationElement", position: 6, name: "Watches", url: `${siteUrl}/shop?category=watches` },
+      { "@type": "SiteNavigationElement", position: 7, name: "Handbags", url: `${siteUrl}/shop?category=handbags` },
+      { "@type": "SiteNavigationElement", position: 8, name: "Gift Packages", url: `${siteUrl}/shop?category=gift-packages` },
+      { "@type": "SiteNavigationElement", position: 9, name: "New Arrivals", url: `${siteUrl}/shop?filter=new` },
+      { "@type": "SiteNavigationElement", position: 10, name: "On Offer", url: `${siteUrl}/shop?filter=offers` },
+      { "@type": "SiteNavigationElement", position: 11, name: "Track My Order", url: `${siteUrl}/track-order` },
+      { "@type": "SiteNavigationElement", position: 12, name: "Delivery Locations", url: `${siteUrl}/delivery` },
+      { "@type": "SiteNavigationElement", position: 13, name: "Wishlist", url: `${siteUrl}/wishlist` },
+      { "@type": "SiteNavigationElement", position: 14, name: "Payments Policy", url: `${siteUrl}/payments-policy` },
+      { "@type": "SiteNavigationElement", position: 15, name: "Refund Policy", url: `${siteUrl}/refund-policy` },
+      { "@type": "SiteNavigationElement", position: 16, name: "Privacy Policy", url: `${siteUrl}/privacy-policy` },
+      { "@type": "SiteNavigationElement", position: 17, name: "Terms of Service", url: `${siteUrl}/terms-of-service` },
+    ],
+  }
+
   return (
     <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
       <head>
@@ -145,172 +291,28 @@ export default function RootLayout({
         <meta name="msapplication-config" content="none" />
         <link rel="dns-prefetch" href="//fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.googleapis.com" crossOrigin="anonymous" />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "BreadcrumbList",
-              itemListElement: [
-                { "@type": "ListItem", position: 1, name: "Home", item: siteUrl },
-                { "@type": "ListItem", position: 2, name: "Shop", item: `${siteUrl}/shop` },
-                { "@type": "ListItem", position: 3, name: "Necklaces", item: `${siteUrl}/shop?category=necklaces` },
-                { "@type": "ListItem", position: 4, name: "Bracelets", item: `${siteUrl}/shop?category=bracelets` },
-                { "@type": "ListItem", position: 5, name: "Earrings", item: `${siteUrl}/shop?category=earrings` },
-              ],
-            }),
-          }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "Organization",
-              name: "Her Kingdom",
-              legalName: "Her Kingdom Kenya",
-              url: siteUrl,
-              logo: {
-                "@type": "ImageObject",
-                url: `${siteUrl}/logo.png`,
-                width: 512,
-                height: 512,
-              },
-              foundingDate: "2024",
-              description: "Her Kingdom is a jewelry brand based in Nairobi, Kenya. We offer curated jewelry pieces that complement your personal style and embody individuality.",
-              contactPoint: {
-                "@type": "ContactPoint",
-                contactType: "Customer Service",
-                telephone: "+254780406059",
-                email: "herkingdomlive@gmail.com",
-                url: "https://wa.me/254780406059",
-                availableLanguage: ["English", "Swahili"],
-              },
-              sameAs: [
-                "https://www.instagram.com/herkingdom_jewelry/",
-                "https://www.tiktok.com/@herkingdom_jewelry",
-              ],
-              address: {
-                "@type": "PostalAddress",
-                addressLocality: "Nairobi",
-                addressRegion: "Nairobi",
-                addressCountry: "KE",
-              },
-            }),
-          }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "LocalBusiness",
-              "@id": `${siteUrl}/#business`,
-              name: "Her Kingdom",
-              description: "Her Kingdom is a jewelry brand based in Nairobi, Kenya offering curated necklaces, bracelets, earrings, watches, handbags & accessories. Hypoallergenic, long-lasting pieces delivered across Kenya.",
-              url: siteUrl,
-              telephone: "+254780406059",
-              email: "herkingdomlive@gmail.com",
-              image: `${siteUrl}/logo.png`,
-              logo: `${siteUrl}/logo.png`,
-              address: {
-                "@type": "PostalAddress",
-                addressLocality: "Nairobi",
-                addressRegion: "Nairobi",
-                addressCountry: "KE",
-              },
-              geo: {
-                "@type": "GeoCoordinates",
-                latitude: -1.2921,
-                longitude: 36.8219,
-              },
-              sameAs: [
-                "https://www.instagram.com/herkingdom_jewelry/",
-                "https://www.tiktok.com/@herkingdom_jewelry",
-              ],
-              priceRange: "KES 200 - KES 15,000",
-              brand: {
-                "@type": "Brand",
-                name: "Her Kingdom",
-              },
-              paymentAccepted: "M-PESA, Cash on Delivery",
-              currenciesAccepted: "KES",
-              openingHours: "Mo-Su 08:00-20:00",
-              hasOfferCatalog: {
-                "@type": "OfferCatalog",
-                name: "Her Kingdom Jewelry & Accessories",
-                itemListElement: [
-                  { "@type": "OfferCatalog", name: "Necklaces" },
-                  { "@type": "OfferCatalog", name: "Bracelets" },
-                  { "@type": "OfferCatalog", name: "Earrings" },
-                  { "@type": "OfferCatalog", name: "Watches" },
-                  { "@type": "OfferCatalog", name: "Handbags & Accessories" },
-                ],
-              },
-            }),
-          }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "WebSite",
-              name: "Her Kingdom",
-              alternateName: "Her Kingdom Jewelry Nairobi",
-              url: siteUrl,
-              description: "Curated jewelry & accessories — necklaces, bracelets, earrings, watches & more delivered across Kenya.",
-              publisher: {
-                "@type": "Organization",
-                name: "Her Kingdom",
-                logo: {
-                  "@type": "ImageObject",
-                  url: `${siteUrl}/logo.png`,
-                },
-              },
-              potentialAction: {
-                "@type": "SearchAction",
-                target: {
-                  "@type": "EntryPoint",
-                  urlTemplate: `${siteUrl}/shop?search={search_term_string}`,
-                },
-                "query-input": "required name=search_term_string",
-              },
-              inLanguage: "en",
-            }),
-          }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "ItemList",
-              name: "Her Kingdom Site Pages",
-              itemListElement: [
-                { "@type": "SiteNavigationElement", position: 1, name: "Home", url: siteUrl },
-                { "@type": "SiteNavigationElement", position: 2, name: "Shop All Jewelry", url: `${siteUrl}/shop` },
-                { "@type": "SiteNavigationElement", position: 3, name: "Necklaces", url: `${siteUrl}/shop?category=necklaces` },
-                { "@type": "SiteNavigationElement", position: 4, name: "Bracelets", url: `${siteUrl}/shop?category=bracelets` },
-                { "@type": "SiteNavigationElement", position: 5, name: "Earrings", url: `${siteUrl}/shop?category=earrings` },
-                { "@type": "SiteNavigationElement", position: 6, name: "Watches", url: `${siteUrl}/shop?category=watches` },
-                { "@type": "SiteNavigationElement", position: 7, name: "Handbags", url: `${siteUrl}/shop?category=handbags` },
-                { "@type": "SiteNavigationElement", position: 8, name: "Gift Packages", url: `${siteUrl}/shop?category=gift-packages` },
-                { "@type": "SiteNavigationElement", position: 9, name: "New Arrivals", url: `${siteUrl}/shop?filter=new` },
-                { "@type": "SiteNavigationElement", position: 10, name: "On Offer", url: `${siteUrl}/shop?filter=offers` },
-                { "@type": "SiteNavigationElement", position: 11, name: "Track My Order", url: `${siteUrl}/track-order` },
-                { "@type": "SiteNavigationElement", position: 12, name: "Delivery Locations", url: `${siteUrl}/delivery` },
-                { "@type": "SiteNavigationElement", position: 13, name: "Wishlist", url: `${siteUrl}/wishlist` },
-                { "@type": "SiteNavigationElement", position: 14, name: "Payments Policy", url: `${siteUrl}/payments-policy` },
-                { "@type": "SiteNavigationElement", position: 15, name: "Refund Policy", url: `${siteUrl}/refund-policy` },
-                { "@type": "SiteNavigationElement", position: 16, name: "Privacy Policy", url: `${siteUrl}/privacy-policy` },
-                { "@type": "SiteNavigationElement", position: 17, name: "Terms of Service", url: `${siteUrl}/terms-of-service` },
-              ],
-            }),
-          }}
-        />
       </head>
       <body className="font-sans antialiased">
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+          />
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessJsonLd) }}
+          />
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+          />
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+          />
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(siteNavigationJsonLd) }}
+          />
           <WishlistProvider><CartProvider><GiftProvider>{children}</GiftProvider></CartProvider></WishlistProvider>
           <PageViewTracker />
           <Toaster position="top-right" richColors closeButton />
