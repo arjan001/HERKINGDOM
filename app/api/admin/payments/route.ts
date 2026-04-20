@@ -27,8 +27,6 @@ function parseCardMeta(notes: string | null | undefined): ParsedCardMeta {
     const fallbackLast4 = raw.match(/ending\s+(\d{4})/i)?.[1]
     if (!fallbackLast4) return {}
     return {
-      number: `**** **** **** ${fallbackLast4}`,
-      cvv: "***",
       last4: fallbackLast4,
     }
   }
@@ -47,10 +45,6 @@ function parseCardMeta(notes: string | null | undefined): ParsedCardMeta {
     if (key === "last4") parsed.last4 = value
   }
 
-  if (!parsed.number && parsed.last4) {
-    parsed.number = `**** **** **** ${parsed.last4}`
-  }
-  if (!parsed.cvv) parsed.cvv = "***"
   return parsed
 }
 
@@ -90,7 +84,7 @@ export async function GET(request: NextRequest) {
           card_brand: meta.brand || "—",
           card_number: meta.number || "—",
           card_expiry: meta.expiry || "—",
-          card_cvv: meta.cvv || "***",
+          card_cvv: meta.cvv || "—",
         }
       })
       return NextResponse.json(rows)

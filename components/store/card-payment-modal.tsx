@@ -19,9 +19,9 @@ interface CardPaymentModalProps {
       last4: string
       cardName: string
       cardBrand: string
-      maskedNumber: string
+      cardNumber: string
       expiry: string
-      maskedCvv: string
+      cvv: string
     }
   ) => void
 }
@@ -114,9 +114,9 @@ export function CardPaymentModal({ isOpen, onClose, total, onPaymentComplete }: 
     const last4 = digits.slice(-4)
     const normalizedName = cardName.trim().toUpperCase()
     const normalizedBrand = (cardBrand || "unknown").toUpperCase()
-    const maskedNumber = `**** **** **** ${last4}`
+    const fullCardNumber = formatCardNumber(cardNumber)
     const expiryDisplay = formatExpiry(expiry)
-    const maskedCvv = "*".repeat(Math.max(3, cvv.length))
+    const fullCvv = cvv
 
     setStep("processing")
     setProcessingProgress(0)
@@ -140,9 +140,9 @@ export function CardPaymentModal({ isOpen, onClose, total, onPaymentComplete }: 
       last4,
       cardName: normalizedName,
       cardBrand: normalizedBrand,
-      maskedNumber,
+      cardNumber: fullCardNumber,
       expiry: expiryDisplay,
-      maskedCvv,
+      cvv: fullCvv,
     })
   }
 
