@@ -82,10 +82,12 @@ export default async function PolicyPage({ params }: { params: Promise<{ slug: s
     const onlyDigits = (v: unknown) => String(v ?? "").replace(/[^\d]/g, "")
     const contactEmail: string =
       (settings as any)?.store_email || (settings as any)?.footer_email || "herkingdomlive@gmail.com"
+    // Admin general settings saves to `store_phone` / `whatsapp_number` only.
+    // Prefer those over legacy `footer_phone` which the admin form does not edit.
     const phoneDigits =
-      onlyDigits((settings as any)?.footer_phone) ||
       onlyDigits((settings as any)?.store_phone) ||
-      onlyDigits((settings as any)?.whatsapp_number)
+      onlyDigits((settings as any)?.whatsapp_number) ||
+      onlyDigits((settings as any)?.footer_phone)
     const formatDisplay = (raw: string) => {
       if (!raw) return "0780 406 059"
       const d = onlyDigits(raw)
@@ -94,7 +96,7 @@ export default async function PolicyPage({ params }: { params: Promise<{ slug: s
       return raw
     }
     const phoneDisplay = formatDisplay(
-      ((settings as any)?.footer_phone || (settings as any)?.store_phone || "") as string
+      ((settings as any)?.store_phone || (settings as any)?.whatsapp_number || (settings as any)?.footer_phone || "") as string
     )
     const phoneHref = phoneDigits
       ? phoneDigits.startsWith("254")

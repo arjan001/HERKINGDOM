@@ -51,10 +51,13 @@ const onlyDigits = (v: unknown) => String(v ?? "").replace(/[^\d]/g, "")
 
 export default async function PaymentsPolicyPage() {
   const settings = await getSiteSettings().catch(() => null)
+  // Admin general settings saves to `whatsapp_number` / `store_phone` only.
+  // Prefer those over the legacy `footer_whatsapp` column that the admin form
+  // does not edit.
   const whatsappDigits =
-    onlyDigits((settings as any)?.footer_whatsapp) ||
     onlyDigits((settings as any)?.whatsapp_number) ||
-    onlyDigits((settings as any)?.store_phone)
+    onlyDigits((settings as any)?.store_phone) ||
+    onlyDigits((settings as any)?.footer_whatsapp)
   const whatsappUrl = whatsappDigits ? `https://wa.me/${whatsappDigits}` : FALLBACK_WHATSAPP_URL
   const supportEmail: string =
     (settings as any)?.store_email ||

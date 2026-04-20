@@ -3,11 +3,13 @@
 import { useState } from "react"
 import { ChevronDown } from "lucide-react"
 import Link from "next/link"
+import { useStoreContact } from "@/hooks/use-store-contact"
 
 export type Faq = { q: string; a: string }
 
 export function FaqSection({ faqs }: { faqs: Faq[] }) {
   const [open, setOpen] = useState<number | null>(0)
+  const { phoneDisplay } = useStoreContact()
   if (!faqs?.length) return null
   return (
     <section
@@ -32,7 +34,7 @@ export function FaqSection({ faqs }: { faqs: Faq[] }) {
             <Link href="/" className="underline underline-offset-4">
               herkingdom.shop
             </Link>
-            . Still have questions? WhatsApp us on +254 780 406 059.
+            . Still have questions? WhatsApp us on {phoneDisplay}.
           </p>
         </div>
         <ul className="divide-y divide-border rounded-xl border border-border bg-background shadow-sm">

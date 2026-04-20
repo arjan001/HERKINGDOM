@@ -28,9 +28,9 @@ export function FloatingWhatsApp() {
   }, [])
 
   const rawNumber =
-    data?.settings?.footer_whatsapp ||
     data?.settings?.whatsapp_number ||
     data?.settings?.store_phone ||
+    data?.settings?.footer_whatsapp ||
     FALLBACK_WHATSAPP_NUMBER
   const whatsappNumber = rawNumber.replace(/[^\d]/g, "") || FALLBACK_WHATSAPP_NUMBER
 
