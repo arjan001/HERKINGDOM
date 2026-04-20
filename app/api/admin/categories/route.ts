@@ -2,6 +2,21 @@ import { createClient } from "@/lib/supabase/server"
 import { NextRequest, NextResponse } from "next/server"
 import { requireAuth, rateLimit, rateLimitResponse } from "@/lib/security"
 import { resolveCategoryImage } from "@/lib/category-images"
+import { revalidatePath } from "next/cache"
+
+// Re-render public pages that depend on the category catalog so new
+// categories (and their SEO metadata / sitemap entries) become discoverable
+// by search engines and AI crawlers immediately after creation.
+function revalidateCategoryPages() {
+  try {
+    revalidatePath("/sitemap.xml")
+    revalidatePath("/llms.txt")
+    revalidatePath("/shop")
+    revalidatePath("/")
+  } catch {
+    // best-effort
+  }
+}
 
 export async function GET(request: NextRequest) {
   const rl = rateLimit(request, { limit: 30, windowSeconds: 60 })
@@ -57,6 +72,7 @@ export async function POST(request: NextRequest) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  revalidateCategoryPages()
   return NextResponse.json(data)
 }
 
@@ -79,6 +95,7 @@ export async function PUT(request: NextRequest) {
     .eq("id", body.id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  revalidateCategoryPages()
   return NextResponse.json({ success: true })
 }
 
@@ -93,5 +110,6 @@ export async function DELETE(request: NextRequest) {
 
   const { error } = await supabase.from("categories").delete().eq("id", id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  revalidateCategoryPages()
   return NextResponse.json({ success: true })
 }

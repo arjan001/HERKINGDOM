@@ -1,6 +1,23 @@
 import { createClient } from "@/lib/supabase/server"
 import { NextRequest, NextResponse } from "next/server"
 import { requireAuth, rateLimit, rateLimitResponse } from "@/lib/security"
+import { revalidatePath } from "next/cache"
+
+// Re-render public pages that depend on the product catalog so new products
+// (and their SEO metadata / sitemap entries) become discoverable by search
+// engines and AI crawlers immediately after upload instead of waiting for the
+// hourly revalidate tick.
+function revalidateCatalogPages(slug?: string) {
+  try {
+    revalidatePath("/sitemap.xml")
+    revalidatePath("/llms.txt")
+    revalidatePath("/shop")
+    revalidatePath("/")
+    if (slug) revalidatePath(`/product/${slug}`)
+  } catch {
+    // best-effort; ignore
+  }
+}
 
 export async function POST(request: NextRequest) {
   const rl = rateLimit(request, { limit: 20, windowSeconds: 60 })
@@ -67,6 +84,8 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Create product error:", error)
     return NextResponse.json({ error: "Failed to create product" }, { status: 500 })
+  } finally {
+    revalidateCatalogPages(body?.slug)
   }
 }
 
@@ -134,6 +153,8 @@ export async function PUT(request: NextRequest) {
   } catch (error) {
     console.error("Update product error:", error)
     return NextResponse.json({ error: "Failed to update product" }, { status: 500 })
+  } finally {
+    revalidateCatalogPages(body?.slug)
   }
 }
 
@@ -156,5 +177,7 @@ export async function DELETE(request: NextRequest) {
   } catch (error) {
     console.error("Delete product error:", error)
     return NextResponse.json({ error: "Failed to delete product" }, { status: 500 })
+  } finally {
+    revalidateCatalogPages()
   }
 }
