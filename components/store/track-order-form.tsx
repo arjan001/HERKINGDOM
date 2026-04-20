@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation"
 import { Search, Package, Truck, CheckCircle, Clock, XCircle, Loader2, Phone, Hash } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { useStoreContact } from "@/hooks/use-store-contact"
 
 type OrderStatus = "pending" | "confirmed" | "dispatched" | "delivered" | "cancelled"
 
@@ -71,6 +72,7 @@ function getStepIndex(status: OrderStatus) {
 
 export function TrackOrderForm({ initialOrderNumber }: { initialOrderNumber?: string }) {
   const searchParams = useSearchParams()
+  const { whatsappNumber } = useStoreContact()
   const [searchType, setSearchType] = useState<"order" | "phone">("order")
   const [query, setQuery] = useState("")
   const [orders, setOrders] = useState<TrackedOrder[]>([])
@@ -176,7 +178,7 @@ export function TrackOrderForm({ initialOrderNumber }: { initialOrderNumber?: st
               : "Make sure you are using the same phone number you provided when placing your order."}
           </p>
           <a
-            href="https://wa.me/254780406059?text=Hi%2C%20I%20need%20help%20tracking%20my%20order"
+            href={`https://wa.me/${whatsappNumber}?text=Hi%2C%20I%20need%20help%20tracking%20my%20order`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 mt-4 text-sm font-medium text-emerald-700 hover:underline"

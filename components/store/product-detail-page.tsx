@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ProductImage } from "./product-image"
 import useSWR from "swr"
+import { useStoreContact } from "@/hooks/use-store-contact"
 
 const fetcher = (url: string) => fetch(url).then((r) => {
   if (!r.ok) throw new Error("Failed to fetch")
@@ -40,6 +41,7 @@ export function ProductDetailPage({ slug }: { slug: string }) {
   const { addItem } = useCart()
   const { selection: giftSelection, setSelection: setGiftSelection } = useGiftSelection()
   const { toggleItem, isInWishlist } = useWishlist()
+  const { whatsappNumber } = useStoreContact()
   const wishlisted = product ? isInWishlist(product.id) : false
   const [selectedImage, setSelectedImage] = useState(0)
   const [quantity, setQuantity] = useState(1)
@@ -322,7 +324,7 @@ export function ProductDetailPage({ slug }: { slug: string }) {
                   Add to Cart
                 </Button>
                 <a
-                  href={`https://wa.me/254780406059?text=${whatsappMessage}`}
+                  href={`https://wa.me/${whatsappNumber}?text=${whatsappMessage}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex-1 flex items-center justify-center gap-2 bg-background text-foreground border border-foreground h-12 text-sm font-medium hover:bg-secondary transition-colors"
@@ -415,7 +417,7 @@ export function ProductDetailPage({ slug }: { slug: string }) {
       {/* Sticky "Order via WhatsApp" CTA — persistent on product pages.
          Sits on the left so it never overlaps the global floating chat. */}
       <a
-        href={`https://wa.me/254780406059?text=${whatsappMessage}`}
+        href={`https://wa.me/${whatsappNumber}?text=${whatsappMessage}`}
         target="_blank"
         rel="noopener noreferrer"
         aria-label={`Order ${product.name} via WhatsApp`}

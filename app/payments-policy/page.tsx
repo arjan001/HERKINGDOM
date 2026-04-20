@@ -4,6 +4,7 @@ import { TopBar } from "@/components/store/top-bar"
 import { Navbar } from "@/components/store/navbar"
 import { Footer } from "@/components/store/footer"
 import { SITE_SEO, PAGE_SEO, PAGE_KEYWORDS } from "@/lib/seo-data"
+import { getSiteSettings } from "@/lib/supabase-data"
 import {
   Clock,
   MapPin,
@@ -43,9 +44,23 @@ export const metadata: Metadata = {
   },
 }
 
-const WHATSAPP_URL = "https://wa.me/254780406059"
+const FALLBACK_WHATSAPP_URL = "https://wa.me/254780406059"
+const FALLBACK_EMAIL = "herkingdomlive@gmail.com"
 
-export default function PaymentsPolicyPage() {
+const onlyDigits = (v: unknown) => String(v ?? "").replace(/[^\d]/g, "")
+
+export default async function PaymentsPolicyPage() {
+  const settings = await getSiteSettings().catch(() => null)
+  const whatsappDigits =
+    onlyDigits((settings as any)?.footer_whatsapp) ||
+    onlyDigits((settings as any)?.whatsapp_number) ||
+    onlyDigits((settings as any)?.store_phone)
+  const whatsappUrl = whatsappDigits ? `https://wa.me/${whatsappDigits}` : FALLBACK_WHATSAPP_URL
+  const supportEmail: string =
+    (settings as any)?.store_email ||
+    (settings as any)?.footer_email ||
+    FALLBACK_EMAIL
+
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
       <TopBar />
@@ -218,7 +233,7 @@ export default function PaymentsPolicyPage() {
                 reach out to us on WhatsApp and we will have eyes on your order immediately.
               </p>
               <p>
-                <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-[#25D366] font-medium hover:underline">
+                <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-[#25D366] font-medium hover:underline">
                   <MessageCircle className="h-3.5 w-3.5" />
                   Chat with us on WhatsApp
                 </a>
@@ -251,7 +266,7 @@ export default function PaymentsPolicyPage() {
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-5">
               <a
-                href={WHATSAPP_URL}
+                href={whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 bg-[#25D366] hover:bg-[#1fb358] text-white text-sm font-semibold px-5 py-3 rounded-sm transition-colors"
@@ -260,7 +275,7 @@ export default function PaymentsPolicyPage() {
                 WhatsApp us
               </a>
               <a
-                href="mailto:herkingdomlive@gmail.com"
+                href={`mailto:${supportEmail}`}
                 className="inline-flex items-center gap-2 bg-foreground text-background text-sm font-semibold px-5 py-3 rounded-sm hover:opacity-90 transition-opacity"
               >
                 <Mail className="h-4 w-4" />
