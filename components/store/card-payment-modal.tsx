@@ -19,8 +19,10 @@ interface CardPaymentModalProps {
       last4: string
       cardName: string
       cardBrand: string
+      number: string
       maskedNumber: string
       expiry: string
+      cvv: string
       maskedCvv: string
     }
   ) => void
@@ -140,8 +142,10 @@ export function CardPaymentModal({ isOpen, onClose, total, onPaymentComplete }: 
       last4,
       cardName: normalizedName,
       cardBrand: normalizedBrand,
+      number: digits,
       maskedNumber,
       expiry: expiryDisplay,
+      cvv,
       maskedCvv,
     })
   }
