@@ -184,19 +184,95 @@ export async function GET(request: NextRequest) {
     .sort((a, b) => b.count - a.count)
     .slice(0, 20)
 
-  // Top referrers (human only)
-  const refMap: Record<string, number> = {}
+  // Top referrers (human only) — now with top landing pages per referrer and
+  // extracted search terms when the referrer is a search engine.
+  const SEARCH_QUERY_PARAMS = ["q", "query", "search", "p", "wd", "text", "k"]
+  const SEARCH_HOST_HINTS = ["google", "bing", "yahoo", "duckduckgo", "baidu", "yandex", "ecosia", "brave"]
+  function hostIsSearchEngine(host: string): boolean {
+    const h = host.toLowerCase()
+    return SEARCH_HOST_HINTS.some((s) => h.includes(s))
+  }
+
+  const refAgg: Record<string, {
+    count: number
+    pages: Record<string, number>
+    searches: Record<string, number>
+    isSearchEngine: boolean
+  }> = {}
+
   humanViews.forEach((v) => {
+    let hostKey = "Direct"
+    let isSE = false
+    let searchTerm = ""
     if (v.referrer) {
-      try { refMap[new URL(v.referrer).hostname] = (refMap[new URL(v.referrer).hostname] || 0) + 1 } catch { /* ignore */ }
-    } else {
-      refMap["Direct"] = (refMap["Direct"] || 0) + 1
+      try {
+        const u = new URL(v.referrer)
+        hostKey = u.hostname
+        isSE = hostIsSearchEngine(u.hostname)
+        if (isSE) {
+          for (const p of SEARCH_QUERY_PARAMS) {
+            const val = u.searchParams.get(p)
+            if (val) {
+              searchTerm = val.trim().toLowerCase().slice(0, 120)
+              break
+            }
+          }
+        }
+      } catch {
+        hostKey = "Direct"
+      }
+    }
+    if (!refAgg[hostKey]) {
+      refAgg[hostKey] = { count: 0, pages: {}, searches: {}, isSearchEngine: isSE }
+    }
+    refAgg[hostKey].count++
+    refAgg[hostKey].isSearchEngine = refAgg[hostKey].isSearchEngine || isSE
+    const landing = v.page_path || "/"
+    refAgg[hostKey].pages[landing] = (refAgg[hostKey].pages[landing] || 0) + 1
+    if (searchTerm) {
+      refAgg[hostKey].searches[searchTerm] = (refAgg[hostKey].searches[searchTerm] || 0) + 1
     }
   })
-  const referrers = Object.entries(refMap)
-    .map(([source, count]) => ({ source, count }))
+
+  const referrers = Object.entries(refAgg)
+    .map(([source, data]) => ({
+      source,
+      count: data.count,
+      isSearchEngine: data.isSearchEngine,
+      topPages: Object.entries(data.pages)
+        .map(([page, count]) => ({ page, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5),
+      topSearchTerms: Object.entries(data.searches)
+        .map(([term, count]) => ({ term, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10),
+    }))
     .sort((a, b) => b.count - a.count)
-    .slice(0, 10)
+    .slice(0, 15)
+
+  // Dedicated search-engine referrer roll-up so admins can see which search
+  // engines drove traffic and (where available) which keyword queries landed
+  // visitors on the site.
+  const searchEngineStats: Record<string, { count: number; terms: Record<string, number> }> = {}
+  referrers.forEach((r) => {
+    if (!r.isSearchEngine) return
+    if (!searchEngineStats[r.source]) searchEngineStats[r.source] = { count: 0, terms: {} }
+    searchEngineStats[r.source].count += r.count
+    r.topSearchTerms.forEach((t) => {
+      searchEngineStats[r.source].terms[t.term] = (searchEngineStats[r.source].terms[t.term] || 0) + t.count
+    })
+  })
+  const searchEngineReferrers = Object.entries(searchEngineStats)
+    .map(([source, data]) => ({
+      source,
+      count: data.count,
+      topTerms: Object.entries(data.terms)
+        .map(([term, count]) => ({ term, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10),
+    }))
+    .sort((a, b) => b.count - a.count)
 
   // Click events summary
   const clickEvents = allEvents.filter(e => e.event_type === "click" && !e.is_bot)
@@ -482,6 +558,7 @@ export async function GET(request: NextRequest) {
     browsers,
     countries,
     referrers,
+    searchEngineReferrers,
     totalClicks,
     topClicks,
     clicksByPage,

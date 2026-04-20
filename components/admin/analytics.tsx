@@ -46,7 +46,18 @@ interface AnalyticsData {
   devices: { device: string; count: number; percentage: number }[]
   browsers: { browser: string; count: number; percentage: number }[]
   countries: { country: string; countryName: string; count: number; percentage: number; topCities: { city: string; count: number }[] }[]
-  referrers: { source: string; count: number }[]
+  referrers: {
+    source: string
+    count: number
+    isSearchEngine: boolean
+    topPages: { page: string; count: number }[]
+    topSearchTerms: { term: string; count: number }[]
+  }[]
+  searchEngineReferrers: {
+    source: string
+    count: number
+    topTerms: { term: string; count: number }[]
+  }[]
   totalClicks: number
   topClicks: { target: string; count: number }[]
   clicksByPage: { page: string; count: number }[]
@@ -344,25 +355,84 @@ export function AdminAnalytics() {
               </div>
             </div>
 
-            {/* Referrer Details (raw sources) */}
+            {/* Referrer Details — hostname, landing page breakdown, and
+                search-engine query terms where available. */}
             <div className="border border-border rounded-sm">
-              <div className="px-5 py-3 border-b border-border">
-                <h2 className="text-sm font-semibold flex items-center gap-2"><Globe className="h-3.5 w-3.5" /> Traffic Sources (Referrers)</h2>
+              <div className="px-5 py-3 border-b border-border flex items-center justify-between">
+                <h2 className="text-sm font-semibold flex items-center gap-2"><Globe className="h-3.5 w-3.5" /> Where Visitors Came From</h2>
+                <span className="text-[11px] text-muted-foreground">Host · landing page · search query</span>
               </div>
               <div className="divide-y divide-border">
                 {(analytics?.referrers || []).length === 0 ? (
                   <div className="px-5 py-8 text-center text-sm text-muted-foreground">No referrer data yet</div>
                 ) : (analytics?.referrers || []).map((r, i) => (
-                  <div key={r.source} className="flex items-center justify-between px-5 py-3">
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs text-muted-foreground w-5">{i + 1}.</span>
-                      <span className="text-sm">{r.source}</span>
+                  <div key={r.source} className="px-5 py-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="text-xs text-muted-foreground w-5 shrink-0">{i + 1}.</span>
+                        <span className="text-sm truncate">
+                          {r.source}
+                          {r.isSearchEngine && (
+                            <span className="ml-2 inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground">
+                              <Search className="h-3 w-3" /> Search
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                      <span className="text-sm font-medium shrink-0">{r.count} visits</span>
                     </div>
-                    <span className="text-sm font-medium">{r.count}</span>
+                    {(r.topPages?.length > 0 || r.topSearchTerms?.length > 0) && (
+                      <div className="mt-2 ml-8 space-y-1">
+                        {r.topPages?.slice(0, 3).map((p) => (
+                          <div key={`p-${p.page}`} className="flex items-center justify-between gap-3">
+                            <span className="text-xs text-muted-foreground truncate">→ {p.page}</span>
+                            <span className="text-xs text-muted-foreground shrink-0">{p.count}</span>
+                          </div>
+                        ))}
+                        {r.topSearchTerms?.slice(0, 3).map((t) => (
+                          <div key={`t-${t.term}`} className="flex items-center justify-between gap-3">
+                            <span className="text-xs text-foreground/80 truncate">“{t.term}”</span>
+                            <span className="text-xs text-muted-foreground shrink-0">{t.count}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
             </div>
+
+            {/* Search engine keyword roll-up — aggregates the search terms
+                extracted from referrer URLs across every search engine. */}
+            {(analytics?.searchEngineReferrers || []).some((s) => s.topTerms.length > 0) && (
+              <div className="border border-border rounded-sm">
+                <div className="px-5 py-3 border-b border-border">
+                  <h2 className="text-sm font-semibold flex items-center gap-2"><Search className="h-3.5 w-3.5" /> Search Engine Keywords (Organic Discovery)</h2>
+                </div>
+                <div className="divide-y divide-border">
+                  {analytics!.searchEngineReferrers.map((s) => (
+                    <div key={`se-${s.source}`} className="px-5 py-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium">{s.source}</span>
+                        <span className="text-xs text-muted-foreground">{s.count} visits</span>
+                      </div>
+                      {s.topTerms.length === 0 ? (
+                        <p className="text-xs text-muted-foreground ml-0">Queries hidden by search engine (encrypted).</p>
+                      ) : (
+                        <div className="space-y-1">
+                          {s.topTerms.map((t) => (
+                            <div key={`se-t-${s.source}-${t.term}`} className="flex items-center justify-between">
+                              <span className="text-xs text-foreground/80 truncate">“{t.term}”</span>
+                              <span className="text-xs text-muted-foreground">{t.count}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* UTM Campaigns */}
             {(analytics?.utmCampaigns || []).length > 0 && (
