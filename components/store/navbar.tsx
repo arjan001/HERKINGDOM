@@ -14,6 +14,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { CartDrawer } from "./cart-drawer"
 import useSWR from "swr"
 import { safeFetcher, asArray } from "@/lib/fetcher"
+import { useStoreContact } from "@/hooks/use-store-contact"
 
 function formatPrice(price: number): string {
   return `KSh ${price.toLocaleString()}`
@@ -56,6 +57,7 @@ export function Navbar() {
   const router = useRouter()
   const { totalItems, setIsCartOpen } = useCart()
   const { totalItems: wishlistCount } = useWishlist()
+  const { phoneHref, phoneDisplay } = useStoreContact()
   const { data: categoriesData } = useSWR<Category[]>("/api/categories", safeFetcher)
   const { data: allProductsData } = useSWR<Product[]>("/api/products", safeFetcher)
   const categories = asArray<Category>(categoriesData)
@@ -174,7 +176,7 @@ export function Navbar() {
               <div className="px-6 py-4 mt-4 space-y-3">
                 <a href="https://www.instagram.com/herkingdom_jewelry/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">Instagram</a>
                 <a href="https://www.tiktok.com/@herkingdom_jewelry" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">TikTok</a>
-                <a href="tel:+254780406059" className="flex items-center gap-2 text-sm font-medium"><Phone className="h-4 w-4" />0780 406 059</a>
+                <a href={phoneHref} className="flex items-center gap-2 text-sm font-medium"><Phone className="h-4 w-4" />{phoneDisplay}</a>
               </div>
             </SheetContent>
           </Sheet>

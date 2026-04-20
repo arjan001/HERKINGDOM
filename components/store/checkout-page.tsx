@@ -24,10 +24,12 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useStoreContact } from "@/hooks/use-store-contact"
 
 export function CheckoutPage() {
   const router = useRouter()
   const { items, removeItem, updateQuantity, totalPrice, clearCart, gift: cartGift, setGift: setCartGift } = useCart()
+  const { whatsappNumber } = useStoreContact()
   const { selection: giftSelection, setSelection: setGiftSelection, resetSelection: resetGiftSelection } = useGiftSelection()
   const [deliveryLocation, setDeliveryLocation] = useState("")
   const [deliveryLocations, setDeliveryLocations] = useState<DeliveryLocation[]>([])
@@ -308,7 +310,7 @@ export function CheckoutPage() {
       }`
     )
 
-        window.open(`https://wa.me/254780406059?text=${message}`, "_blank")
+        window.open(`https://wa.me/${whatsappNumber}?text=${message}`, "_blank")
     clearCart()
     resetGiftSelection()
     setIsSubmitting(false)

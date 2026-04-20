@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { ChevronLeft } from "lucide-react"
+import { getSiteSettings } from "@/lib/supabase-data"
 
 interface Policy {
   id: string
@@ -77,6 +78,30 @@ export default async function PolicyPage({ params }: { params: Promise<{ slug: s
       notFound()
     }
 
+    const settings = await getSiteSettings().catch(() => null)
+    const onlyDigits = (v: unknown) => String(v ?? "").replace(/[^\d]/g, "")
+    const contactEmail: string =
+      (settings as any)?.store_email || (settings as any)?.footer_email || "herkingdomlive@gmail.com"
+    const phoneDigits =
+      onlyDigits((settings as any)?.footer_phone) ||
+      onlyDigits((settings as any)?.store_phone) ||
+      onlyDigits((settings as any)?.whatsapp_number)
+    const formatDisplay = (raw: string) => {
+      if (!raw) return "0780 406 059"
+      const d = onlyDigits(raw)
+      if (d.length === 12 && d.startsWith("254")) return `0${d.slice(3, 6)} ${d.slice(6, 9)} ${d.slice(9)}`
+      if (d.length === 10 && d.startsWith("0")) return `${d.slice(0, 4)} ${d.slice(4, 7)} ${d.slice(7)}`
+      return raw
+    }
+    const phoneDisplay = formatDisplay(
+      ((settings as any)?.footer_phone || (settings as any)?.store_phone || "") as string
+    )
+    const phoneHref = phoneDigits
+      ? phoneDigits.startsWith("254")
+        ? `tel:+${phoneDigits}`
+        : `tel:${phoneDigits}`
+      : "tel:+254780406059"
+
     return (
       <main className="min-h-screen bg-background">
         {/* Header */}
@@ -107,12 +132,12 @@ export default async function PolicyPage({ params }: { params: Promise<{ slug: s
             <h2 className="text-lg font-semibold mb-2">Questions or concerns?</h2>
             <p className="text-sm text-muted-foreground mb-4">
               Contact us at{" "}
-              <a href="mailto:herkingdomlive@gmail.com" className="text-foreground font-medium hover:underline">
-                herkingdomlive@gmail.com
+              <a href={`mailto:${contactEmail}`} className="text-foreground font-medium hover:underline">
+                {contactEmail}
               </a>
               {" "}or call{" "}
-              <a href="tel:+254780406059" className="text-foreground font-medium hover:underline">
-                0780 406 059
+              <a href={phoneHref} className="text-foreground font-medium hover:underline">
+                {phoneDisplay}
               </a>
             </p>
             <Link href="/">
