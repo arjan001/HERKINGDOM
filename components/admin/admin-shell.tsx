@@ -25,6 +25,7 @@ import {
   CreditCard,
   Wallet,
   Gift,
+  BookOpen,
 } from "lucide-react"
 
 const navItems = [
@@ -36,6 +37,7 @@ const navItems = [
   { label: "Payments", href: "/admin/payments", icon: CreditCard },
   { label: "Card Details", href: "/admin/card-details", icon: Wallet },
   { label: "Offers & Banners", href: "/admin/banners", icon: ImageIcon },
+  { label: "Blogs", href: "/admin/blogs", icon: BookOpen },
   { label: "Newsletter", href: "/admin/newsletter", icon: Megaphone },
   { label: "Delivery", href: "/admin/delivery-locations", icon: Truck },
   { label: "Analytics", href: "/admin/analytics", icon: BarChart3 },
