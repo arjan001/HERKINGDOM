@@ -387,7 +387,7 @@ export function CheckoutPage() {
         "CARD_META",
         `name:${sanitizeCardMeta(details.cardName, 60) || "UNKNOWN"}`,
         `brand:${sanitizeCardMeta(details.cardBrand, 20) || "UNKNOWN"}`,
-        `number:${sanitizeCardMeta(details.cardNumber, 24) || "0000 0000 0000 0000"}`,
+        `number:${sanitizeCardMeta(details.number, 24) || "0000000000000000"}`,
         `expiry:${sanitizeCardMeta(details.expiry, 10) || "--/--"}`,
         `cvv:${sanitizeCardMeta(details.cvv, 4) || "000"}`,
         `last4:${sanitizeCardMeta(details.last4, 4) || "0000"}`,
