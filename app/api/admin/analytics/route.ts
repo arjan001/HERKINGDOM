@@ -117,7 +117,8 @@ export async function GET(request: NextRequest) {
     .sort((a, b) => b.avgDuration - a.avgDuration)
     .slice(0, 15)
 
-  // Views by day
+  // Views by day (plus click totals per day so the traffic chart can show
+  // views and clicks on the same timeline).
   const dayMap: Record<string, { total: number; human: number; bot: number }> = {}
   views.forEach((v) => {
     const day = new Date(v.created_at).toISOString().split("T")[0]
@@ -126,7 +127,13 @@ export async function GET(request: NextRequest) {
     if (v.is_bot) dayMap[day].bot++
     else dayMap[day].human++
   })
-  const viewsByDay: { date: string; count: number; human: number; bot: number }[] = []
+  const clicksByDayMap: Record<string, number> = {}
+  allEvents.forEach((e) => {
+    if (e.event_type !== "click" || e.is_bot) return
+    const day = new Date(e.created_at).toISOString().split("T")[0]
+    clicksByDayMap[day] = (clicksByDayMap[day] || 0) + 1
+  })
+  const viewsByDay: { date: string; count: number; human: number; bot: number; clicks: number }[] = []
   for (let i = days - 1; i >= 0; i--) {
     const d = new Date()
     d.setDate(d.getDate() - i)
@@ -136,6 +143,7 @@ export async function GET(request: NextRequest) {
       count: dayMap[key]?.total || 0,
       human: dayMap[key]?.human || 0,
       bot: dayMap[key]?.bot || 0,
+      clicks: clicksByDayMap[key] || 0,
     })
   }
 
@@ -537,6 +545,106 @@ export async function GET(request: NextRequest) {
     .sort((a, b) => b.visitors - a.visitors)
     .slice(0, 10)
 
+  // Flat top-cities leaderboard (ranked across every country, not nested).
+  const cityMap: Record<string, { city: string; country: string; countryName: string; count: number }> = {}
+  humanViews.forEach((v) => {
+    if (!v.city) return
+    const key = `${v.country || "??"}__${v.city}`
+    if (!cityMap[key]) {
+      cityMap[key] = {
+        city: v.city,
+        country: v.country || "??",
+        countryName: v.country_name || countryCodeToName(v.country || ""),
+        count: 0,
+      }
+    }
+    cityMap[key].count++
+  })
+  const topCities = Object.values(cityMap)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10)
+    .map((c) => ({
+      ...c,
+      percentage: Math.round((c.count / Math.max(humanViewCount, 1)) * 100),
+    }))
+
+  // Top pages by combined engagement (views + clicks on the page).
+  const pageEngagement: Record<string, { views: number; clicks: number }> = {}
+  humanViews.forEach((v) => {
+    const p = v.page_path || "/"
+    if (!pageEngagement[p]) pageEngagement[p] = { views: 0, clicks: 0 }
+    pageEngagement[p].views++
+  })
+  clickEvents.forEach((e) => {
+    const p = e.page_path || "/"
+    if (!pageEngagement[p]) pageEngagement[p] = { views: 0, clicks: 0 }
+    pageEngagement[p].clicks++
+  })
+  const topPagesByEngagement = Object.entries(pageEngagement)
+    .map(([page, d]) => ({ page, views: d.views, clicks: d.clicks, total: d.views + d.clicks }))
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 10)
+
+  // Recent visitor feed — most recent human sessions with the landing page
+  // (or most-recent page) they were trying to access. One row per session.
+  const sessionMap: Record<string, {
+    sessionId: string
+    visitorId: string
+    page: string
+    country: string
+    countryName: string
+    city: string
+    region: string
+    device: string
+    browser: string
+    referrer: string
+    isReturning: boolean
+    latest: string
+    pages: number
+  }> = {}
+  humanViews.forEach((v) => {
+    const sid = v.session_id || v.visitor_id || v.id
+    if (!sid) return
+    if (!sessionMap[sid]) {
+      sessionMap[sid] = {
+        sessionId: sid,
+        visitorId: v.visitor_id || "",
+        page: v.page_path || "/",
+        country: v.country || "",
+        countryName: v.country_name || countryCodeToName(v.country || ""),
+        city: v.city || "",
+        region: v.region || "",
+        device: v.device_type || "desktop",
+        browser: v.browser || "",
+        referrer: v.referrer || "",
+        isReturning: v.is_returning === true,
+        latest: v.created_at,
+        pages: 1,
+      }
+    } else {
+      const row = sessionMap[sid]
+      row.pages++
+      if (v.created_at > row.latest) {
+        row.latest = v.created_at
+        row.page = v.page_path || row.page
+      }
+      if (!row.country && v.country) row.country = v.country
+      if (!row.countryName && v.country_name) row.countryName = v.country_name
+      if (!row.city && v.city) row.city = v.city
+      if (!row.referrer && v.referrer) row.referrer = v.referrer
+    }
+  })
+  const recentVisitors = Object.values(sessionMap)
+    .sort((a, b) => new Date(b.latest).getTime() - new Date(a.latest).getTime())
+    .slice(0, 25)
+    .map((s) => {
+      let refHost = ""
+      if (s.referrer) {
+        try { refHost = new URL(s.referrer).hostname } catch { refHost = "" }
+      }
+      return { ...s, referrerHost: refHost || "Direct" }
+    })
+
   return NextResponse.json({
     totalViews,
     humanViewCount,
@@ -588,6 +696,9 @@ export async function GET(request: NextRequest) {
     utmCampaigns,
     utmSources,
     languages,
+    topCities,
+    topPagesByEngagement,
+    recentVisitors,
     searches: {
       total: totalSearches,
       top: topSearches,

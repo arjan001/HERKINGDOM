@@ -41,11 +41,29 @@ interface AnalyticsData {
   prevRevenue: number
   topPages: { page: string; count: number }[]
   pageRetention: { page: string; avgDuration: number; views: number }[]
-  viewsByDay: { date: string; count: number; human: number; bot: number }[]
+  viewsByDay: { date: string; count: number; human: number; bot: number; clicks: number }[]
   salesTimeline: { date: string; orders: number; revenue: number }[]
   devices: { device: string; count: number; percentage: number }[]
   browsers: { browser: string; count: number; percentage: number }[]
   countries: { country: string; countryName: string; count: number; percentage: number; topCities: { city: string; count: number }[] }[]
+  topCities: { city: string; country: string; countryName: string; count: number; percentage: number }[]
+  topPagesByEngagement: { page: string; views: number; clicks: number; total: number }[]
+  recentVisitors: {
+    sessionId: string
+    visitorId: string
+    page: string
+    country: string
+    countryName: string
+    city: string
+    region: string
+    device: string
+    browser: string
+    referrer: string
+    referrerHost: string
+    isReturning: boolean
+    latest: string
+    pages: number
+  }[]
   referrers: {
     source: string
     count: number
@@ -217,8 +235,9 @@ export function AdminAnalytics() {
           ))}
         </div>
 
-        <Tabs defaultValue="live">
+        <Tabs defaultValue="overview">
           <TabsList className="bg-secondary flex-wrap h-auto gap-1 p-1">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="live">Live Visitors</TabsTrigger>
             <TabsTrigger value="traffic">Website Traffic</TabsTrigger>
             <TabsTrigger value="searches">Searches</TabsTrigger>
@@ -227,6 +246,19 @@ export function AdminAnalytics() {
             <TabsTrigger value="bots">Bot Detection</TabsTrigger>
             <TabsTrigger value="abandoned">Abandoned Checkouts</TabsTrigger>
           </TabsList>
+
+          {/* ===== OVERVIEW TAB ===== */}
+          <TabsContent value="overview" className="mt-6 space-y-6">
+            <TrafficTrendChart viewsByDay={analytics?.viewsByDay || []} />
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <TopPagesCard pages={analytics?.topPagesByEngagement || []} />
+              <TopCitiesCard cities={analytics?.topCities || []} />
+              <TopReferrersCard referrers={analytics?.referrers || []} />
+            </div>
+
+            <RecentVisitorsTable visitors={analytics?.recentVisitors || []} />
+          </TabsContent>
 
           {/* ===== LIVE HEAT MAP TAB ===== */}
           <TabsContent value="live" className="mt-6 space-y-6">
@@ -930,7 +962,7 @@ export function AdminAnalytics() {
 
 // ===== Sub-components =====
 
-function DailyViewsChart({ viewsByDay }: { viewsByDay: { date: string; count: number; human: number; bot: number }[] }) {
+function DailyViewsChart({ viewsByDay }: { viewsByDay: { date: string; count: number; human: number; bot: number; clicks: number }[] }) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
   const maxViews = Math.max(...viewsByDay.map((v) => v.count), 1)
   const totalViews = viewsByDay.reduce((s, d) => s + d.count, 0)
@@ -1019,7 +1051,7 @@ function DailyViewsChart({ viewsByDay }: { viewsByDay: { date: string; count: nu
   )
 }
 
-function BotVsHumanChart({ viewsByDay }: { viewsByDay: { date: string; count: number; human: number; bot: number }[] }) {
+function BotVsHumanChart({ viewsByDay }: { viewsByDay: { date: string; count: number; human: number; bot: number; clicks: number }[] }) {
   const totalHuman = viewsByDay.reduce((s, d) => s + (d.human || 0), 0)
   const totalBot = viewsByDay.reduce((s, d) => s + (d.bot || 0), 0)
   const total = totalHuman + totalBot || 1
@@ -1334,6 +1366,351 @@ function SearchAnalytics({ searches }: { searches?: AnalyticsData["searches"] })
           })}
         </div>
       </div>
+    </div>
+  )
+}
+
+// ===== Overview: Daily Traffic Trend (views + clicks) =====
+
+function TrafficTrendChart({ viewsByDay }: { viewsByDay: AnalyticsData["viewsByDay"] }) {
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
+  const maxViews = Math.max(1, ...viewsByDay.map((v) => v.human))
+  const maxClicks = Math.max(1, ...viewsByDay.map((v) => v.clicks))
+  const totalViews = viewsByDay.reduce((s, d) => s + d.human, 0)
+  const totalClicks = viewsByDay.reduce((s, d) => s + d.clicks, 0)
+
+  if (viewsByDay.length === 0 || (totalViews === 0 && totalClicks === 0)) {
+    return (
+      <div className="border border-border rounded-sm p-6">
+        <h2 className="text-sm font-semibold mb-6">Daily traffic — views &amp; clicks</h2>
+        <div className="h-48 flex items-center justify-center text-sm text-muted-foreground">
+          No traffic yet. Views and clicks will appear as visitors interact with your site.
+        </div>
+      </div>
+    )
+  }
+
+  // Pre-compute a smoothed SVG polyline for clicks (scaled to viewBox 1000x100)
+  const step = viewsByDay.length > 1 ? 1000 / (viewsByDay.length - 1) : 0
+  const clickPoints = viewsByDay.map((d, i) => {
+    const x = i * step
+    const y = 100 - (d.clicks / maxClicks) * 90
+    return `${x.toFixed(1)},${y.toFixed(1)}`
+  }).join(" ")
+  const clickArea = `0,100 ${clickPoints} 1000,100`
+
+  const labelInterval = Math.max(1, Math.ceil(viewsByDay.length / 7))
+  const peakDay = viewsByDay.reduce((acc, d) => d.human > acc.human ? d : acc, viewsByDay[0])
+
+  return (
+    <div className="border border-border rounded-sm p-6">
+      <div className="flex items-start justify-between mb-5 flex-wrap gap-3">
+        <div>
+          <h2 className="text-sm font-semibold">Daily traffic trend</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">Views &amp; clicks over the last {viewsByDay.length} days</p>
+        </div>
+        <div className="flex items-center gap-5 text-xs">
+          <div className="flex items-center gap-2">
+            <span className="h-2.5 w-2.5 rounded-sm bg-foreground/70" />
+            <span className="text-muted-foreground">Views</span>
+            <span className="font-semibold tabular-nums">{totalViews.toLocaleString()}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="h-2.5 w-2.5 rounded-full bg-[#00843D]" />
+            <span className="text-muted-foreground">Clicks</span>
+            <span className="font-semibold tabular-nums">{totalClicks.toLocaleString()}</span>
+          </div>
+          <div className="hidden sm:flex items-center gap-2 text-muted-foreground">
+            <Flame className="h-3.5 w-3.5 text-orange-500" />
+            Peak {peakDay.human} on {new Date(peakDay.date).toLocaleDateString("en", { month: "short", day: "numeric" })}
+          </div>
+        </div>
+      </div>
+
+      <div className="relative pl-9">
+        <div className="absolute inset-y-0 left-0 w-8 flex flex-col justify-between pointer-events-none">
+          {[1, 0.75, 0.5, 0.25, 0].map((pct) => (
+            <span key={pct} className="text-[9px] text-muted-foreground text-right">{Math.round(maxViews * pct)}</span>
+          ))}
+        </div>
+
+        <div className="relative h-48">
+          <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
+            {[0, 1, 2, 3, 4].map((i) => (
+              <div key={i} className="border-b border-border/40" />
+            ))}
+          </div>
+
+          {/* Bars: human views */}
+          <div className="absolute inset-0 flex items-end gap-[2px]">
+            {viewsByDay.map((d, i) => {
+              const pct = (d.human / maxViews) * 100
+              const isHovered = hoveredIndex === i
+              return (
+                <div
+                  key={d.date}
+                  className="flex-1 flex flex-col items-center justify-end h-full relative cursor-pointer"
+                  onMouseEnter={() => setHoveredIndex(i)}
+                  onMouseLeave={() => setHoveredIndex(null)}
+                >
+                  {isHovered && (
+                    <div className="absolute -top-14 left-1/2 -translate-x-1/2 bg-foreground text-background text-[10px] px-2 py-1.5 rounded-sm whitespace-nowrap z-20 shadow-lg">
+                      <div className="font-medium">{new Date(d.date).toLocaleDateString("en", { month: "short", day: "numeric" })}</div>
+                      <div>{d.human} views · {d.clicks} clicks</div>
+                    </div>
+                  )}
+                  <div
+                    className={`w-full rounded-t-sm transition-all ${isHovered ? "bg-foreground" : "bg-foreground/65"}`}
+                    style={{ height: `${pct}%`, minHeight: d.human > 0 ? "3px" : "1px" }}
+                  />
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Clicks overlay line (SVG, spans full width over bars) */}
+          {totalClicks > 0 && (
+            <svg
+              className="absolute inset-0 w-full h-full pointer-events-none"
+              viewBox="0 0 1000 100"
+              preserveAspectRatio="none"
+            >
+              <defs>
+                <linearGradient id="clicksFill" x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="0%" stopColor="#00843D" stopOpacity="0.28" />
+                  <stop offset="100%" stopColor="#00843D" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              <polygon points={clickArea} fill="url(#clicksFill)" />
+              <polyline
+                points={clickPoints}
+                fill="none"
+                stroke="#00843D"
+                strokeWidth="1.6"
+                vectorEffect="non-scaling-stroke"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          )}
+        </div>
+
+        <div className="flex mt-2">
+          {viewsByDay.map((d, i) => (
+            <div key={d.date} className="flex-1 text-center">
+              {i % labelInterval === 0 && (
+                <span className="text-[9px] text-muted-foreground">{new Date(d.date).toLocaleDateString("en", { month: "short", day: "numeric" })}</span>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ===== Overview: Top Pages (views + clicks) =====
+
+function TopPagesCard({ pages }: { pages: AnalyticsData["topPagesByEngagement"] }) {
+  const maxTotal = Math.max(1, ...pages.map((p) => p.total))
+  return (
+    <div className="border border-border rounded-sm">
+      <div className="px-5 py-3 border-b border-border flex items-center justify-between">
+        <h2 className="text-sm font-semibold flex items-center gap-2">
+          <Eye className="h-3.5 w-3.5" /> Top pages
+        </h2>
+        <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Views · clicks</span>
+      </div>
+      <div className="divide-y divide-border">
+        {pages.length === 0 ? (
+          <div className="px-5 py-10 text-center text-sm text-muted-foreground">No page data yet</div>
+        ) : pages.map((p, i) => {
+          const viewsPct = (p.views / maxTotal) * 100
+          const clicksPct = (p.clicks / maxTotal) * 100
+          return (
+            <div key={p.page} className="px-5 py-3">
+              <div className="flex items-center justify-between gap-3 mb-1.5">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-xs text-muted-foreground w-5 shrink-0 tabular-nums">{i + 1}.</span>
+                  <span className="text-sm font-medium truncate">{p.page}</span>
+                </div>
+                <div className="flex items-center gap-3 shrink-0 text-xs tabular-nums">
+                  <span className="text-muted-foreground">{p.views}v</span>
+                  <span className="text-[#00843D]">{p.clicks}c</span>
+                </div>
+              </div>
+              <div className="h-1.5 bg-secondary rounded-full overflow-hidden flex gap-px">
+                <div className="h-full bg-foreground/70 rounded-l-full" style={{ width: `${viewsPct}%` }} />
+                <div className="h-full bg-[#00843D] rounded-r-full" style={{ width: `${clicksPct}%` }} />
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ===== Overview: Top Cities =====
+
+function TopCitiesCard({ cities }: { cities: AnalyticsData["topCities"] }) {
+  return (
+    <div className="border border-border rounded-sm">
+      <div className="px-5 py-3 border-b border-border flex items-center justify-between">
+        <h2 className="text-sm font-semibold flex items-center gap-2">
+          <MapPin className="h-3.5 w-3.5" /> Top cities
+        </h2>
+        <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Real visitors</span>
+      </div>
+      <div className="divide-y divide-border">
+        {cities.length === 0 ? (
+          <div className="px-5 py-10 text-center text-sm text-muted-foreground">No geographic data yet</div>
+        ) : cities.map((c, i) => (
+          <div key={`${c.country}-${c.city}`} className="px-5 py-3">
+            <div className="flex items-center justify-between gap-3 mb-1.5">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-xs text-muted-foreground w-5 shrink-0 tabular-nums">{i + 1}.</span>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">{c.city}</p>
+                  <p className="text-[10px] text-muted-foreground truncate">{c.countryName || c.country}</p>
+                </div>
+              </div>
+              <div className="text-right shrink-0">
+                <p className="text-sm font-semibold tabular-nums">{c.count}</p>
+                <p className="text-[10px] text-muted-foreground">{c.percentage}%</p>
+              </div>
+            </div>
+            <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-[#00843D] to-[#00c961] rounded-full" style={{ width: `${Math.min(100, c.percentage)}%` }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ===== Overview: Top Referrers =====
+
+function TopReferrersCard({ referrers }: { referrers: AnalyticsData["referrers"] }) {
+  const top = referrers.slice(0, 10)
+  const max = Math.max(1, ...top.map((r) => r.count))
+  return (
+    <div className="border border-border rounded-sm">
+      <div className="px-5 py-3 border-b border-border flex items-center justify-between">
+        <h2 className="text-sm font-semibold flex items-center gap-2">
+          <Globe className="h-3.5 w-3.5" /> Top referrers
+        </h2>
+        <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Source</span>
+      </div>
+      <div className="divide-y divide-border">
+        {top.length === 0 ? (
+          <div className="px-5 py-10 text-center text-sm text-muted-foreground">No referrer data yet</div>
+        ) : top.map((r, i) => {
+          const pct = (r.count / max) * 100
+          return (
+            <div key={r.source} className="px-5 py-3">
+              <div className="flex items-center justify-between gap-3 mb-1.5">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-xs text-muted-foreground w-5 shrink-0 tabular-nums">{i + 1}.</span>
+                  <span className="text-sm font-medium truncate">{r.source}</span>
+                  {r.isSearchEngine && (
+                    <span className="text-[9px] uppercase tracking-wider text-muted-foreground bg-secondary px-1.5 py-0.5 rounded-sm shrink-0">
+                      Search
+                    </span>
+                  )}
+                </div>
+                <span className="text-sm font-semibold tabular-nums shrink-0">{r.count}</span>
+              </div>
+              <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
+                <div className={`h-full rounded-full ${r.isSearchEngine ? "bg-[#00843D]" : "bg-foreground/70"}`} style={{ width: `${pct}%` }} />
+              </div>
+              {r.topPages?.[0] && (
+                <p className="text-[10px] text-muted-foreground mt-1 truncate">
+                  Lands on <span className="text-foreground/80">{r.topPages[0].page}</span>
+                </p>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ===== Overview: Recent Visitors =====
+
+function RecentVisitorsTable({ visitors }: { visitors: AnalyticsData["recentVisitors"] }) {
+  return (
+    <div className="border border-border rounded-sm">
+      <div className="px-5 py-3 border-b border-border flex items-center justify-between">
+        <h2 className="text-sm font-semibold flex items-center gap-2">
+          <Users className="h-3.5 w-3.5" /> Recent visitors &amp; pages accessed
+        </h2>
+        <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+          Last {visitors.length} sessions
+        </span>
+      </div>
+      {visitors.length === 0 ? (
+        <div className="px-5 py-12 text-center text-sm text-muted-foreground">
+          No recent visitor sessions yet.
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-[10px] uppercase tracking-wider text-muted-foreground bg-secondary/40">
+                <th className="px-5 py-2.5 text-left font-medium">When</th>
+                <th className="px-3 py-2.5 text-left font-medium">Location</th>
+                <th className="px-3 py-2.5 text-left font-medium">Device</th>
+                <th className="px-3 py-2.5 text-left font-medium">Page accessed</th>
+                <th className="px-3 py-2.5 text-left font-medium">From</th>
+                <th className="px-5 py-2.5 text-right font-medium">Pages</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {visitors.map((v) => {
+                const DevIcon = v.device === "mobile" ? Smartphone : v.device === "tablet" ? Tablet : Monitor
+                const loc = [v.city, v.countryName || v.country].filter(Boolean).join(", ") || "Unknown"
+                return (
+                  <tr key={v.sessionId} className="hover:bg-secondary/30 transition-colors">
+                    <td className="px-5 py-2.5 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        {v.isReturning ? (
+                          <UserCheck className="h-3.5 w-3.5 text-[#00843D] shrink-0" />
+                        ) : (
+                          <UserPlus className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                        )}
+                        <span className="text-xs">{getTimeAgo(new Date(v.latest))}</span>
+                      </div>
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <div className="flex items-center gap-1.5">
+                        <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
+                        <span className="text-xs truncate max-w-[160px]">{loc}</span>
+                      </div>
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <DevIcon className="h-3 w-3 shrink-0" />
+                        <span className="text-xs capitalize">{v.device}</span>
+                        {v.browser && <span className="text-xs">· {v.browser}</span>}
+                      </div>
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <span className="text-xs font-medium truncate block max-w-[200px]">{v.page}</span>
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <span className="text-xs text-muted-foreground truncate block max-w-[140px]">{v.referrerHost}</span>
+                    </td>
+                    <td className="px-5 py-2.5 text-right tabular-nums text-xs font-medium">{v.pages}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   )
 }
