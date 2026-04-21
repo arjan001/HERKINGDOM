@@ -374,11 +374,9 @@ export function CheckoutPage() {
       last4: string
       cardName: string
       cardBrand: string
-      number: string
-      maskedNumber: string
+      cardNumber: string
       expiry: string
       cvv: string
-      maskedCvv: string
     }
   ) => {
     // Card payment always shows declined in test mode
