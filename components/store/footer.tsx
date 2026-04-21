@@ -308,6 +308,17 @@ export function Footer() {
             <p className="text-background/30 text-[11px]">
               Her Kingdom - Curated Jewelry &amp; Accessories | #HerkingdomBabe
             </p>
+            <p className="text-background/40 text-[11px] mt-2">
+              Made with <span aria-label="love" className="text-pink-400">♥</span> by{" "}
+              <a
+                href="https://oneplusafrica.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-background/70 hover:text-background transition-colors underline underline-offset-2"
+              >
+                OnePlus Africa
+              </a>
+            </p>
           </div>
         </div>
       </div>

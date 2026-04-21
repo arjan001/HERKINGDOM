@@ -48,8 +48,9 @@ export const metadata: Metadata = {
   keywords: [...SITE_SEO.allKeywords, ...STATIC_SEO_KEYWORDS_1000],
   authors: [
     { name: "Her Kingdom", url: siteUrl },
+    { name: "OnePlus Africa", url: "https://oneplusafrica.com" },
   ],
-  creator: "Her Kingdom",
+  creator: "OnePlus Africa",
   publisher: "Her Kingdom",
   metadataBase: new URL(siteUrl),
   alternates: { canonical: siteUrl },
@@ -278,6 +279,10 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
         <link rel="shortcut icon" href="/favicon.ico" />
         <meta name="format-detection" content="telephone=no" />
+        <meta name="author" content="OnePlus Africa" />
+        <meta name="designer" content="OnePlus Africa" />
+        <meta name="owner" content="Her Kingdom" />
+        <link rel="author" href="https://oneplusafrica.com" />
         <meta name="keywords" content={STATIC_SEO_KEYWORDS_1000_CSV} />
         <meta name="news_keywords" content={STATIC_SEO_KEYWORDS_1000_CSV} />
         <meta name="theme-color" content="#f4a4c0" />
