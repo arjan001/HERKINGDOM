@@ -46,7 +46,7 @@ export async function generateMetadata({
   const title = `${post.title} | The Her Kingdom Journal`
   const description = post.excerpt || `${post.title} — a story from the Her Kingdom Journal.`
   const canonical = `${siteUrl}/blogs/${post.slug}`
-  const image = post.cover_image || `${siteUrl}/logo.png`
+  const image = post.cover_image || `${siteUrl}/og-default.jpg`
 
   return {
     title,

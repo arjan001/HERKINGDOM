@@ -64,11 +64,11 @@ export const metadata: Metadata = {
       "Shop curated jewelry, necklaces, bracelets, earrings, watches & accessories at Her Kingdom. Hypoallergenic, long-lasting pieces. Delivery across Kenya.",
     images: [
       {
-        url: `${siteUrl}/logo.png`,
-        width: 512,
-        height: 512,
+        url: `${siteUrl}/og-default.jpg`,
+        width: 1200,
+        height: 1200,
         alt: "Her Kingdom - Curated Jewelry & Accessories Nairobi",
-        type: "image/png",
+        type: "image/jpeg",
       },
     ],
   },
@@ -81,10 +81,10 @@ export const metadata: Metadata = {
       "Shop curated necklaces, bracelets, earrings, watches & accessories. Hypoallergenic jewelry delivered across Kenya. WhatsApp +254780406059.",
     images: [
       {
-        url: `${siteUrl}/logo.png`,
-        alt: "Her Kingdom Logo",
-        width: 512,
-        height: 512,
+        url: `${siteUrl}/og-default.jpg`,
+        alt: "Her Kingdom Jewelry",
+        width: 1200,
+        height: 1200,
       },
     ],
   },
