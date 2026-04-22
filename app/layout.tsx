@@ -66,7 +66,7 @@ export const metadata: Metadata = {
       {
         url: `${siteUrl}/og-default.jpg`,
         width: 1200,
-        height: 1200,
+        height: 630,
         alt: "Her Kingdom - Curated Jewelry & Accessories Nairobi",
         type: "image/jpeg",
       },
@@ -84,7 +84,7 @@ export const metadata: Metadata = {
         url: `${siteUrl}/og-default.jpg`,
         alt: "Her Kingdom Jewelry",
         width: 1200,
-        height: 1200,
+        height: 630,
       },
     ],
   },

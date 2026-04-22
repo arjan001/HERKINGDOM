@@ -62,14 +62,25 @@ export async function generateMetadata({
   const description = post.excerpt || `${post.title} — a story from the Her Kingdom Journal.`
   const canonical = `${siteUrl}/blogs/${post.slug}`
   const image = ogImageUrl(post.cover_image)
-  const ogImage = {
-    url: image,
-    secureUrl: image,
-    width: 1200,
-    height: 630,
-    alt: post.title,
-    type: "image/jpeg",
-  }
+  const usingFallback = !post.cover_image || post.cover_image.length === 0
+  // Only declare width/height for our known fallback image. Blog cover images have
+  // varying dimensions, and WhatsApp refuses to preview when declared dims differ from
+  // the real image size.
+  const ogImage = usingFallback
+    ? {
+        url: image,
+        secureUrl: image,
+        width: 1200,
+        height: 630,
+        alt: post.title,
+        type: "image/jpeg",
+      }
+    : {
+        url: image,
+        secureUrl: image,
+        alt: post.title,
+        type: "image/jpeg",
+      }
 
   return {
     title,
@@ -94,7 +105,9 @@ export async function generateMetadata({
       creator: "@herkingdom_jewelry",
       title: post.title,
       description,
-      images: [{ url: image, alt: post.title, width: 1200, height: 630 }],
+      images: [usingFallback
+        ? { url: image, alt: post.title, width: 1200, height: 630 }
+        : { url: image, alt: post.title }],
     },
   }
 }

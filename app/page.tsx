@@ -21,7 +21,16 @@ export const metadata: Metadata = {
     type: "website",
     siteName: "Her Kingdom",
     locale: "en_KE",
-    images: [{ url: `${siteUrl}/logo.png`, width: 512, height: 512, alt: "Her Kingdom - Curated Jewelry & Accessories Nairobi" }],
+    images: [
+      {
+        url: `${siteUrl}/og-default.jpg`,
+        secureUrl: `${siteUrl}/og-default.jpg`,
+        width: 1200,
+        height: 630,
+        alt: "Her Kingdom - Curated Jewelry & Accessories Nairobi",
+        type: "image/jpeg",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
@@ -29,7 +38,7 @@ export const metadata: Metadata = {
     creator: "@herkingdom_jewelry",
     title: HOME_TITLE,
     description: HOME_DESCRIPTION,
-    images: [{ url: `${siteUrl}/logo.png`, alt: "Her Kingdom Logo" }],
+    images: [{ url: `${siteUrl}/og-default.jpg`, alt: "Her Kingdom Jewelry", width: 1200, height: 630 }],
   },
 }
 
