@@ -34,6 +34,21 @@ async function fetchPost(slug: string): Promise<BlogFetched["post"] | null> {
   }
 }
 
+function absoluteUrl(url: string): string {
+  if (!url) return `${siteUrl}/og-default.jpg`
+  if (url.startsWith("http://") || url.startsWith("https://")) return url
+  if (url.startsWith("/")) return `${siteUrl}${url}`
+  return `${siteUrl}/${url}`
+}
+
+// Social crawlers (Twitter/X, WhatsApp, Facebook) need a direct, absolute image URL
+// with explicit dimensions in the OG tags. Relative paths or missing width/height
+// cause the preview card to render without an image.
+function ogImageUrl(rawUrl: string | null | undefined): string {
+  if (!rawUrl || rawUrl.length === 0) return `${siteUrl}/og-default.jpg`
+  return absoluteUrl(rawUrl)
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -46,7 +61,15 @@ export async function generateMetadata({
   const title = `${post.title} | The Her Kingdom Journal`
   const description = post.excerpt || `${post.title} — a story from the Her Kingdom Journal.`
   const canonical = `${siteUrl}/blogs/${post.slug}`
-  const image = post.cover_image || `${siteUrl}/og-default.jpg`
+  const image = ogImageUrl(post.cover_image)
+  const ogImage = {
+    url: image,
+    secureUrl: image,
+    width: 1200,
+    height: 630,
+    alt: post.title,
+    type: "image/jpeg",
+  }
 
   return {
     title,
@@ -63,13 +86,15 @@ export async function generateMetadata({
       publishedTime: post.published_at,
       authors: [post.author],
       tags: post.tags || [],
-      images: [{ url: image, alt: post.title }],
+      images: [ogImage],
     },
     twitter: {
       card: "summary_large_image",
+      site: "@herkingdom_jewelry",
+      creator: "@herkingdom_jewelry",
       title: post.title,
       description,
-      images: [{ url: image, alt: post.title }],
+      images: [{ url: image, alt: post.title, width: 1200, height: 630 }],
     },
   }
 }
@@ -84,7 +109,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
     "@type": "Article",
     headline: post.title,
     description: post.excerpt,
-    image: post.cover_image ? [post.cover_image] : undefined,
+    image: post.cover_image ? [absoluteUrl(post.cover_image)] : [`${siteUrl}/og-default.jpg`],
     datePublished: post.published_at,
     author: { "@type": "Person", name: post.author },
     publisher: {
