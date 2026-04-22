@@ -45,14 +45,25 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     const title = `${product.name} | Best ${category} Gift Kenya | herkingdomjewelry.shop`
     const description = `Shop ${product.name} at herkingdomjewelry.shop. The best ${category.toLowerCase()} in Nairobi. Perfect for ${occasion} with luxe packaging and same-day delivery. Order via WhatsApp!`
     const primaryImage = ogImageUrl(product.images[0])
-    const ogImage = {
-      url: primaryImage,
-      secureUrl: primaryImage,
-      width: 1200,
-      height: 1200,
-      alt: `${product.name} - Her Kingdom Jewelry Nairobi`,
-      type: "image/jpeg",
-    }
+    const hasProductImage = product.images && product.images.length > 0 && product.images[0]
+    // When we control the fallback image we declare its exact dimensions so social crawlers
+    // (WhatsApp, Facebook) trust it. For actual product photos we omit width/height because
+    // they vary per-product and WhatsApp refuses to render when declared dims differ from real ones.
+    const ogImage = hasProductImage
+      ? {
+          url: primaryImage,
+          secureUrl: primaryImage,
+          alt: `${product.name} - Her Kingdom Jewelry Nairobi`,
+          type: "image/jpeg",
+        }
+      : {
+          url: primaryImage,
+          secureUrl: primaryImage,
+          width: 1200,
+          height: 630,
+          alt: `${product.name} - Her Kingdom Jewelry Nairobi`,
+          type: "image/jpeg",
+        }
     return {
       title,
       description,
@@ -80,7 +91,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
         creator: "@herkingdom_jewelry",
         title,
         description,
-        images: [{ url: primaryImage, alt: ogImage.alt, width: 1200, height: 1200 }],
+        images: [hasProductImage
+          ? { url: primaryImage, alt: ogImage.alt }
+          : { url: primaryImage, alt: ogImage.alt, width: 1200, height: 630 }],
       },
       robots: {
         index: true,
