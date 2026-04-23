@@ -43,8 +43,17 @@ export default function RegisterPage() {
       setError("Passwords do not match")
       return
     }
-    if (form.password.length < 6) {
-      setError("Password must be at least 6 characters")
+    if (form.password.length < 8) {
+      setError("Password must be at least 8 characters")
+      return
+    }
+    if (!/[A-Za-z]/.test(form.password) || !/[0-9]/.test(form.password)) {
+      setError("Password must contain both letters and numbers")
+      return
+    }
+    const hasSymbolOrMixedCase = /[^A-Za-z0-9]/.test(form.password) || (/[a-z]/.test(form.password) && /[A-Z]/.test(form.password))
+    if (!hasSymbolOrMixedCase) {
+      setError("Password must include a symbol or mix upper & lower case")
       return
     }
 
@@ -202,7 +211,7 @@ export default function RegisterPage() {
           <div>
             <Label htmlFor="password" className="text-sm font-medium mb-1.5 block">Password</Label>
             <div className="relative">
-              <Input id="password" type={showPassword ? "text" : "password"} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Min 6 characters" className="h-11 pr-10" required />
+              <Input id="password" type={showPassword ? "text" : "password"} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Min 8 chars, letters + numbers + symbol/mixed case" className="h-11 pr-10" required />
               <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>

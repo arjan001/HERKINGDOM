@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { ChevronLeft } from "lucide-react"
 import { getSiteSettings } from "@/lib/supabase-data"
+import { sanitizeHtml } from "@/lib/sanitize-html"
 
 interface Policy {
   id: string
@@ -124,7 +125,7 @@ export default async function PolicyPage({ params }: { params: Promise<{ slug: s
         <div className="max-w-3xl mx-auto px-4 py-12">
           <div
             className="prose prose-sm max-w-none prose-headings:font-serif prose-headings:font-semibold prose-headings:text-foreground prose-headings:mt-6 prose-headings:mb-3 prose-p:text-muted-foreground prose-p:leading-7 prose-a:text-foreground prose-a:underline prose-a:hover:no-underline prose-strong:text-foreground prose-strong:font-semibold prose-ul:list-disc prose-ul:pl-5 prose-ul:my-3 prose-li:my-1"
-            dangerouslySetInnerHTML={{ __html: policy.content }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(policy.content) }}
           />
         </div>
 

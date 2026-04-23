@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
+import { sanitizeHtml } from "@/lib/sanitize-html"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
@@ -446,7 +447,7 @@ export function BlogDetailPage({ slug }: { slug: string }) {
                 [&_p.lead]:first-letter:float-left [&_p.lead]:first-letter:mr-3 [&_p.lead]:first-letter:mt-1
                 [&_p.lead]:first-letter:leading-[0.9] [&_p.lead]:first-letter:text-pink-600
               "
-              dangerouslySetInnerHTML={{ __html: post.content }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.content) }}
             />
 
             {/* Tag cloud */}

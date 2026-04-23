@@ -4,6 +4,7 @@ import { Navbar } from "@/components/store/navbar"
 import { Footer } from "@/components/store/footer"
 import { PAGE_SEO, SITE_SEO } from "@/lib/seo-data"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { sanitizeHtml } from "@/lib/sanitize-html"
 
 export const revalidate = 300
 
@@ -67,7 +68,7 @@ export default async function RefundPolicyPage() {
         </p>
         <div
           className="mt-10 prose prose-sm max-w-none text-muted-foreground prose-headings:text-lg prose-headings:font-serif prose-headings:font-semibold prose-headings:text-foreground prose-strong:text-foreground prose-a:text-foreground prose-a:underline prose-a:underline-offset-2 prose-ul:list-disc prose-ul:pl-5 prose-li:my-1"
-          dangerouslySetInnerHTML={{ __html: policy?.content || "<p>Content not available.</p>" }}
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(policy?.content || "<p>Content not available.</p>") }}
         />
       </main>
       <Footer />

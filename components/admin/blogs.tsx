@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import useSWR from "swr"
+import { sanitizeHtml } from "@/lib/sanitize-html"
 import {
   Save,
   Loader2,
@@ -603,7 +604,7 @@ function BlogPreview({ form }: { form: FormState }) {
             [&_figure]:my-6 [&_figure_img]:w-full [&_figure_img]:rounded-2xl [&_figure_img]:shadow-lg
             [&_hr]:border-0 [&_hr]:h-px [&_hr]:bg-pink-200 [&_hr]:my-10
           "
-          dangerouslySetInnerHTML={{ __html: form.content || "<p>Your story will appear here.</p>" }}
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(form.content || "<p>Your story will appear here.</p>") }}
         />
         {form.tags.length > 0 && (
           <div className="mt-10 pt-6 border-t border-black/5">
