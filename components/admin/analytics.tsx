@@ -1642,6 +1642,16 @@ function TopReferrersCard({ referrers }: { referrers: AnalyticsData["referrers"]
 // ===== Overview: Recent Visitors =====
 
 function RecentVisitorsTable({ visitors }: { visitors: AnalyticsData["recentVisitors"] }) {
+  const PER_PAGE = 10
+  const [page, setPage] = useState(1)
+  const totalPages = Math.max(1, Math.ceil(visitors.length / PER_PAGE))
+  useEffect(() => {
+    if (page > totalPages) setPage(1)
+  }, [totalPages, page])
+  const start = (page - 1) * PER_PAGE
+  const pagedVisitors = visitors.slice(start, start + PER_PAGE)
+  const rangeStart = visitors.length === 0 ? 0 : start + 1
+  const rangeEnd = Math.min(start + PER_PAGE, visitors.length)
   return (
     <div className="border border-border rounded-sm">
       <div className="px-5 py-3 border-b border-border flex items-center justify-between">
@@ -1670,7 +1680,7 @@ function RecentVisitorsTable({ visitors }: { visitors: AnalyticsData["recentVisi
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {visitors.map((v) => {
+              {pagedVisitors.map((v) => {
                 const DevIcon = v.device === "mobile" ? Smartphone : v.device === "tablet" ? Tablet : Monitor
                 const loc = [v.city, v.countryName || v.country].filter(Boolean).join(", ") || "Unknown"
                 const allPages = v.pagePaths && v.pagePaths.length > 0 ? v.pagePaths : [v.page]
@@ -1720,6 +1730,17 @@ function RecentVisitorsTable({ visitors }: { visitors: AnalyticsData["recentVisi
               })}
             </tbody>
           </table>
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-5 py-2.5 border-t border-border bg-secondary/30">
+              <span className="text-[11px] text-muted-foreground">
+                {rangeStart}-{rangeEnd} of {visitors.length} · Page {page}/{totalPages}
+              </span>
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === 1} onClick={() => setPage(p => p - 1)}><ChevronLeft className="h-3.5 w-3.5" /></Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === totalPages} onClick={() => setPage(p => p + 1)}><ChevronRight className="h-3.5 w-3.5" /></Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
