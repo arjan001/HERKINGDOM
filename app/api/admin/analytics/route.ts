@@ -585,12 +585,13 @@ export async function GET(request: NextRequest) {
     .sort((a, b) => b.total - a.total)
     .slice(0, 10)
 
-  // Recent visitor feed — most recent human sessions with the landing page
-  // (or most-recent page) they were trying to access. One row per session.
+  // Recent visitor feed — most recent human sessions with the full list of
+  // pages they accessed (most recent first). One row per session.
   const sessionMap: Record<string, {
     sessionId: string
     visitorId: string
     page: string
+    pagePaths: string[]
     country: string
     countryName: string
     city: string
@@ -605,11 +606,13 @@ export async function GET(request: NextRequest) {
   humanViews.forEach((v) => {
     const sid = v.session_id || v.visitor_id || v.id
     if (!sid) return
+    const path = v.page_path || "/"
     if (!sessionMap[sid]) {
       sessionMap[sid] = {
         sessionId: sid,
         visitorId: v.visitor_id || "",
-        page: v.page_path || "/",
+        page: path,
+        pagePaths: [path],
         country: v.country || "",
         countryName: v.country_name || countryCodeToName(v.country || ""),
         city: v.city || "",
@@ -624,9 +627,10 @@ export async function GET(request: NextRequest) {
     } else {
       const row = sessionMap[sid]
       row.pages++
+      if (!row.pagePaths.includes(path)) row.pagePaths.push(path)
       if (v.created_at > row.latest) {
         row.latest = v.created_at
-        row.page = v.page_path || row.page
+        row.page = path
       }
       if (!row.country && v.country) row.country = v.country
       if (!row.countryName && v.country_name) row.countryName = v.country_name

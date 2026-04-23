@@ -52,6 +52,7 @@ interface AnalyticsData {
     sessionId: string
     visitorId: string
     page: string
+    pagePaths: string[]
     country: string
     countryName: string
     city: string
@@ -1641,6 +1642,16 @@ function TopReferrersCard({ referrers }: { referrers: AnalyticsData["referrers"]
 // ===== Overview: Recent Visitors =====
 
 function RecentVisitorsTable({ visitors }: { visitors: AnalyticsData["recentVisitors"] }) {
+  const PER_PAGE = 10
+  const [page, setPage] = useState(1)
+  const totalPages = Math.max(1, Math.ceil(visitors.length / PER_PAGE))
+  useEffect(() => {
+    if (page > totalPages) setPage(1)
+  }, [totalPages, page])
+  const start = (page - 1) * PER_PAGE
+  const pagedVisitors = visitors.slice(start, start + PER_PAGE)
+  const rangeStart = visitors.length === 0 ? 0 : start + 1
+  const rangeEnd = Math.min(start + PER_PAGE, visitors.length)
   return (
     <div className="border border-border rounded-sm">
       <div className="px-5 py-3 border-b border-border flex items-center justify-between">
@@ -1663,17 +1674,19 @@ function RecentVisitorsTable({ visitors }: { visitors: AnalyticsData["recentVisi
                 <th className="px-5 py-2.5 text-left font-medium">When</th>
                 <th className="px-3 py-2.5 text-left font-medium">Location</th>
                 <th className="px-3 py-2.5 text-left font-medium">Device</th>
-                <th className="px-3 py-2.5 text-left font-medium">Page accessed</th>
+                <th className="px-3 py-2.5 text-left font-medium">Pages accessed</th>
                 <th className="px-3 py-2.5 text-left font-medium">From</th>
                 <th className="px-5 py-2.5 text-right font-medium">Pages</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {visitors.map((v) => {
+              {pagedVisitors.map((v) => {
                 const DevIcon = v.device === "mobile" ? Smartphone : v.device === "tablet" ? Tablet : Monitor
                 const loc = [v.city, v.countryName || v.country].filter(Boolean).join(", ") || "Unknown"
+                const allPages = v.pagePaths && v.pagePaths.length > 0 ? v.pagePaths : [v.page]
+                const extraPages = allPages.slice(1)
                 return (
-                  <tr key={v.sessionId} className="hover:bg-secondary/30 transition-colors">
+                  <tr key={v.sessionId} className="hover:bg-secondary/30 transition-colors align-top">
                     <td className="px-5 py-2.5 whitespace-nowrap">
                       <div className="flex items-center gap-2">
                         {v.isReturning ? (
@@ -1698,7 +1711,15 @@ function RecentVisitorsTable({ visitors }: { visitors: AnalyticsData["recentVisi
                       </div>
                     </td>
                     <td className="px-3 py-2.5">
-                      <span className="text-xs font-medium truncate block max-w-[200px]">{v.page}</span>
+                      <div className="max-w-[240px]" title={allPages.join("\n")}>
+                        <span className="text-xs font-medium truncate block">{allPages[0]}</span>
+                        {extraPages.length > 0 && (
+                          <span className="text-[10px] text-muted-foreground truncate block mt-0.5">
+                            {extraPages.slice(0, 2).join(" · ")}
+                            {extraPages.length > 2 ? ` · +${extraPages.length - 2} more` : ""}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-3 py-2.5">
                       <span className="text-xs text-muted-foreground truncate block max-w-[140px]">{v.referrerHost}</span>
@@ -1709,6 +1730,17 @@ function RecentVisitorsTable({ visitors }: { visitors: AnalyticsData["recentVisi
               })}
             </tbody>
           </table>
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-5 py-2.5 border-t border-border bg-secondary/30">
+              <span className="text-[11px] text-muted-foreground">
+                {rangeStart}-{rangeEnd} of {visitors.length} · Page {page}/{totalPages}
+              </span>
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === 1} onClick={() => setPage(p => p - 1)}><ChevronLeft className="h-3.5 w-3.5" /></Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === totalPages} onClick={() => setPage(p => p + 1)}><ChevronRight className="h-3.5 w-3.5" /></Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
