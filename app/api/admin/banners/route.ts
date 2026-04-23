@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { NextRequest, NextResponse } from "next/server"
-import { requireAuth, rateLimit, rateLimitResponse } from "@/lib/security"
+import { requireAuth, rateLimit, rateLimitResponse, isValidUUID } from "@/lib/security"
 
 export async function GET(request: NextRequest) {
   const rl = rateLimit(request, { limit: 30, windowSeconds: 60 })
@@ -150,6 +150,10 @@ export async function DELETE(request: NextRequest) {
   const type = searchParams.get("type")
 
   if (!id || !type) return NextResponse.json({ error: "Missing id or type" }, { status: 400 })
+  if (!isValidUUID(id)) return NextResponse.json({ error: "Invalid id" }, { status: 400 })
+  if (!["banner", "navbar_offer", "popup_offer"].includes(type)) {
+    return NextResponse.json({ error: "Invalid type" }, { status: 400 })
+  }
 
   const table = type === "banner" ? "banners" : type === "navbar_offer" ? "navbar_offers" : "popup_offers"
   const { error } = await supabase.from(table).delete().eq("id", id)

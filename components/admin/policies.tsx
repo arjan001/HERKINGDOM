@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import useSWR from "swr"
+import { sanitizeHtml } from "@/lib/sanitize-html"
 
 interface Policy {
   id: string
@@ -273,7 +274,7 @@ export function AdminPolicies() {
                     <div className="px-4 py-2 border-b border-border bg-secondary/30">
                       <p className="text-xs font-medium text-muted-foreground">Preview</p>
                     </div>
-                    <div className="p-6 prose prose-sm max-w-none prose-headings:font-serif prose-headings:font-semibold" dangerouslySetInnerHTML={{ __html: form.content }} />
+                    <div className="p-6 prose prose-sm max-w-none prose-headings:font-serif prose-headings:font-semibold" dangerouslySetInnerHTML={{ __html: sanitizeHtml(form.content) }} />
                   </div>
                 ) : (
                   <div>

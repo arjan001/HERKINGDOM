@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { NextRequest, NextResponse } from "next/server"
-import { requireAuth, rateLimit, rateLimitResponse } from "@/lib/security"
+import { requireAuth, rateLimit, rateLimitResponse, isValidUUID } from "@/lib/security"
 
 const ALLOWED_TYPES = new Set(["delivery", "pickup"])
 const ALLOWED_REGIONS = new Set(["nairobi", "outside_nairobi"])
@@ -94,7 +94,9 @@ export async function PUT(request: NextRequest) {
   const supabase = await createClient()
   const body = await request.json()
 
-  if (!body.id) return NextResponse.json({ error: "Missing ID" }, { status: 400 })
+  if (!body.id || typeof body.id !== "string" || !isValidUUID(body.id)) {
+    return NextResponse.json({ error: "Missing or invalid ID" }, { status: 400 })
+  }
 
   const payload = {
     name: String(body.name || "").trim(),
@@ -134,7 +136,7 @@ export async function DELETE(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const id = searchParams.get("id")
 
-  if (!id) return NextResponse.json({ error: "Missing ID" }, { status: 400 })
+  if (!id || !isValidUUID(id)) return NextResponse.json({ error: "Invalid ID" }, { status: 400 })
 
   const { error } = await supabase.from("delivery_locations").delete().eq("id", id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

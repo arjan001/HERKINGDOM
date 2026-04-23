@@ -24,14 +24,34 @@ export default function LoginPage() {
     setLoading(true)
     setError("")
 
+    const cleanEmail = email.trim().toLowerCase()
+
+    // Brute-force guard (per-IP + per-email rate limit)
+    try {
+      const guard = await fetch("/api/auth/login-guard", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: cleanEmail }),
+      })
+      if (!guard.ok) {
+        const data = await guard.json().catch(() => ({}))
+        setError(data.error || "Too many attempts. Please wait a few minutes.")
+        setLoading(false)
+        return
+      }
+    } catch {
+      // Fail-open on network error so the user isn't permanently locked out
+    }
+
     const supabase = createClient()
     const { error: authError } = await supabase.auth.signInWithPassword({
-      email,
+      email: cleanEmail,
       password,
     })
 
     if (authError) {
-      setError(authError.message)
+      // Generic message -- do not leak whether account exists
+      setError("Invalid email or password.")
       setLoading(false)
       return
     }

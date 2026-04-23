@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { NextResponse, NextRequest } from "next/server"
 import * as bcrypt from "bcrypt"
+import { isValidEmail, validatePassword, stripTags } from "@/lib/security"
 
 export async function POST(request: NextRequest) {
   const body = await request.json()
@@ -11,8 +12,23 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
   }
 
-  // Hash the password with bcrypt
-  const passwordHash = await bcrypt.hash(password, 10)
+  const cleanEmail = typeof email === "string" ? email.trim().toLowerCase() : ""
+  if (!isValidEmail(cleanEmail)) {
+    return NextResponse.json({ error: "Invalid email" }, { status: 400 })
+  }
+
+  const cleanName = stripTags(displayName, 80)
+  if (!cleanName) {
+    return NextResponse.json({ error: "Invalid name" }, { status: 400 })
+  }
+
+  const pwCheck = validatePassword(password)
+  if (!pwCheck.ok) {
+    return NextResponse.json({ error: pwCheck.error }, { status: 400 })
+  }
+
+  // Hash the password with bcrypt (cost 12 for stronger protection)
+  const passwordHash = await bcrypt.hash(password, 12)
 
   const supabase = await createClient()
 
@@ -20,7 +36,7 @@ export async function POST(request: NextRequest) {
   const { data: existing } = await supabase
     .from("admin_users")
     .select("id")
-    .eq("email", email)
+    .eq("email", cleanEmail)
     .single()
 
   if (existing) {
@@ -44,8 +60,8 @@ export async function POST(request: NextRequest) {
   const { data, error } = await supabase
     .from("admin_users")
     .insert({
-      email,
-      name: displayName,
+      email: cleanEmail,
+      name: cleanName,
       role: assignedRole,
       password_hash: passwordHash,
     })
@@ -54,7 +70,7 @@ export async function POST(request: NextRequest) {
 
   if (error) {
     console.error("[v0] Admin user insert error:", error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: "Failed to create account" }, { status: 500 })
   }
 
   return NextResponse.json({ success: true, user: data, isFirstUser: userCount === 0 })

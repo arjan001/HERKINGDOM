@@ -133,3 +133,46 @@ export function isValidUUID(id: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
 }
 
+// ==========================================
+// PASSWORD STRENGTH
+// ==========================================
+
+/**
+ * Enforce minimum password strength:
+ * - 8+ characters
+ * - at least one letter and one digit
+ * - at least one non-alphanumeric character OR mixed case
+ * - not a common weak password
+ */
+const COMMON_WEAK = new Set([
+  "password", "password1", "password123", "12345678", "123456789", "qwerty123",
+  "admin123", "welcome1", "letmein1", "iloveyou", "abc12345", "000000000",
+  "111111111", "qwertyuiop",
+])
+
+export function validatePassword(password: unknown): { ok: true } | { ok: false; error: string } {
+  if (typeof password !== "string") return { ok: false, error: "Invalid password" }
+  if (password.length < 8) return { ok: false, error: "Password must be at least 8 characters" }
+  if (password.length > 128) return { ok: false, error: "Password is too long" }
+  if (!/[A-Za-z]/.test(password)) return { ok: false, error: "Password must contain a letter" }
+  if (!/[0-9]/.test(password)) return { ok: false, error: "Password must contain a number" }
+  const hasSymbolOrMixedCase = /[^A-Za-z0-9]/.test(password) || (/[a-z]/.test(password) && /[A-Z]/.test(password))
+  if (!hasSymbolOrMixedCase) {
+    return { ok: false, error: "Password must contain a symbol or mix upper & lower case letters" }
+  }
+  if (COMMON_WEAK.has(password.toLowerCase())) {
+    return { ok: false, error: "This password is too common. Choose a stronger one." }
+  }
+  return { ok: true }
+}
+
+/** Strip HTML tags & control chars, for safe free-text fields (names, titles, etc). */
+export function stripTags(input: unknown, maxLength = 500): string {
+  if (typeof input !== "string") return ""
+  return input
+    .replace(/<[^>]*>/g, "")
+    .replace(/[\u0000-\u001f\u007f]/g, "") // control chars
+    .trim()
+    .slice(0, maxLength)
+}
+
