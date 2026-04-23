@@ -52,6 +52,7 @@ interface AnalyticsData {
     sessionId: string
     visitorId: string
     page: string
+    pagePaths: string[]
     country: string
     countryName: string
     city: string
@@ -1663,7 +1664,7 @@ function RecentVisitorsTable({ visitors }: { visitors: AnalyticsData["recentVisi
                 <th className="px-5 py-2.5 text-left font-medium">When</th>
                 <th className="px-3 py-2.5 text-left font-medium">Location</th>
                 <th className="px-3 py-2.5 text-left font-medium">Device</th>
-                <th className="px-3 py-2.5 text-left font-medium">Page accessed</th>
+                <th className="px-3 py-2.5 text-left font-medium">Pages accessed</th>
                 <th className="px-3 py-2.5 text-left font-medium">From</th>
                 <th className="px-5 py-2.5 text-right font-medium">Pages</th>
               </tr>
@@ -1672,8 +1673,10 @@ function RecentVisitorsTable({ visitors }: { visitors: AnalyticsData["recentVisi
               {visitors.map((v) => {
                 const DevIcon = v.device === "mobile" ? Smartphone : v.device === "tablet" ? Tablet : Monitor
                 const loc = [v.city, v.countryName || v.country].filter(Boolean).join(", ") || "Unknown"
+                const allPages = v.pagePaths && v.pagePaths.length > 0 ? v.pagePaths : [v.page]
+                const extraPages = allPages.slice(1)
                 return (
-                  <tr key={v.sessionId} className="hover:bg-secondary/30 transition-colors">
+                  <tr key={v.sessionId} className="hover:bg-secondary/30 transition-colors align-top">
                     <td className="px-5 py-2.5 whitespace-nowrap">
                       <div className="flex items-center gap-2">
                         {v.isReturning ? (
@@ -1698,7 +1701,15 @@ function RecentVisitorsTable({ visitors }: { visitors: AnalyticsData["recentVisi
                       </div>
                     </td>
                     <td className="px-3 py-2.5">
-                      <span className="text-xs font-medium truncate block max-w-[200px]">{v.page}</span>
+                      <div className="max-w-[240px]" title={allPages.join("\n")}>
+                        <span className="text-xs font-medium truncate block">{allPages[0]}</span>
+                        {extraPages.length > 0 && (
+                          <span className="text-[10px] text-muted-foreground truncate block mt-0.5">
+                            {extraPages.slice(0, 2).join(" · ")}
+                            {extraPages.length > 2 ? ` · +${extraPages.length - 2} more` : ""}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-3 py-2.5">
                       <span className="text-xs text-muted-foreground truncate block max-w-[140px]">{v.referrerHost}</span>
