@@ -69,6 +69,7 @@ interface AnalyticsData {
     source: string
     count: number
     isSearchEngine: boolean
+    isSocial: boolean
     topPages: { page: string; count: number }[]
     topSearchTerms: { term: string; count: number }[]
   }[]
@@ -408,6 +409,11 @@ export function AdminAnalytics() {
                           {r.isSearchEngine && (
                             <span className="ml-2 inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground">
                               <Search className="h-3 w-3" /> Search
+                            </span>
+                          )}
+                          {r.isSocial && (
+                            <span className="ml-2 inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-white bg-[#00843D] px-1.5 py-0.5 rounded-sm">
+                              <Share2 className="h-3 w-3" /> Social
                             </span>
                           )}
                         </span>
@@ -1620,11 +1626,16 @@ function TopReferrersCard({ referrers }: { referrers: AnalyticsData["referrers"]
                       Search
                     </span>
                   )}
+                  {r.isSocial && (
+                    <span className="text-[9px] uppercase tracking-wider text-white bg-[#00843D] px-1.5 py-0.5 rounded-sm shrink-0 inline-flex items-center gap-1">
+                      <Share2 className="h-2.5 w-2.5" /> Social
+                    </span>
+                  )}
                 </div>
                 <span className="text-sm font-semibold tabular-nums shrink-0">{r.count}</span>
               </div>
               <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
-                <div className={`h-full rounded-full ${r.isSearchEngine ? "bg-[#00843D]" : "bg-foreground/70"}`} style={{ width: `${pct}%` }} />
+                <div className={`h-full rounded-full ${r.isSearchEngine ? "bg-[#00843D]" : r.isSocial ? "bg-[#E1306C]" : "bg-foreground/70"}`} style={{ width: `${pct}%` }} />
               </div>
               {r.topPages?.[0] && (
                 <p className="text-[10px] text-muted-foreground mt-1 truncate">
