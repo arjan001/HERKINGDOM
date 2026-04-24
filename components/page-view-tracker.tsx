@@ -73,10 +73,43 @@ function getUtmParams(): Record<string, string> {
     const val = params.get(key)
     if (val) utm[key] = val.slice(0, 200)
   }
-  // Also capture gclid (Google Ads), fbclid (Facebook), etc.
+  // Also capture click IDs from ad/social platforms, useful when the referrer
+  // header is stripped (in-app browsers often do this).
   if (params.get("gclid")) utm.gclid = "true"
   if (params.get("fbclid")) utm.fbclid = "true"
+  if (params.get("ttclid")) utm.ttclid = "true"
+  if (params.get("igshid") || params.get("igsh")) utm.igshid = "true"
+  if (params.get("twclid")) utm.twclid = "true"
+  if (params.get("li_fat_id")) utm.li_fat_id = "true"
+  if (params.get("msclkid")) utm.msclkid = "true"
+  if (params.get("yclid")) utm.yclid = "true"
+  if (params.get("rdt_cid")) utm.rdt_cid = "true"
+  if (params.get("epik")) utm.epik = "true"
+  if (params.get("sc_cid")) utm.sc_cid = "true"
   return utm
+}
+
+/**
+ * Infer a social/ad traffic source when the referrer header is missing.
+ * Many in-app browsers (Instagram, TikTok, Facebook, etc.) strip the Referer
+ * header, so we fall back to well-known click-ID parameters to attribute the
+ * visit. Returns { source, medium } or null.
+ */
+function inferSocialFromClickIds(): { source: string; medium: string } | null {
+  if (typeof window === "undefined") return null
+  const params = new URLSearchParams(window.location.search)
+  if (params.get("fbclid")) return { source: "facebook", medium: "social" }
+  if (params.get("ttclid")) return { source: "tiktok", medium: "social" }
+  if (params.get("igshid") || params.get("igsh")) return { source: "instagram", medium: "social" }
+  if (params.get("twclid")) return { source: "twitter", medium: "social" }
+  if (params.get("li_fat_id")) return { source: "linkedin", medium: "social" }
+  if (params.get("rdt_cid")) return { source: "reddit", medium: "social" }
+  if (params.get("epik")) return { source: "pinterest", medium: "social" }
+  if (params.get("sc_cid")) return { source: "snapchat", medium: "social" }
+  if (params.get("msclkid")) return { source: "bing", medium: "cpc" }
+  if (params.get("gclid")) return { source: "google", medium: "cpc" }
+  if (params.get("yclid")) return { source: "yandex", medium: "cpc" }
+  return null
 }
 
 export function PageViewTracker() {
@@ -147,6 +180,14 @@ export function PageViewTracker() {
     const utmParams = getUtmParams()
     const returning = isReturningVisitor()
     const visitorId = getVisitorId()
+    const inferred = inferSocialFromClickIds()
+    // When the raw referrer header is empty (common with in-app browsers from
+    // TikTok/Instagram/Facebook) but a platform click-ID is present, fall back
+    // to the inferred source/medium so Top Referrers attributes the visit
+    // rather than counting it as Direct.
+    const hasRealReferrer = !!(document.referrer || "").trim()
+    const effectiveUtmSource = utmParams.utm_source || (!hasRealReferrer && inferred ? inferred.source : "")
+    const effectiveUtmMedium = utmParams.utm_medium || (!hasRealReferrer && inferred ? inferred.medium : "")
 
     const track = async () => {
       try {
@@ -163,8 +204,8 @@ export function PageViewTracker() {
             screenWidth: window.innerWidth,
             screenHeight: window.innerHeight,
             language: navigator.language || "",
-            utmSource: utmParams.utm_source || "",
-            utmMedium: utmParams.utm_medium || "",
+            utmSource: effectiveUtmSource,
+            utmMedium: effectiveUtmMedium,
             utmCampaign: utmParams.utm_campaign || "",
           }),
         })

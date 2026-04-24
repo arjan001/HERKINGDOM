@@ -201,21 +201,85 @@ export async function GET(request: NextRequest) {
     return SEARCH_HOST_HINTS.some((s) => h.includes(s))
   }
 
+  // Social/messaging platforms. Many have multiple hostnames (e.g. Facebook
+  // links out via l.facebook.com, lm.facebook.com; Instagram uses l.instagram.com;
+  // Twitter/X via t.co). We collapse these into a single canonical label so
+  // admins see "Facebook" instead of three separate entries.
+  const SOCIAL_HOST_MAP: { match: (h: string) => boolean; label: string }[] = [
+    { match: (h) => /(^|\.)facebook\.com$/.test(h) || /(^|\.)fb\.com$/.test(h) || /(^|\.)fb\.me$/.test(h), label: "Facebook" },
+    { match: (h) => /(^|\.)instagram\.com$/.test(h), label: "Instagram" },
+    { match: (h) => /(^|\.)tiktok\.com$/.test(h) || /(^|\.)bytedance\.net$/.test(h), label: "TikTok" },
+    { match: (h) => h === "t.co" || /(^|\.)twitter\.com$/.test(h) || /(^|\.)x\.com$/.test(h), label: "Twitter / X" },
+    { match: (h) => /(^|\.)linkedin\.com$/.test(h) || h === "lnkd.in", label: "LinkedIn" },
+    { match: (h) => /(^|\.)pinterest\.[a-z.]+$/.test(h) || h === "pin.it", label: "Pinterest" },
+    { match: (h) => /(^|\.)reddit\.com$/.test(h) || /(^|\.)redd\.it$/.test(h), label: "Reddit" },
+    { match: (h) => /(^|\.)youtube\.com$/.test(h) || h === "youtu.be", label: "YouTube" },
+    { match: (h) => /(^|\.)snapchat\.com$/.test(h), label: "Snapchat" },
+    { match: (h) => /(^|\.)whatsapp\.com$/.test(h) || h === "wa.me" || /(^|\.)whatsapp\.net$/.test(h), label: "WhatsApp" },
+    { match: (h) => /(^|\.)t\.me$/.test(h) || /(^|\.)telegram\.(org|me)$/.test(h), label: "Telegram" },
+    { match: (h) => /(^|\.)threads\.net$/.test(h), label: "Threads" },
+    { match: (h) => /(^|\.)messenger\.com$/.test(h), label: "Messenger" },
+    { match: (h) => /(^|\.)discord\.(com|gg)$/.test(h), label: "Discord" },
+  ]
+
+  function classifySocialHost(host: string): string | null {
+    const h = host.toLowerCase()
+    const match = SOCIAL_HOST_MAP.find((m) => m.match(h))
+    return match ? match.label : null
+  }
+
+  // When the raw referrer is empty but utm_source/utm_medium indicate a social
+  // platform (e.g. client inferred from fbclid/ttclid/igshid), map it to the
+  // canonical social label so it appears in Top Referrers.
+  function utmSocialLabel(utmSource?: string, utmMedium?: string): string | null {
+    const src = (utmSource || "").toLowerCase().trim()
+    const med = (utmMedium || "").toLowerCase().trim()
+    if (!src) return null
+    const isSocialMedium = med === "social" || med === "paid_social" || med === "paidsocial"
+    const byName: Record<string, string> = {
+      facebook: "Facebook",
+      fb: "Facebook",
+      instagram: "Instagram",
+      ig: "Instagram",
+      tiktok: "TikTok",
+      twitter: "Twitter / X",
+      x: "Twitter / X",
+      linkedin: "LinkedIn",
+      pinterest: "Pinterest",
+      reddit: "Reddit",
+      youtube: "YouTube",
+      snapchat: "Snapchat",
+      whatsapp: "WhatsApp",
+      telegram: "Telegram",
+      threads: "Threads",
+    }
+    if (byName[src] && (isSocialMedium || Object.keys(byName).includes(src))) return byName[src]
+    return null
+  }
+
   const refAgg: Record<string, {
     count: number
     pages: Record<string, number>
     searches: Record<string, number>
     isSearchEngine: boolean
+    isSocial: boolean
   }> = {}
 
   humanViews.forEach((v) => {
     let hostKey = "Direct"
     let isSE = false
+    let isSocial = false
     let searchTerm = ""
     if (v.referrer) {
       try {
         const u = new URL(v.referrer)
-        hostKey = u.hostname
+        const social = classifySocialHost(u.hostname)
+        if (social) {
+          hostKey = social
+          isSocial = true
+        } else {
+          hostKey = u.hostname
+        }
         isSE = hostIsSearchEngine(u.hostname)
         if (isSE) {
           for (const p of SEARCH_QUERY_PARAMS) {
@@ -230,11 +294,22 @@ export async function GET(request: NextRequest) {
         hostKey = "Direct"
       }
     }
+    // Fallback: referrer header was stripped but a utm_source/click-ID on the
+    // landing page pointed to a known social platform. Attribute the visit
+    // there rather than leaving it as Direct.
+    if (hostKey === "Direct") {
+      const inferred = utmSocialLabel(v.utm_source, v.utm_medium)
+      if (inferred) {
+        hostKey = inferred
+        isSocial = true
+      }
+    }
     if (!refAgg[hostKey]) {
-      refAgg[hostKey] = { count: 0, pages: {}, searches: {}, isSearchEngine: isSE }
+      refAgg[hostKey] = { count: 0, pages: {}, searches: {}, isSearchEngine: isSE, isSocial }
     }
     refAgg[hostKey].count++
     refAgg[hostKey].isSearchEngine = refAgg[hostKey].isSearchEngine || isSE
+    refAgg[hostKey].isSocial = refAgg[hostKey].isSocial || isSocial
     const landing = v.page_path || "/"
     refAgg[hostKey].pages[landing] = (refAgg[hostKey].pages[landing] || 0) + 1
     if (searchTerm) {
@@ -247,6 +322,7 @@ export async function GET(request: NextRequest) {
       source,
       count: data.count,
       isSearchEngine: data.isSearchEngine,
+      isSocial: data.isSocial,
       topPages: Object.entries(data.pages)
         .map(([page, count]) => ({ page, count }))
         .sort((a, b) => b.count - a.count)
