@@ -8,6 +8,8 @@ import { Toaster } from "@/components/ui/sonner"
 import { PageViewTracker } from "@/components/page-view-tracker"
 import { SITE_SEO } from "@/lib/seo-data"
 import { STATIC_SEO_KEYWORDS_1000, STATIC_SEO_KEYWORDS_1000_CSV } from "@/lib/seo-keywords-static"
+import { INTENT_SEO_KEYWORDS, INTENT_SEO_KEYWORDS_CSV } from "@/lib/seo-keywords-intent"
+import { INTENT_SEO_KEYWORDS_EXTRA, INTENT_SEO_KEYWORDS_EXTRA_CSV } from "@/lib/seo-keywords-intent-extra"
 import "./globals.css"
 
 const inter = Inter({
@@ -45,7 +47,7 @@ export const metadata: Metadata = {
     shortcut: "/favicon.ico",
   },
   manifest: "/manifest.json",
-  keywords: [...SITE_SEO.allKeywords, ...STATIC_SEO_KEYWORDS_1000],
+  keywords: [...SITE_SEO.allKeywords, ...STATIC_SEO_KEYWORDS_1000, ...INTENT_SEO_KEYWORDS, ...INTENT_SEO_KEYWORDS_EXTRA],
   authors: [
     { name: "Her Kingdom", url: siteUrl },
     { name: "OnePlus Africa", url: "https://oneplusafrica.com" },
@@ -278,8 +280,8 @@ export default function RootLayout({
         <meta name="designer" content="OnePlus Africa" />
         <meta name="owner" content="Her Kingdom" />
         <link rel="author" href="https://oneplusafrica.com" />
-        <meta name="keywords" content={STATIC_SEO_KEYWORDS_1000_CSV} />
-        <meta name="news_keywords" content={STATIC_SEO_KEYWORDS_1000_CSV} />
+        <meta name="keywords" content={`${STATIC_SEO_KEYWORDS_1000_CSV}, ${INTENT_SEO_KEYWORDS_CSV}, ${INTENT_SEO_KEYWORDS_EXTRA_CSV}`} />
+        <meta name="news_keywords" content={`${STATIC_SEO_KEYWORDS_1000_CSV}, ${INTENT_SEO_KEYWORDS_CSV}, ${INTENT_SEO_KEYWORDS_EXTRA_CSV}`} />
         <meta name="theme-color" content="#f4a4c0" />
         <meta name="application-name" content="Her Kingdom" />
         <meta name="apple-mobile-web-app-title" content="Her Kingdom" />
