@@ -305,6 +305,14 @@ export function Footer() {
               <Link href="/payments-policy" className="text-background/40 text-xs hover:text-background transition-colors">
                 Payments Policy
               </Link>
+              <a
+                href="/sitemap.xml"
+                className="text-background/40 text-xs hover:text-background transition-colors"
+                target="_blank"
+                rel="noopener"
+              >
+                Sitemap
+              </a>
             </div>
           </div>
           <div className="mt-4 text-center">
