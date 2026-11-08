@@ -26,11 +26,11 @@ const siteUrl = SITE_SEO.siteUrl
 
 export const metadata: Metadata = {
   title: {
-    default: "Her Kingdom | Curated Jewelry & Accessories for Women in Nairobi, Kenya",
+    default: "Her Kingdom | Curated & Hypoallergenic Jewelry Shop Nairobi, Kenya",
     template: "%s | Her Kingdom",
   },
   description:
-    "Shop curated jewelry, necklaces, bracelets, earrings, watches & accessories at Her Kingdom Nairobi. Hypoallergenic, long-lasting pieces that complement your personal style. #HerkingdomBabe",
+    "Discover curated, hypoallergenic, and long-lasting jewelry at Her Kingdom. Shop unique necklaces, rings, and premium gift packages with same-day delivery in Nairobi.",
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     shortcut: "/favicon.ico",
   },
   manifest: "/manifest.json",
-  keywords: [...SITE_SEO.allKeywords, ...STATIC_SEO_KEYWORDS_1000, ...INTENT_SEO_KEYWORDS, ...INTENT_SEO_KEYWORDS_EXTRA],
+  keywords: "jewelry store nairobi, hypoallergenic jewelry kenya, custom gift packages nairobi, jewelry shop near me, online jewelry store kenya, fashion accessories nairobi",
   authors: [
     { name: "Her Kingdom", url: siteUrl },
     { name: "OnePlus Africa", url: "https://oneplusafrica.com" },
@@ -61,9 +61,9 @@ export const metadata: Metadata = {
     locale: "en_KE",
     url: siteUrl,
     siteName: "Her Kingdom",
-    title: "Her Kingdom | Curated Jewelry & Accessories for Women in Nairobi, Kenya",
+    title: "Her Kingdom | Curated & Hypoallergenic Jewelry Shop Nairobi",
     description:
-      "Shop curated jewelry, necklaces, bracelets, earrings, watches & accessories at Her Kingdom. Hypoallergenic, long-lasting pieces. Delivery across Kenya.",
+      "Long-lasting, unique, and hypoallergenic jewelry curated for your style. Get premium gift packaging and same-day delivery across Nairobi. Find your spark!",
     images: [
       {
         url: `${siteUrl}/og-default.jpg`,
@@ -78,9 +78,9 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     site: "@herkingdom_jewelry",
     creator: "@herkingdom_jewelry",
-    title: "Her Kingdom | Curated Jewelry & Accessories in Nairobi",
+    title: "Her Kingdom | Jewelry Brand Nairobi, Kenya",
     description:
-      "Shop curated necklaces, bracelets, earrings, watches & accessories. Hypoallergenic jewelry delivered across Kenya. WhatsApp +254780406059.",
+      "Shop beautiful, carefully sourced jewelry pieces that embody individuality. Hypoallergenic quality with regional shipping. #HerkingdomBabe",
     images: [
       {
         url: `${siteUrl}/og-default.jpg`,
@@ -107,6 +107,11 @@ export const metadata: Metadata = {
     "pinterest-rich-pin": "true",
     bingbot: "index, follow, max-snippet:-1, max-image-preview:large",
     msnbot: "index, follow",
+    "geo.region": "KE-110",
+    "geo.placename": "Nairobi",
+    "geo.position": "-1.2921;36.8219",
+    "ICBM": "-1.2921, 36.8219",
+    language: "English",
   },
   category: "Jewelry & Accessories",
   classification: "Jewelry Store",
@@ -173,15 +178,60 @@ export default function RootLayout({
 
   const localBusinessJsonLd = {
     "@context": "https://schema.org",
-    "@type": "LocalBusiness",
-    "@id": `${siteUrl}/#business`,
+    "@type": "OnlineStore",
     name: "Her Kingdom",
-    description: "Her Kingdom is a jewelry brand based in Nairobi, Kenya offering curated necklaces, bracelets, earrings, watches, handbags & accessories. Hypoallergenic, long-lasting pieces delivered across Kenya.",
     url: siteUrl,
-    telephone: "+254780406059",
-    email: "herkingdomlive@gmail.com",
-    image: `${siteUrl}/logo.png`,
     logo: `${siteUrl}/logo.png`,
+    description: "Her Kingdom is a curated jewelry and accessory brand based in Nairobi, Kenya offering premium long-lasting, hypoallergenic jewelry pieces and custom gift packages.",
+    slogan: "Complimenting your personal style and embodying individuality.",
+    sameAs: [
+      "https://www.instagram.com/herkingdom_jewelry/",
+      "https://www.tiktok.com/@herkingdom_jewelry",
+    ],
+    areaServed: [
+      {
+        "@type": "AdministrativeArea",
+        name: "Nairobi"
+      },
+      {
+        "@type": "Country",
+        name: "Kenya"
+      }
+    ],
+    hasOfferCatalog: {
+      "@type": "OfferCatalog",
+      name: "Jewelry and Accessories Catalog",
+      itemListElement: [
+        {
+          "@type": "Offer",
+          itemOffered: {
+            "@type": "Product",
+            name: "Hypoallergenic Necklaces"
+          }
+        },
+        {
+          "@type": "Offer",
+          itemOffered: {
+            "@type": "Product",
+            name: "Long-lasting Bracelets & Rings"
+          }
+        },
+        {
+          "@type": "Offer",
+          itemOffered: {
+            "@type": "Product",
+            name: "Premium Gift Packages & Boxes"
+          }
+        }
+      ]
+    },
+    contactPoint: {
+      "@type": "ContactPoint",
+      telephone: "+254-780-406-059",
+      contactType: "customer service",
+      areaServed: "KE",
+      availableLanguage: "English"
+    },
     address: {
       "@type": "PostalAddress",
       addressLocality: "Nairobi",
@@ -193,29 +243,10 @@ export default function RootLayout({
       latitude: -1.2921,
       longitude: 36.8219,
     },
-    sameAs: [
-      "https://www.instagram.com/herkingdom_jewelry/",
-      "https://www.tiktok.com/@herkingdom_jewelry",
-    ],
     priceRange: "KES 200 - KES 15,000",
-    brand: {
-      "@type": "Brand",
-      name: "Her Kingdom",
-    },
     paymentAccepted: "M-PESA, Cash on Delivery",
     currenciesAccepted: "KES",
     openingHours: "Mo-Su 08:00-20:00",
-    hasOfferCatalog: {
-      "@type": "OfferCatalog",
-      name: "Her Kingdom Jewelry & Accessories",
-      itemListElement: [
-        { "@type": "OfferCatalog", name: "Necklaces" },
-        { "@type": "OfferCatalog", name: "Bracelets" },
-        { "@type": "OfferCatalog", name: "Earrings" },
-        { "@type": "OfferCatalog", name: "Watches" },
-        { "@type": "OfferCatalog", name: "Handbags & Accessories" },
-      ],
-    },
   }
 
   const websiteJsonLd = {
@@ -280,8 +311,7 @@ export default function RootLayout({
         <meta name="designer" content="OnePlus Africa" />
         <meta name="owner" content="Her Kingdom" />
         <link rel="author" href="https://oneplusafrica.com" />
-        <meta name="keywords" content={`${STATIC_SEO_KEYWORDS_1000_CSV}, ${INTENT_SEO_KEYWORDS_CSV}, ${INTENT_SEO_KEYWORDS_EXTRA_CSV}`} />
-        <meta name="news_keywords" content={`${STATIC_SEO_KEYWORDS_1000_CSV}, ${INTENT_SEO_KEYWORDS_CSV}, ${INTENT_SEO_KEYWORDS_EXTRA_CSV}`} />
+        <meta name="keywords" content="jewelry store nairobi, hypoallergenic jewelry kenya, custom gift packages nairobi, jewelry shop near me, online jewelry store kenya, fashion accessories nairobi" />
         <meta name="theme-color" content="#f4a4c0" />
         <meta name="application-name" content="Her Kingdom" />
         <meta name="apple-mobile-web-app-title" content="Her Kingdom" />
