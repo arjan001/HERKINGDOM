@@ -151,7 +151,7 @@ export function Navbar() {
               <nav className="flex flex-col px-6 gap-1">
                 <Link href="/" className="py-3 text-sm font-medium border-b border-border">Home</Link>
                 <p className="pt-3 pb-1 text-[10px] tracking-[0.2em] uppercase text-muted-foreground">Categories</p>
-                {categories.slice(0, 4).map((cat) => {
+                {categories.filter(cat => ["necklaces", "handbags-purses", "women-watches", "bracelets"].includes(cat.slug)).map((cat) => {
                   const isNecklaces = cat.slug === "necklaces"
                   return (
                     <Link
@@ -171,7 +171,6 @@ export function Navbar() {
                     </Link>
                   )
                 })}
-                <Link href="/track-order" className="py-3 text-sm font-medium border-b border-border">Track My Order</Link>
               </nav>
               <div className="px-6 py-4 mt-4 space-y-3">
                 <a href="https://www.instagram.com/herkingdom_jewelry/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">Instagram</a>
@@ -316,7 +315,7 @@ export function Navbar() {
           <div className="flex items-center justify-center h-12">
             <nav className="flex items-center gap-8">
               <Link href="/" className="text-sm font-medium hover:text-muted-foreground transition-colors">Home</Link>
-              {categories.slice(0, 4).map((cat) => {
+              {categories.filter(cat => ["necklaces", "handbags-purses", "women-watches", "bracelets"].includes(cat.slug)).map((cat) => {
                 const isNecklaces = cat.slug === "necklaces"
                 return (
                   <Link
@@ -336,7 +335,6 @@ export function Navbar() {
                   </Link>
                 )
               })}
-              <Link href="/track-order" className="text-sm font-medium hover:text-muted-foreground transition-colors">Track My Order</Link>
             </nav>
           </div>
         </div>
