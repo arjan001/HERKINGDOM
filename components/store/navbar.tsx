@@ -151,15 +151,15 @@ export function Navbar() {
               <nav className="flex flex-col px-6 gap-1">
                 <Link href="/" className="py-3 text-sm font-medium border-b border-border">Home</Link>
                 <p className="pt-3 pb-1 text-[10px] tracking-[0.2em] uppercase text-muted-foreground">Categories</p>
-                {categories.filter(cat => ["necklaces", "handbags-purses", "women-watches", "bracelets"].includes(cat.slug)).map((cat) => {
-                  const isNecklaces = cat.slug === "necklaces"
+                {categories.filter(cat => ["necklaces", "necklace-sets", "perfume-scents", "handbags-purses", "women-watches", "bracelets"].includes(cat.slug)).map((cat) => {
+                  const isGlow = ["necklaces", "necklace-sets", "perfume-scents"].includes(cat.slug)
                   return (
                     <Link
                       key={cat.id}
                       href={`/shop?category=${cat.slug}`}
-                      className={`relative py-2.5 text-sm font-medium border-b border-border pl-3 ${isNecklaces ? "necklaces-glow font-semibold" : ""}`}
+                      className={`relative py-2.5 text-sm font-medium border-b border-border pl-3 ${isGlow ? "necklaces-glow font-semibold" : ""}`}
                     >
-                      {isNecklaces && (
+                      {isGlow && (
                         <>
                           <span aria-hidden="true" className="payments-sparkle payments-sparkle-1 absolute left-0 top-1 text-pink-300 text-[9px] leading-none">★</span>
                           <span aria-hidden="true" className="payments-sparkle payments-sparkle-2 absolute right-2 top-1 text-pink-300 text-[10px] leading-none">✦</span>
@@ -315,15 +315,15 @@ export function Navbar() {
           <div className="flex items-center justify-center h-12">
             <nav className="flex items-center gap-8">
               <Link href="/" className="text-sm font-medium hover:text-muted-foreground transition-colors">Home</Link>
-              {categories.filter(cat => ["necklaces", "handbags-purses", "women-watches", "bracelets"].includes(cat.slug)).map((cat) => {
-                const isNecklaces = cat.slug === "necklaces"
+              {categories.filter(cat => ["necklaces", "necklace-sets", "perfume-scents", "handbags-purses", "women-watches", "bracelets"].includes(cat.slug)).map((cat) => {
+                const isGlow = ["necklaces", "necklace-sets", "perfume-scents"].includes(cat.slug)
                 return (
                   <Link
                     key={cat.id}
                     href={`/shop?category=${cat.slug}`}
-                    className={`relative inline-flex items-center text-sm font-medium transition-colors ${isNecklaces ? "necklaces-glow font-semibold" : "hover:text-muted-foreground"}`}
+                    className={`relative inline-flex items-center text-sm font-medium transition-colors ${isGlow ? "necklaces-glow font-semibold" : "hover:text-muted-foreground"}`}
                   >
-                    {isNecklaces && (
+                    {isGlow && (
                       <>
                         <span aria-hidden="true" className="payments-sparkle payments-sparkle-1 absolute -left-3 -top-2 text-pink-300 text-[10px] leading-none">★</span>
                         <span aria-hidden="true" className="payments-sparkle payments-sparkle-2 absolute -right-3 -top-1 text-pink-300 text-[12px] leading-none">✦</span>

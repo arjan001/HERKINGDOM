@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     template: "%s | Her Kingdom",
   },
   description:
-    "Discover curated, hypoallergenic, and long-lasting jewelry at Her Kingdom. Shop unique necklaces, rings, and premium gift packages with same-day delivery in Nairobi.",
+    "Discover curated, hypoallergenic, and long-lasting jewelry at Her Kingdom. Shop unique necklaces, rings, gift cards, and personalized gift packages with same-day delivery in Nairobi. Perfect for birthdays, anniversaries, and special occasions.",
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     shortcut: "/favicon.ico",
   },
   manifest: "/manifest.json",
-  keywords: "jewelry store nairobi, hypoallergenic jewelry kenya, custom gift packages nairobi, jewelry shop near me, online jewelry store kenya, fashion accessories nairobi",
+  keywords: "jewelry store nairobi, hypoallergenic jewelry kenya, custom gift packages nairobi, jewelry shop near me, online jewelry store kenya, fashion accessories nairobi, best gift for occasion nairobi, gift cards kenya, personalized jewelry gifts nairobi, same day gift delivery nairobi, birthday gift packages kenya, anniversary jewelry gifts nairobi, valentines gift sets kenya",
   authors: [
     { name: "Her Kingdom", url: siteUrl },
     { name: "OnePlus Africa", url: "https://oneplusafrica.com" },
