@@ -1,0 +1,62 @@
+# Her Kingdom Jewelry - robots.txt
+# https://herkingdom.shop
+
+User-agent: *
+Allow: /
+
+# Allow Googlebot
+User-agent: Googlebot
+Allow: /
+
+# Allow Bingbot
+User-agent: Bingbot
+Allow: /
+
+# Allow Yandex
+User-agent: YandexBot
+Allow: /
+
+# Allow DuckDuckGo
+User-agent: DuckDuckBot
+Allow: /
+
+# Allow Slurp (Yahoo)
+User-agent: Slurp
+Allow: /
+
+# Allow Baiduspider
+User-agent: Baiduspider
+Allow: /
+
+# Disallow admin areas
+Disallow: /admin/
+Disallow: /api/admin/
+Disallow: /auth/
+
+# Disallow temporary or internal pages
+Disallow: /llm.txt
+
+# Block known scrapers and aggressive bots
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: DotBot
+Disallow: /
+
+User-agent: AspiegelBot
+Disallow: /
+
+User-agent: ia_archiver
+Disallow: /
+
+User-agent: archive.org_bot
+Disallow: /
+
+# Sitemap
+Sitemap: https://herkingdom.shop/sitemap.xml

@@ -260,9 +260,9 @@ export const SITE_SEO = {
 // Page-specific SEO metadata
 export const PAGE_SEO = {
   home: {
-    title: "Her Kingdom | Curated Jewelry & Accessories in Nairobi, Kenya",
+    title: "Best Jewelry & Gift Shop in Nairobi | Her Kingdom Kenya",
     description:
-      "Shop curated jewelry, necklaces, bracelets, earrings, watches & accessories at Her Kingdom Nairobi. Hypoallergenic, long-lasting pieces. Free delivery on orders over KSh 5,000. WhatsApp +254780406059.",
+      "Shop premium, tarnish-free jewelry, bags, necklaces, and custom gift packages in Nairobi. Same-day delivery across Kenya. Click to order via website or WhatsApp!",
   },
   shop: {
     title: "Shop All Jewelry & Accessories | Her Kingdom Nairobi",
@@ -283,6 +283,16 @@ export const PAGE_SEO = {
     title: "Gift Packages & Flowers | Her Kingdom Nairobi",
     description:
       "Explore curated gift packages, flowers & accessories at Her Kingdom. Perfect gifts for birthdays, anniversaries, Valentine's Day & special occasions. Delivery across Kenya.",
+  },
+  graduation: {
+    title: "Best Graduation Gifts in Nairobi | Luxury Jewelry & Gift Packages",
+    description:
+      "Shop premium graduation gifts in Nairobi. Luxury jewelry, tarnish-free necklaces, watches, and custom gift packages for her. Same-day delivery across Kenya. Order online or WhatsApp!",
+  },
+  fathersDay: {
+    title: "Unique Father's Day Gifts Kenya | Men's Watches & Necklaces",
+    description:
+      "Find unique Father's Day gifts in Kenya. Men's stainless steel watches, necklaces, and premium gift sets delivered across Kenya. Same-day delivery available. Order online or WhatsApp!",
   },
   newArrivals: {
     title: "New Arrivals - Latest Jewelry & Accessories | Her Kingdom",
@@ -349,6 +359,22 @@ const INTENT_HOME = [
   "best jewelry set for wedding in Kenya",
   "best gift for her under 5000 Kenya",
   "same day jewelry delivery Nairobi",
+  // Conversational/AI intent keywords
+  "Where can I buy affordable but luxurious jewelry in Nairobi?",
+  "What is the best online gift shop for same-day delivery in Kenya?",
+  "Top rated tarnish-free jewelry brands based in Nairobi",
+  "Where to buy a complete gift package with a card in Nairobi",
+  "Best places to shop for hypoallergenic earrings in Westlands",
+  "Affordable luxury gift ideas for a graduation party in Kenya",
+  "Who sells high quality men's watch gift sets in Nairobi?",
+  "Where can I find an elegant birthday gift package under 5000 KES?",
+  "Best local online stores for women's bags and accessories in Nairobi",
+  "Trusted online jewelry vendors in Nairobi with WhatsApp ordering",
+  "What should I buy my dad for Father's Day in Kenya?",
+  "Gift shops in Nairobi that write custom calligraphy cards",
+  "Where to source minimalist bridesmaid jewelry in Kenya",
+  "Most reliable jewelry shop with safe delivery in Nairobi CBD",
+  "Premium jewelry aesthetic gift stores in Kenya",
 ]
 
 const INTENT_SHOP = [
@@ -420,6 +446,18 @@ const INTENT_GIFT = [
   "best mothers day gift in Nairobi",
   "best christmas gift for her Nairobi",
   "best graduation gift for her Nairobi",
+  "best graduation gift nairobi",
+  "graduation gift packages kenya",
+  "thoughtful graduation gifts for her nairobi",
+  "best fathers day gift nairobi",
+  "unique fathers day gifts kenya",
+  "last minute fathers day gifts nairobi",
+  "cheapest gift for family friend nairobi",
+  "birthday gift hampers for girlfriend nairobi",
+  "anniversary gift packages nairobi",
+  "best send-off gifts in kenya",
+  "meaningful birthday gifts for best friend kenya",
+  "sorry gifts for friend nairobi",
   "best gift for her under 2000 Kenya",
   "best gift for her under 3000 Nairobi",
   "best gift for her under 5000 Kenya",
@@ -654,6 +692,30 @@ export const PAGE_KEYWORDS = {
     "gift packages Kenya", "flowers Nairobi", "jewelry gifts", "gift for her",
     "birthday gift jewelry", "valentine gift", "anniversary gift",
     "bridesmaid gifts Kenya", "Her Kingdom gifts",
+    "graduation gifts Kenya", "fathers day gifts Nairobi",
+    "buy tarnish free jewelry nairobi",
+    "hypoallergenic necklaces kenya",
+    "best jewelry shops in nairobi cbd",
+    "minimalist bracelets nairobi",
+    "aesthetic bags and purses nairobi",
+    "premium crystal jewelry set nairobi",
+    "men's stainless steel watches kenya",
+    "luxury gold coated jewelry sets nairobi",
+    "affordable women's watches nairobi",
+    "buy custom jewelry packages kenya",
+    "chunky statement earrings nairobi",
+    "designer shawls and scarves nairobi",
+    "unisex perfumes online nairobi",
+    "same day gift delivery nairobi",
+    "jewelry delivery nairobi cbd",
+    "buy jewelry via m-pesa kenya",
+    "gift shops in nairobi with cash on delivery",
+    "jewelry shops in westlands",
+    "gift delivery in lavington nairobi",
+    "premium gift packaging nairobi",
+    "order jewelry online pickup mtaani kenya",
+    "luxe gift boxes same day delivery nairobi",
+    "affordable jewelry shop kenya website",
     ...INTENT_GIFT,
     ...INTENT_EXTRA_GIFT,
   ],
