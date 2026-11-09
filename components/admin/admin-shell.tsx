@@ -46,6 +46,8 @@ const navItems = [
   { label: "Settings", href: "/admin/settings", icon: Settings },
 ]
 
+const STORAGE_KEY = "admin_seen_notifications"
+
 interface CurrentUser {
   display_name: string
   email: string
@@ -59,6 +61,29 @@ export function AdminShell({ children, title }: { children: ReactNode; title: st
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null)
   const [loggingOut, setLoggingOut] = useState(false)
   const [pendingOrders, setPendingOrders] = useState(0)
+  const [seenNotifications, setSeenNotifications] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    // Load seen notifications from localStorage
+    const stored = localStorage.getItem(STORAGE_KEY)
+    if (stored) {
+      try {
+        setSeenNotifications(new Set(JSON.parse(stored)))
+      } catch {}
+    }
+  }, [])
+
+  useEffect(() => {
+    // Clear badge when user visits the page
+    if (pathname) {
+      setSeenNotifications((prev) => {
+        const next = new Set(prev)
+        next.add(pathname)
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(next)))
+        return next
+      })
+    }
+  }, [pathname])
 
   useEffect(() => {
     const supabase = createClient()
@@ -133,7 +158,8 @@ export function AdminShell({ children, title }: { children: ReactNode; title: st
           <nav className="flex-1 py-4">
             {navItems.map((item) => {
               const isActive = pathname === item.href
-              const showBadge = (item as typeof navItems[number] & { hasBadge?: boolean }).hasBadge && pendingOrders > 0
+              const hasSeen = seenNotifications.has(item.href)
+              const showBadge = (item as typeof navItems[number] & { hasBadge?: boolean }).hasBadge && pendingOrders > 0 && !hasSeen
               return (
                 <Link
                   key={item.href}
@@ -223,7 +249,8 @@ export function AdminShell({ children, title }: { children: ReactNode; title: st
               <nav className="flex-1 py-4">
                 {navItems.map((item) => {
                   const isActive = pathname === item.href
-                  const showBadge = (item as typeof navItems[number] & { hasBadge?: boolean }).hasBadge && pendingOrders > 0
+                  const hasSeen = seenNotifications.has(item.href)
+                  const showBadge = (item as typeof navItems[number] & { hasBadge?: boolean }).hasBadge && pendingOrders > 0 && !hasSeen
                   return (
                     <Link
                       key={item.href}
