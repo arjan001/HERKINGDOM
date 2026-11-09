@@ -23,6 +23,8 @@ interface PayHeroBalance {
   currency?: string
   channelName?: string
   channelId?: number
+  serviceWallet?: { balance?: number; error?: string }
+  paymentWallet?: { balance?: number; error?: string }
   error?: string
 }
 
@@ -74,28 +76,42 @@ export function AdminDashboard() {
           ))}
         </div>
 
-        {/* PayHero wallet balance */}
+        {/* PayHero wallet balances */}
         <div className="border border-border rounded-sm p-5 bg-gradient-to-br from-[#00843D]/5 to-background">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Wallet className="h-4 w-4 text-[#00843D]" />
-              <span className="text-xs text-muted-foreground uppercase tracking-wider">PayHero M-Pesa Wallet</span>
+              <span className="text-xs text-muted-foreground uppercase tracking-wider">PayHero Wallets</span>
             </div>
-            <Link href="/admin/payments" className="text-xs text-muted-foreground hover:text-foreground">Manage</Link>
+            <Link href="/admin/payments?tab=service-wallet" className="text-xs text-muted-foreground hover:text-foreground">Manage</Link>
           </div>
           {balance?.configured === false ? (
             <p className="text-sm text-muted-foreground mt-3">
-              Add PayHero credentials in Netlify environment variables to see your wallet balance here.
+              Add PayHero credentials in environment variables to see wallet balances here.
             </p>
           ) : balance?.error ? (
             <p className="text-sm text-red-600 mt-3">{balance.error}</p>
           ) : balance ? (
-            <>
-              <p className="text-3xl font-bold mt-2 text-[#00843D]">{formatPrice(Number(balance.balance) || 0)}</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                {balance.channelName || `Channel #${balance.channelId ?? ""}`}
-              </p>
-            </>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
+              <div>
+                <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Service Wallet</p>
+                <p className="text-xl sm:text-2xl font-bold mt-1 text-[#00843D]">
+                  {balance.serviceWallet?.balance != null
+                    ? formatPrice(balance.serviceWallet.balance)
+                    : balance.balance != null
+                      ? formatPrice(balance.balance)
+                      : "—"}
+                </p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Pays STK transaction fees</p>
+              </div>
+              <div>
+                <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Payments Wallet</p>
+                <p className="text-xl sm:text-2xl font-bold mt-1">
+                  {balance.paymentWallet?.balance != null ? formatPrice(balance.paymentWallet.balance) : "—"}
+                </p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Customer payments</p>
+              </div>
+            </div>
           ) : (
             <p className="text-sm text-muted-foreground mt-3">Loading...</p>
           )}

@@ -14,6 +14,8 @@ import {
   Phone,
   AlertCircle,
   Wallet,
+  ArrowUpCircle,
+  Landmark,
 } from "lucide-react"
 
 
@@ -39,6 +41,27 @@ interface BalanceInfo {
   channelName?: string
   serviceWallet?: { balance?: number; error?: string }
   paymentWallet?: { balance?: number; error?: string }
+  error?: string
+}
+
+interface PayHeroTx {
+  id: number
+  transaction_type: string
+  transaction_name?: string
+  description?: string
+  amount: number
+  cost?: number
+  wallet_balance?: number
+  transaction_reference?: string
+  provider_reference?: string
+  gateway?: string
+  created_at: string
+}
+
+interface PayHeroTxResponse {
+  configured: boolean
+  transactions?: PayHeroTx[]
+  pagination?: { count: number; fetched: number; hasMore: boolean }
   error?: string
 }
 
@@ -195,7 +218,187 @@ function StkPushForm() {
   )
 }
 
-type PaymentsTab = "transactions" | "stk-push" | "card-payments"
+function ServiceWalletTab({ balance }: { balance?: BalanceInfo }) {
+  const [amount, setAmount] = useState("")
+  const [phone, setPhone] = useState("")
+  const [loading, setLoading] = useState(false)
+  const { data: txData, isLoading: txLoading } = useSWR<PayHeroTxResponse>(
+    "/api/admin/payhero/transactions",
+    fetcher,
+    { refreshInterval: 60000 },
+  )
+
+  const serviceBalance = balance?.serviceWallet?.balance ?? balance?.balance
+  const paymentBalance = balance?.paymentWallet?.balance
+  const txList = txData?.transactions || []
+
+  const handleTopup = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const num = Number(amount)
+    if (!num || num < 1) {
+      toast.error("Enter a valid amount (min KSh 1)")
+      return
+    }
+    if (!phone.trim()) {
+      toast.error("Enter the M-Pesa phone number to receive the prompt")
+      return
+    }
+    setLoading(true)
+    try {
+      const res = await fetch("/api/admin/payhero/topup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: num, phone: phone.trim() }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        toast.error(data.error || "Top-up failed")
+        return
+      }
+      toast.success(`Top-up request sent (${data.status || "QUEUED"}). Check your phone for the M-Pesa prompt.`)
+      setAmount("")
+      mutate("/api/admin/payhero/balance")
+      mutate("/api/admin/payments?action=balance")
+    } catch {
+      toast.error("Top-up request failed")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="p-5 border border-border rounded-md bg-gradient-to-br from-[#00843D]/5 to-background">
+          <div className="flex items-center gap-2">
+            <Landmark className="h-4 w-4 text-[#00843D]" />
+            <p className="text-xs text-muted-foreground uppercase tracking-wider">Service Wallet</p>
+          </div>
+          <p className="text-2xl sm:text-3xl font-bold mt-2 text-[#00843D]">
+            {serviceBalance != null ? formatPrice(serviceBalance) : "—"}
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Pays PayHero transaction fees for every STK push. Keep it funded.
+          </p>
+          {balance?.serviceWallet?.error && (
+            <p className="text-xs text-red-600 mt-2">{balance.serviceWallet.error}</p>
+          )}
+        </div>
+        <div className="p-5 border border-border rounded-md">
+          <div className="flex items-center gap-2">
+            <Wallet className="h-4 w-4 text-muted-foreground" />
+            <p className="text-xs text-muted-foreground uppercase tracking-wider">Payments Wallet</p>
+          </div>
+          <p className="text-2xl sm:text-3xl font-bold mt-2">
+            {paymentBalance != null ? formatPrice(paymentBalance) : "—"}
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Customer M-Pesa payments available for withdrawal.
+          </p>
+          {balance?.paymentWallet?.error && (
+            <p className="text-xs text-red-600 mt-2">{balance.paymentWallet.error}</p>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="p-6 border border-border rounded-md">
+          <h3 className="font-medium mb-1 flex items-center gap-2">
+            <ArrowUpCircle className="h-4 w-4 text-[#00843D]" />
+            Service Wallet Top Up
+          </h3>
+          <p className="text-xs text-muted-foreground mb-4">
+            Sends an M-Pesa prompt to the phone below. Enter your PIN to move money
+            from M-Pesa into your PayHero service wallet.
+          </p>
+          <form onSubmit={handleTopup} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Amount (KES)</label>
+              <input
+                type="number"
+                min="1"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="e.g. 1000"
+                className="w-full h-10 px-3 border border-border rounded-md text-sm bg-background"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">M-Pesa Phone Number</label>
+              <input
+                type="text"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="0712345678 or +254712345678"
+                className="w-full h-10 px-3 border border-border rounded-md text-sm bg-background"
+              />
+              <p className="text-[11px] text-muted-foreground mt-1">The phone that will receive the STK prompt.</p>
+            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full h-10 bg-[#00843D] text-white rounded-md text-sm font-medium hover:bg-[#006B31] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              <ArrowUpCircle className="h-4 w-4" />
+              {loading ? "Sending prompt..." : "Top Up Service Wallet"}
+            </button>
+          </form>
+        </div>
+
+        <div className="p-6 border border-border rounded-md">
+          <h3 className="font-medium mb-1">PayHero Account Activity</h3>
+          <p className="text-xs text-muted-foreground mb-4">
+            Recent wallet movements: top-ups, STK fees, withdrawals.
+            {txData?.pagination?.hasMore && ` Showing latest ${txData.pagination.fetched} of ${txData.pagination.count}.`}
+          </p>
+          {txLoading ? (
+            <p className="text-sm text-muted-foreground py-6 text-center">Loading activity...</p>
+          ) : txList.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-6 text-center">
+              {txData?.error || "No PayHero transactions yet."}
+            </p>
+          ) : (
+            <div className="overflow-x-auto max-h-80 overflow-y-auto">
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 bg-background">
+                  <tr className="border-b border-border text-left">
+                    <th className="pb-2 font-medium text-muted-foreground">Type</th>
+                    <th className="pb-2 font-medium text-muted-foreground">Amount</th>
+                    <th className="pb-2 font-medium text-muted-foreground">Balance</th>
+                    <th className="pb-2 font-medium text-muted-foreground">Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {txList.map((tx) => (
+                    <tr key={tx.id} className="border-b border-border/50">
+                      <td className="py-2">
+                        <p className="text-xs font-medium">{tx.transaction_name || tx.transaction_type}</p>
+                        {tx.description && (
+                          <p className="text-[11px] text-muted-foreground truncate max-w-[180px]">{tx.description}</p>
+                        )}
+                      </td>
+                      <td className={`py-2 font-medium text-xs ${tx.amount >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+                        {tx.amount >= 0 ? "+" : ""}{formatPrice(tx.amount)}
+                      </td>
+                      <td className="py-2 text-xs text-muted-foreground">
+                        {tx.wallet_balance != null ? formatPrice(tx.wallet_balance) : "—"}
+                      </td>
+                      <td className="py-2 text-xs text-muted-foreground whitespace-nowrap">
+                        {tx.created_at ? formatDate(tx.created_at) : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+type PaymentsTab = "transactions" | "stk-push" | "card-payments" | "service-wallet"
 
 interface AdminPaymentsProps {
   initialTab?: PaymentsTab
@@ -304,6 +507,7 @@ export function AdminPayments({ initialTab = "transactions" }: AdminPaymentsProp
             {[
               { key: "transactions" as const, label: "M-Pesa Transactions", icon: CreditCard },
               { key: "card-payments" as const, label: "Card Payments", icon: Wallet },
+              { key: "service-wallet" as const, label: "Service Wallet", icon: Landmark },
               { key: "stk-push" as const, label: "Send STK Push", icon: Send },
             ].map((tab) => (
               <button
@@ -424,6 +628,10 @@ export function AdminPayments({ initialTab = "transactions" }: AdminPaymentsProp
               </div>
             )}
           </div>
+        )}
+
+        {activeTab === "service-wallet" && (
+          <ServiceWalletTab balance={balance} />
         )}
 
         {activeTab === "stk-push" && (
