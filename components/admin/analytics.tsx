@@ -13,6 +13,7 @@ import {
 } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
+import { LiveMap } from "./live-map"
 import useSWR from "swr"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
@@ -279,6 +280,10 @@ export function AdminAnalytics() {
 
           {/* ===== LIVE HEAT MAP TAB ===== */}
           <TabsContent value="live" className="mt-6 space-y-6">
+            <LiveMap
+              data={analytics?.liveHeatmap}
+              realTimeUsers={realTimeUsers}
+            />
             <LiveVisitorHeatmap
               live={analytics?.liveHeatmap}
               realTimeUsers={realTimeUsers}
