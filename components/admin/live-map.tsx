@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import { Globe } from "lucide-react"
 
 interface LiveMapProps {
@@ -14,6 +14,8 @@ interface LiveMapProps {
 }
 
 export function LiveMap({ data, realTimeUsers }: LiveMapProps) {
+  const [selectedCountry, setSelectedCountry] = useState<{ country: string; countryName: string; visitors: number } | null>(null)
+
   const markers = useMemo(() => {
     if (!data?.cells) return []
     
@@ -25,18 +27,35 @@ export function LiveMap({ data, realTimeUsers }: LiveMapProps) {
           x: coords[0],
           y: coords[1],
           city: cell.city,
-          country: cell.countryName,
+          country: cell.country,
+          countryName: cell.countryName,
           visitors: cell.visitors,
           views: cell.views,
           latest: cell.latest,
         }
       })
-      .filter(Boolean) as { x: number; y: number; city: string; country: string; visitors: number; views: number; latest: string }[]
+      .filter(Boolean) as { x: number; y: number; city: string; country: string; countryName: string; visitors: number; views: number; latest: string }[]
   }, [data])
 
   const topCountries = useMemo(() => {
     if (!data?.byCountry) return []
     return data.byCountry.slice(0, 10)
+  }, [data])
+
+  const handleCountryClick = (countryCode: string, countryName: string) => {
+    const countryData = data?.byCountry.find(c => c.country === countryCode)
+    if (countryData) {
+      setSelectedCountry({ country: countryCode, countryName, visitors: countryData.visitors })
+    }
+  }
+
+  const countryVisitors = useMemo(() => {
+    if (!data?.byCountry) return {}
+    const map: Record<string, number> = {}
+    data.byCountry.forEach(c => {
+      map[c.country] = c.visitors
+    })
+    return map
   }, [data])
 
   return (
@@ -65,7 +84,17 @@ export function LiveMap({ data, realTimeUsers }: LiveMapProps) {
           alt="World Map"
           className="w-full h-full object-contain"
           style={{ maxHeight: "400px", opacity: 0.8 }}
+          useMap="#world-map"
         />
+        
+        <map name="world-map">
+          {/* Major clickable regions - simplified for SVG overlay */}
+          <area shape="rect" coords="45,35 65,55" alt="Africa" onClick={() => handleCountryClick("KE", "Kenya")} className="cursor-pointer" />
+          <area shape="rect" coords="20,30 35,45" alt="Europe" onClick={() => handleCountryClick("GB", "United Kingdom")} className="cursor-pointer" />
+          <area shape="rect" coords="10,35 30,50" alt="North America" onClick={() => handleCountryClick("US", "United States")} className="cursor-pointer" />
+          <area shape="rect" coords="75,30 95,50" alt="Asia" onClick={() => handleCountryClick("JP", "Japan")} className="cursor-pointer" />
+          <area shape="rect" coords="85,70 100,85" alt="Australia" onClick={() => handleCountryClick("AU", "Australia")} className="cursor-pointer" />
+        </map>
         
         {/* Visitor markers overlay */}
         <div className="absolute inset-0 pointer-events-none">
@@ -86,6 +115,7 @@ export function LiveMap({ data, realTimeUsers }: LiveMapProps) {
                   top: `${marker.y}%`,
                   transform: "translate(-50%, -50%)",
                 }}
+                onClick={() => handleCountryClick(marker.country, marker.countryName)}
                 title={`${marker.city}, ${marker.country} - ${marker.visitors} visitors, ${marker.views} views`}
               >
                 {/* Pulse animation */}
@@ -111,6 +141,21 @@ export function LiveMap({ data, realTimeUsers }: LiveMapProps) {
           })}
         </div>
         
+        {/* Country detail panel */}
+        {selectedCountry && (
+          <div className="absolute top-4 right-4 bg-background/95 backdrop-blur-sm border border-border rounded-sm p-4 shadow-lg max-w-xs">
+            <button
+              onClick={() => setSelectedCountry(null)}
+              className="absolute top-2 right-2 text-muted-foreground hover:text-foreground"
+            >
+              ✕
+            </button>
+            <h3 className="font-semibold text-sm">{selectedCountry.countryName}</h3>
+            <p className="text-2xl font-bold text-blue-600 mt-1">{selectedCountry.visitors}</p>
+            <p className="text-xs text-muted-foreground">visitors</p>
+          </div>
+        )}
+        
         {/* Legend overlay */}
         <div className="absolute bottom-4 left-4 bg-background/90 backdrop-blur-sm border border-border rounded-sm p-3 text-xs space-y-2 max-w-[200px]">
           <p className="font-medium text-foreground">Top Locations</p>
@@ -118,7 +163,11 @@ export function LiveMap({ data, realTimeUsers }: LiveMapProps) {
             <p className="text-muted-foreground">No data yet</p>
           ) : (
             topCountries.map((c, i) => (
-              <div key={c.country} className="flex items-center justify-between gap-4">
+              <div
+                key={c.country}
+                className="flex items-center justify-between gap-4 cursor-pointer hover:bg-secondary/50 rounded-sm px-2 py-1"
+                onClick={() => handleCountryClick(c.country, c.countryName)}
+              >
                 <span className="text-muted-foreground truncate flex-1">{c.countryName}</span>
                 <span className="font-medium">{c.visitors}</span>
               </div>
