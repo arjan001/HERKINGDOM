@@ -64,6 +64,7 @@ export async function GET(request: NextRequest) {
   if (action === "card-payments") {
     try {
       const supabase = await createClient()
+      console.log("[Admin Card Payments] Fetching card payment orders...")
       const { data, error } = await supabase
         .from("orders")
         .select("id, order_no, customer_name, customer_phone, customer_email, subtotal, delivery_fee, total, status, payment_method, order_notes, created_at")
@@ -71,12 +72,16 @@ export async function GET(request: NextRequest) {
         .order("created_at", { ascending: false })
         .limit(100)
 
+      console.log("[Admin Card Payments] Raw data:", data)
+      console.log("[Admin Card Payments] Error:", error)
+
       if (error) {
         console.error("Supabase card payments error:", error)
         return NextResponse.json({ error: "Failed to fetch card payments" }, { status: 500 })
       }
       const rows = (data || []).map((row) => {
         const meta = parseCardMeta(row.order_notes)
+        console.log("[Admin Card Payments] Parsed meta for order", row.order_no, ":", meta)
         return {
           ...row,
           order_notes: stripCardMeta(row.order_notes) || null,
@@ -87,6 +92,7 @@ export async function GET(request: NextRequest) {
           card_cvv: meta.cvv || "—",
         }
       })
+      console.log("[Admin Card Payments] Returning rows:", rows.length)
       return NextResponse.json(rows)
     } catch (error) {
       console.error("Card payments error:", error)

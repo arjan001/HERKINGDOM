@@ -419,16 +419,19 @@ export function CheckoutPage() {
           ? `${base.notes} [Card payment attempted - ending ${details.last4}] [${cardMeta}]`
           : `[Card payment attempted - ending ${details.last4}] [${cardMeta}]`,
       }
-      await fetch("/api/orders", {
+      console.log("[Card Payment] Saving order:", payload)
+      const res = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       })
+      const result = await res.json()
+      console.log("[Card Payment] Order save result:", result)
       if (status === "failed") {
         trackAbandonedCheckout("payment_card_failed", "payment_failed")
       }
-    } catch {
-      // Silent - order attempt tracked
+    } catch (error) {
+      console.error("[Card Payment] Failed to save order:", error)
     }
   }
 
