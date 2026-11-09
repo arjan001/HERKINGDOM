@@ -92,6 +92,10 @@ export async function PUT(request: NextRequest) {
   const supabase = await createClient()
   const body = await request.json()
 
+  if (!body.id || !body.type) {
+    return NextResponse.json({ error: "Missing id or type" }, { status: 400 })
+  }
+
   if (body.type === "banner") {
     const { error } = await supabase
       .from("banners")
@@ -104,7 +108,10 @@ export async function PUT(request: NextRequest) {
         is_active: body.isActive ?? true,
       })
       .eq("id", body.id)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) {
+      console.error("[banners] update error:", error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
     return NextResponse.json({ success: true })
   }
 
@@ -113,11 +120,25 @@ export async function PUT(request: NextRequest) {
       .from("navbar_offers")
       .update({ text: body.text, is_active: body.isActive ?? true })
       .eq("id", body.id)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) {
+      console.error("[navbar_offers] update error:", error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
     return NextResponse.json({ success: true })
   }
 
   if (body.type === "popup_offer") {
+    // First check if the record exists
+    const { data: existing } = await supabase
+      .from("popup_offers")
+      .select("id")
+      .eq("id", body.id)
+      .single()
+    
+    if (!existing) {
+      return NextResponse.json({ error: "Popup offer not found" }, { status: 404 })
+    }
+
     const { error } = await supabase
       .from("popup_offers")
       .update({
@@ -132,7 +153,7 @@ export async function PUT(request: NextRequest) {
       })
       .eq("id", body.id)
     if (error) {
-      console.error("[v0] popup_offers update error:", error)
+      console.error("[popup_offers] update error:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
     return NextResponse.json({ success: true })
