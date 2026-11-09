@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useState, useEffect } from "react"
 import { Globe } from "lucide-react"
 
 interface LiveMapProps {
@@ -15,6 +15,15 @@ interface LiveMapProps {
 
 export function LiveMap({ data, realTimeUsers }: LiveMapProps) {
   const [selectedCountry, setSelectedCountry] = useState<{ country: string; countryName: string; visitors: number } | null>(null)
+  const [svgContent, setSvgContent] = useState<string>("")
+
+  // Load SVG content on mount
+  useEffect(() => {
+    fetch("/world.svg")
+      .then(res => res.text())
+      .then(text => setSvgContent(text))
+      .catch(() => setSvgContent(""))
+  }, [])
 
   const markers = useMemo(() => {
     if (!data?.cells) return []
@@ -42,13 +51,6 @@ export function LiveMap({ data, realTimeUsers }: LiveMapProps) {
     return data.byCountry.slice(0, 10)
   }, [data])
 
-  const handleCountryClick = (countryCode: string, countryName: string) => {
-    const countryData = data?.byCountry.find(c => c.country === countryCode)
-    if (countryData) {
-      setSelectedCountry({ country: countryCode, countryName, visitors: countryData.visitors })
-    }
-  }
-
   const countryVisitors = useMemo(() => {
     if (!data?.byCountry) return {}
     const map: Record<string, number> = {}
@@ -57,6 +59,54 @@ export function LiveMap({ data, realTimeUsers }: LiveMapProps) {
     })
     return map
   }, [data])
+
+  const handleCountryClick = (countryCode: string, countryName: string) => {
+    const countryData = data?.byCountry.find(c => c.country === countryCode)
+    if (countryData) {
+      setSelectedCountry({ country: countryCode, countryName, visitors: countryData.visitors })
+    }
+  }
+
+  // Make SVG paths clickable by injecting onClick handlers
+  const interactiveSvg = useMemo(() => {
+    if (!svgContent) return null
+    const parser = new DOMParser()
+    const doc = parser.parseFromString(svgContent, "image/svg+xml")
+    const paths = doc.querySelectorAll("path[id]")
+    
+    paths.forEach(path => {
+      const countryCode = path.getAttribute("id")
+      const countryName = path.getAttribute("title") || countryCode
+      const visitorCount = countryVisitors[countryCode || ""] || 0
+      
+      // Add hover and click behavior
+      path.setAttribute("style", `
+        fill: ${visitorCount > 0 ? "#3b82f6" : "#e5e7eb"};
+        fill-opacity: ${visitorCount > 0 ? Math.min(0.8, 0.3 + visitorCount * 0.05) : 0.3};
+        stroke: #9ca3af;
+        stroke-width: 0.5;
+        cursor: pointer;
+        transition: fill-opacity 0.2s;
+      `)
+      path.setAttribute("data-country", countryCode || "")
+      path.setAttribute("data-name", countryName)
+      
+      // We'll handle clicks via event delegation
+    })
+    
+    return doc.documentElement.outerHTML
+  }, [svgContent, countryVisitors])
+
+  const handleSvgClick = (e: React.MouseEvent) => {
+    const target = e.target as SVGPathElement
+    if (target.tagName === "path") {
+      const countryCode = target.getAttribute("data-country")
+      const countryName = target.getAttribute("data-name")
+      if (countryCode && countryName) {
+        handleCountryClick(countryCode, countryName)
+      }
+    }
+  }
 
   return (
     <div className="border border-border rounded-sm overflow-hidden">
@@ -79,22 +129,18 @@ export function LiveMap({ data, realTimeUsers }: LiveMapProps) {
       </div>
       
       <div className="relative bg-secondary/20" style={{ height: "400px" }}>
-        <img
-          src="/world.svg"
-          alt="World Map"
-          className="w-full h-full object-contain"
-          style={{ maxHeight: "400px", opacity: 0.8 }}
-          useMap="#world-map"
-        />
-        
-        <map name="world-map">
-          {/* Major clickable regions - simplified for SVG overlay */}
-          <area shape="rect" coords="45,35 65,55" alt="Africa" onClick={() => handleCountryClick("KE", "Kenya")} className="cursor-pointer" />
-          <area shape="rect" coords="20,30 35,45" alt="Europe" onClick={() => handleCountryClick("GB", "United Kingdom")} className="cursor-pointer" />
-          <area shape="rect" coords="10,35 30,50" alt="North America" onClick={() => handleCountryClick("US", "United States")} className="cursor-pointer" />
-          <area shape="rect" coords="75,30 95,50" alt="Asia" onClick={() => handleCountryClick("JP", "Japan")} className="cursor-pointer" />
-          <area shape="rect" coords="85,70 100,85" alt="Australia" onClick={() => handleCountryClick("AU", "Australia")} className="cursor-pointer" />
-        </map>
+        {!interactiveSvg ? (
+          <div className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
+            Loading map...
+          </div>
+        ) : (
+          <div
+            className="w-full h-full"
+            style={{ maxHeight: "400px" }}
+            dangerouslySetInnerHTML={{ __html: interactiveSvg }}
+            onClick={handleSvgClick}
+          />
+        )}
         
         {/* Visitor markers overlay */}
         <div className="absolute inset-0 pointer-events-none">
