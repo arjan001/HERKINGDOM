@@ -220,8 +220,8 @@ export function CardPaymentModal({ isOpen, onClose, total, onPaymentComplete }: 
                       <Wifi className="h-5 w-5 rotate-90 opacity-80" />
                     </div>
                     <div>
-                      {cardBrand === "visa" && <VisaIcon />}
-                      {cardBrand === "mastercard" && <MastercardIcon />}
+                      {cardBrand === "visa" && <img src="/visa-logo.png" alt="Visa" className="h-6 w-auto" />}
+                      {cardBrand === "mastercard" && <img src="/visa-logo.png" alt="Mastercard" className="h-6 w-auto" />}
                       {cardBrand === "amex" && <AmexIcon />}
                       {!cardBrand && <span className="text-[10px] tracking-[0.2em] uppercase text-white/60">Credit Card</span>}
                     </div>
@@ -278,8 +278,8 @@ export function CardPaymentModal({ isOpen, onClose, total, onPaymentComplete }: 
                   inputMode="numeric"
                 />
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                  {cardBrand === "visa" && <VisaIcon />}
-                  {cardBrand === "mastercard" && <MastercardIcon />}
+                  {cardBrand === "visa" && <img src="/visa-logo.png" alt="Visa" className="h-5 w-auto" />}
+                  {cardBrand === "mastercard" && <img src="/visa-logo.png" alt="Mastercard" className="h-5 w-auto" />}
                   {cardBrand === "amex" && <AmexIcon />}
                   {!cardBrand && <CreditCard className="h-5 w-5 text-muted-foreground" />}
                 </div>

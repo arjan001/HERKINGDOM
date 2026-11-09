@@ -192,6 +192,9 @@ export function MpesaPaymentModal({
         </button>
 
         <div className="bg-[#00843D] px-6 pt-8 pb-6 text-center relative overflow-hidden">
+          <div className="flex justify-center mb-3">
+            <img src="/mpesa-logo.png.png" alt="M-PESA" className="h-12 w-auto" />
+          </div>
           <h2 className="text-white font-extrabold text-2xl tracking-tight">
             M-PESA Payment
           </h2>
