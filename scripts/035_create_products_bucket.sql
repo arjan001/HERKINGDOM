@@ -13,27 +13,33 @@ VALUES (
 )
 ON CONFLICT (id) DO NOTHING;
 
+-- Drop policies if they exist (to avoid conflicts)
+DROP POLICY IF EXISTS "Allow public read access on products" ON storage.objects;
+DROP POLICY IF EXISTS "Allow authenticated upload to products" ON storage.objects;
+DROP POLICY IF EXISTS "Allow authenticated update on products" ON storage.objects;
+DROP POLICY IF EXISTS "Allow authenticated delete on products" ON storage.objects;
+
 -- Create RLS policies for the products bucket
 -- Allow public read access (since bucket is public)
-CREATE POLICY IF NOT EXISTS "Allow public read access on products" 
+CREATE POLICY "Allow public read access on products" 
 ON storage.objects FOR SELECT 
 TO public 
 USING (bucket_id = 'products');
 
 -- Allow authenticated users to upload
-CREATE POLICY IF NOT EXISTS "Allow authenticated upload to products" 
+CREATE POLICY "Allow authenticated upload to products" 
 ON storage.objects FOR INSERT 
 TO authenticated 
 WITH CHECK (bucket_id = 'products');
 
 -- Allow authenticated users to update
-CREATE POLICY IF NOT EXISTS "Allow authenticated update on products" 
+CREATE POLICY "Allow authenticated update on products" 
 ON storage.objects FOR UPDATE 
 TO authenticated 
 WITH CHECK (bucket_id = 'products');
 
 -- Allow authenticated users to delete
-CREATE POLICY IF NOT EXISTS "Allow authenticated delete on products" 
+CREATE POLICY "Allow authenticated delete on products" 
 ON storage.objects FOR DELETE 
 TO authenticated 
 USING (bucket_id = 'products');
