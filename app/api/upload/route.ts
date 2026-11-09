@@ -35,6 +35,18 @@ export async function POST(request: NextRequest) {
 
     const buffer = Buffer.from(await file.arrayBuffer())
 
+    // Check if the bucket exists first
+    const { data: buckets } = await supabase.storage.listBuckets()
+    const bucketExists = buckets?.some((b: { name: string }) => b.name === "products")
+
+    if (!bucketExists) {
+      console.error("Storage bucket 'products' does not exist")
+      return NextResponse.json(
+        { error: "Storage bucket 'products' does not exist. Please create it in Supabase Dashboard → Storage." },
+        { status: 500 }
+      )
+    }
+
     const { error } = await supabase.storage
       .from("products")
       .upload(filename, buffer, {
