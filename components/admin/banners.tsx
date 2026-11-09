@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Image from "next/image"
-import { Plus, Pencil, Trash2, Megaphone } from "lucide-react"
+import { Plus, Pencil, Trash2, Megaphone, Upload, X } from "lucide-react"
 import { AdminShell } from "./admin-shell"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -100,6 +100,27 @@ export function AdminBanners() {
   const [bannerModal, setBannerModal] = useState(false)
   const [editBanner, setEditBanner] = useState<BannerData | null>(null)
   const [bannerForm, setBannerForm] = useState({ title: "", subtitle: "", image: "", link: "", position: "hero" as string })
+  const [bannerUploading, setBannerUploading] = useState(false)
+
+  // Image upload helper
+  const uploadImage = async (file: File): Promise<string> => {
+    const formData = new FormData()
+    formData.append("file", file)
+    formData.append("productSlug", "banners")
+    
+    const response = await fetch("/api/upload", {
+      method: "POST",
+      body: formData,
+    })
+    
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || "Upload failed")
+    }
+    
+    const data = await response.json()
+    return data.url
+  }
 
   // Nav offer modal
   const [navModal, setNavModal] = useState(false)
@@ -110,6 +131,7 @@ export function AdminBanners() {
   const [popupModal, setPopupModal] = useState(false)
   const [editPopup, setEditPopup] = useState<PopupData | null>(null)
   const [popupForm, setPopupForm] = useState({ title: "", description: "", discountPercentage: "", discountLabel: "", image: "", link: "/shop", validUntil: "" })
+  const [popupUploading, setPopupUploading] = useState(false)
 
   // Banner CRUD
   const openBannerNew = () => { setEditBanner(null); setBannerForm({ title: "", subtitle: "", image: "", link: "", position: "hero" }); setBannerModal(true) }
@@ -324,7 +346,49 @@ export function AdminBanners() {
           <div className="space-y-4 mt-4">
             <div><Label className="text-sm font-medium mb-1.5 block">Title *</Label><Input value={bannerForm.title} onChange={(e) => setBannerForm({ ...bannerForm, title: e.target.value })} /></div>
             <div><Label className="text-sm font-medium mb-1.5 block">Subtitle</Label><Input value={bannerForm.subtitle} onChange={(e) => setBannerForm({ ...bannerForm, subtitle: e.target.value })} /></div>
-            <div><Label className="text-sm font-medium mb-1.5 block">Image URL</Label><Input value={bannerForm.image} onChange={(e) => setBannerForm({ ...bannerForm, image: e.target.value })} /></div>
+            <div>
+              <Label className="text-sm font-medium mb-1.5 block">Image</Label>
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <Input
+                    value={bannerForm.image}
+                    onChange={(e) => setBannerForm({ ...bannerForm, image: e.target.value })}
+                    placeholder="Upload image or paste URL"
+                    disabled={bannerUploading}
+                  />
+                  <label className="cursor-pointer">
+                    <Input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                      const file = e.target.files?.[0]
+                      if (!file) return
+                      setBannerUploading(true)
+                      try {
+                        const url = await uploadImage(file)
+                        setBannerForm({ ...bannerForm, image: url })
+                      } catch (error) {
+                        alert(`Upload failed: ${error instanceof Error ? error.message : "Unknown error"}`)
+                      } finally {
+                        setBannerUploading(false)
+                      }
+                    }} />
+                    <Button variant="outline" size="icon" disabled={bannerUploading} type="button">
+                      {bannerUploading ? <div className="h-4 w-4 border-2 border-t-foreground rounded-full animate-spin" /> : <Upload className="h-4 w-4" />}
+                    </Button>
+                  </label>
+                </div>
+                {bannerForm.image && (
+                  <div className="relative w-full h-28 rounded-sm overflow-hidden bg-secondary">
+                    <Image src={bannerForm.image} alt="Preview" fill className="object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => setBannerForm({ ...bannerForm, image: "" })}
+                      className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white rounded-full p-1"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
             <div><Label className="text-sm font-medium mb-1.5 block">Link</Label><Input value={bannerForm.link} onChange={(e) => setBannerForm({ ...bannerForm, link: e.target.value })} placeholder="/shop" /></div>
             <div>
               <Label className="text-sm font-medium mb-1.5 block">Position</Label>
@@ -335,7 +399,7 @@ export function AdminBanners() {
             </div>
             <div className="flex justify-end gap-3 pt-4 border-t border-border">
               <Button variant="outline" onClick={() => setBannerModal(false)} className="bg-transparent">Cancel</Button>
-              <Button onClick={saveBanner} disabled={!bannerForm.title} className="bg-foreground text-background hover:bg-foreground/90">{editBanner ? "Update" : "Add"} Banner</Button>
+              <Button onClick={saveBanner} disabled={!bannerForm.title || bannerUploading} className="bg-foreground text-background hover:bg-foreground/90">{editBanner ? "Update" : "Add"} Banner</Button>
             </div>
           </div>
         </DialogContent>
@@ -364,11 +428,46 @@ export function AdminBanners() {
             <div><Label className="text-sm font-medium mb-1.5 block">Description</Label><Textarea value={popupForm.description} onChange={(e) => setPopupForm({ ...popupForm, description: e.target.value })} rows={3} /></div>
             <div className="grid grid-cols-2 gap-4">
               <div><Label className="text-sm font-medium mb-1.5 block">Discount %</Label><Input type="number" value={popupForm.discountPercentage} onChange={(e) => setPopupForm({ ...popupForm, discountPercentage: e.target.value })} placeholder="30" /></div>
-              <div><Label className="text-sm font-medium mb-1.5 block">Image URL</Label><Input value={popupForm.image} onChange={(e) => setPopupForm({ ...popupForm, image: e.target.value })} /></div>
+              <div>
+                <Label className="text-sm font-medium mb-1.5 block">Image</Label>
+                <div className="flex gap-2">
+                  <Input value={popupForm.image} onChange={(e) => setPopupForm({ ...popupForm, image: e.target.value })} disabled={popupUploading} />
+                  <label className="cursor-pointer">
+                    <Input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                      const file = e.target.files?.[0]
+                      if (!file) return
+                      setPopupUploading(true)
+                      try {
+                        const url = await uploadImage(file)
+                        setPopupForm({ ...popupForm, image: url })
+                      } catch (error) {
+                        alert(`Upload failed: ${error instanceof Error ? error.message : "Unknown error"}`)
+                      } finally {
+                        setPopupUploading(false)
+                      }
+                    }} />
+                    <Button variant="outline" size="icon" disabled={popupUploading} type="button">
+                      {popupUploading ? <div className="h-4 w-4 border-2 border-t-foreground rounded-full animate-spin" /> : <Upload className="h-4 w-4" />}
+                    </Button>
+                  </label>
+                </div>
+                {popupForm.image && (
+                  <div className="relative w-full h-20 rounded-sm overflow-hidden bg-secondary mt-2">
+                    <Image src={popupForm.image} alt="Preview" fill className="object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => setPopupForm({ ...popupForm, image: "" })}
+                      className="absolute top-1 right-1 bg-black/50 hover:bg-black/70 text-white rounded-full p-1"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
             <div className="flex justify-end gap-3 pt-4 border-t border-border">
               <Button variant="outline" onClick={() => setPopupModal(false)} className="bg-transparent">Cancel</Button>
-              <Button onClick={savePopup} disabled={!popupForm.title} className="bg-foreground text-background hover:bg-foreground/90">{editPopup ? "Update" : "Add"} Offer</Button>
+              <Button onClick={savePopup} disabled={!popupForm.title || popupUploading} className="bg-foreground text-background hover:bg-foreground/90">{editPopup ? "Update" : "Add"} Offer</Button>
             </div>
           </div>
         </DialogContent>

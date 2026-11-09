@@ -92,11 +92,15 @@ export async function PUT(request: NextRequest) {
   const supabase = await createClient()
   const body = await request.json()
 
+  console.log("[banners PUT] Received body:", JSON.stringify(body, null, 2))
+
   if (!body.id || !body.type) {
+    console.error("[banners PUT] Missing id or type:", { id: body.id, type: body.type })
     return NextResponse.json({ error: "Missing id or type" }, { status: 400 })
   }
 
   if (body.type === "banner") {
+    console.log("[banners PUT] Updating banner:", body.id)
     const { error } = await supabase
       .from("banners")
       .update({
@@ -116,6 +120,7 @@ export async function PUT(request: NextRequest) {
   }
 
   if (body.type === "navbar_offer") {
+    console.log("[banners PUT] Updating navbar_offer:", body.id)
     const { error } = await supabase
       .from("navbar_offers")
       .update({ text: body.text, is_active: body.isActive ?? true })
@@ -128,14 +133,16 @@ export async function PUT(request: NextRequest) {
   }
 
   if (body.type === "popup_offer") {
+    console.log("[banners PUT] Updating popup_offer:", body.id)
     // First check if the record exists
-    const { data: existing } = await supabase
+    const { data: existing, error: checkError } = await supabase
       .from("popup_offers")
       .select("id")
       .eq("id", body.id)
       .single()
     
-    if (!existing) {
+    if (checkError || !existing) {
+      console.error("[popup_offers] Record not found:", body.id, checkError)
       return NextResponse.json({ error: "Popup offer not found" }, { status: 404 })
     }
 
@@ -159,6 +166,7 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ success: true })
   }
 
+  console.error("[banners PUT] Invalid type:", body.type)
   return NextResponse.json({ error: "Invalid type" }, { status: 400 })
 }
 
