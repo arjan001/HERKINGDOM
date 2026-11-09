@@ -1,8 +1,6 @@
 -- Recreate products storage bucket for image uploads
 -- This script deletes the existing bucket (if any) and creates a new public bucket
-
--- Enable storage extension if not already enabled
-CREATE EXTENSION IF NOT EXISTS "storage";
+-- Note: Supabase Storage extension is already enabled by default in Supabase
 
 -- Delete existing products bucket if it exists
 DELETE FROM storage.buckets WHERE id = 'products';
