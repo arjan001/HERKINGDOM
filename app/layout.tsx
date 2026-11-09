@@ -309,6 +309,26 @@ export default function RootLayout({
             `,
           }}
         />
+        {/* Google Analytics 4 */}
+        <script
+          async
+          src="https://www.googletagmanager.com/gtag/js?id=G-XMGFY2BW4V"
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-XMGFY2BW4V', {
+                send_page_view: true,
+                cookie_flags: 'SameSite=None;Secure',
+                allow_google_signals: true,
+                allow_ad_personalization_signals: true
+              });
+            `,
+          }}
+        />
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" href="/favicon-16.png" type="image/png" sizes="16x16" />
         <link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32" />

@@ -220,6 +220,21 @@ export function AdminAnalytics() {
           <p className="text-sm text-muted-foreground mt-1">Comprehensive store performance &amp; visitor tracking — last 30 days.</p>
         </div>
 
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <span className="inline-flex items-center gap-1.5 px-2 py-1 bg-green-100 text-green-700 rounded-sm text-xs font-medium">
+            <span className="w-1.5 h-1.5 bg-green-600 rounded-full animate-pulse" />
+            GA4 Active (G-XMGFY2BW4V)
+          </span>
+          <span className="inline-flex items-center gap-1.5 px-2 py-1 bg-blue-100 text-blue-700 rounded-sm text-xs font-medium">
+            <span className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-pulse" />
+            GTM Active (GTM-TG5RCDW9)
+          </span>
+          <span className="inline-flex items-center gap-1.5 px-2 py-1 bg-purple-100 text-purple-700 rounded-sm text-xs font-medium">
+            <span className="w-1.5 h-1.5 bg-purple-600 rounded-full animate-pulse" />
+            Supabase Analytics
+          </span>
+        </div>
+
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {stats.map((stat) => (

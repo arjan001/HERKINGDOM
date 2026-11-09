@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useCallback } from "react"
 import { usePathname } from "next/navigation"
+import { trackPageView } from "@/lib/analytics/ga4"
 
 function getSessionId() {
   if (typeof window === "undefined") return ""
@@ -40,12 +41,17 @@ function isReturningVisitor(): boolean {
 function detectBot(): boolean {
   if (typeof window === "undefined") return false
   const ua = navigator.userAgent
-  // Known bot patterns
+  // Known bot patterns (including scrapers)
   if (/bot|crawl|spider|scraper|curl|wget|python|java|go-http|headless|phantom|puppeteer|selenium|playwright/i.test(ua)) return true
   // No webdriver check
   if ((navigator as unknown as Record<string, unknown>).webdriver) return true
   // No plugins often means headless
   if (navigator.plugins && navigator.plugins.length === 0 && !/mobile|android|iphone/i.test(ua)) return true
+  // Check for automated behavior patterns
+  if (navigator.hardwareConcurrency === 0) return true
+  if (navigator.deviceMemory === 0) return true
+  // Googlebot specifically should be allowed (they need to crawl for SEO)
+  if (/googlebot|bingbot|yandexbot|duckduckbot|slurp|baiduspider/i.test(ua)) return false
   return false
 }
 
@@ -176,6 +182,9 @@ export function PageViewTracker() {
     pageEnterTime.current = Date.now()
     maxScrollDepth.current = 0
     isBot.current = detectBot()
+
+    // Fire GA4 page_view event
+    trackPageView(pathname, document.title)
 
     const utmParams = getUtmParams()
     const returning = isReturningVisitor()

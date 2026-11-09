@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react"
 import type { CartItem, Product } from "./types"
+import { trackAddToCart, trackRemoveFromCart } from "./analytics/ga4"
 
 export interface GiftPersonalization {
   wrap: boolean
@@ -98,6 +99,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [gift, hydrated])
 
   const addItem = useCallback((product: Product, quantity = 1, variations?: Record<string, string>) => {
+    // Track GA4 add_to_cart event
+    trackAddToCart({
+      item_id: product.id,
+      item_name: product.name,
+      item_category: product.category,
+      price: product.price,
+      quantity,
+    })
+
     setItems((prev) => {
       const variationKey = variations ? JSON.stringify(variations) : ""
       const existing = prev.find(
@@ -116,8 +126,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const removeItem = useCallback((productId: string) => {
+    // Track GA4 remove_from_cart event
+    const item = items.find(i => i.product.id === productId)
+    if (item) {
+      trackRemoveFromCart({
+        item_id: item.product.id,
+        item_name: item.product.name,
+        item_category: item.product.category,
+        price: item.product.price,
+        quantity: item.quantity,
+      })
+    }
     setItems((prev) => prev.filter((item) => item.product.id !== productId))
-  }, [])
+  }, [items])
 
   const updateQuantity = useCallback((productId: string, quantity: number) => {
     if (quantity <= 0) {

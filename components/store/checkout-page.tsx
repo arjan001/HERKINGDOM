@@ -19,6 +19,7 @@ import { useCart } from "@/lib/cart-context"
 import { useGiftSelection } from "@/lib/gift-context"
 import { formatPrice } from "@/lib/format"
 import type { DeliveryLocation } from "@/lib/types"
+import { trackBeginCheckout, trackPurchase } from "@/lib/analytics/ga4"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -48,6 +49,18 @@ export function CheckoutPage() {
     email: "",
     address: "",
   })
+
+  // Track begin_checkout when checkout page loads with items
+  useEffect(() => {
+    if (items.length > 0 && !orderResult) {
+      trackBeginCheckout(totalPrice, items.map(item => ({
+        item_id: item.product.id,
+        item_name: item.product.name,
+        price: item.product.price,
+        quantity: item.quantity,
+      })))
+    }
+  }, [items, totalPrice, orderResult])
   const isGift = giftSelection.isGift
   const giftMessage = giftSelection.messageNote
   const [freeShippingThreshold, setFreeShippingThreshold] = useState(5000)
@@ -351,6 +364,13 @@ export function CheckoutPage() {
 
   const handleMpesaConfirmed = (result: { orderNumber: string; mpesaReceipt: string; phone: string }) => {
     setOrderResult({ orderNumber: result.orderNumber, paymentMethod: "mpesa" })
+    // Track GA4 purchase event
+    trackPurchase(result.orderNumber, totalPrice, items.map(item => ({
+      item_id: item.product.id,
+      item_name: item.product.name,
+      price: item.product.price,
+      quantity: item.quantity,
+    })))
     clearCart()
     resetGiftSelection()
     // Leave the modal visible for a moment so the success state is seen.
