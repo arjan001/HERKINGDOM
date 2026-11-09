@@ -1045,10 +1045,7 @@ export function CheckoutPage() {
                     disabled={isSubmitting}
                     className="w-full h-12 text-sm font-semibold disabled:opacity-40 bg-[#4CAF50] text-white hover:bg-[#43A047]"
                   >
-                    <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M17 2H7c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 18H7V4h10v16z" />
-                      <path d="M11 17.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5-.67 1.5-1.5 1.5-1.5-.67-1.5-1.5z" />
-                    </svg>
+                    <img src="/mpesa-logo.png" alt="M-PESA" className="h-5 w-auto mr-2" />
                     Pay with M-PESA
                   </Button>
 
@@ -1058,10 +1055,8 @@ export function CheckoutPage() {
                     disabled={isSubmitting}
                     className="w-full h-12 text-sm font-semibold disabled:opacity-40 bg-[#1a1f36] text-white hover:bg-[#2d3250]"
                   >
-                    <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
-                      <line x1="1" y1="10" x2="23" y2="10" />
-                    </svg>
+                    <img src="/visa-logo.png" alt="Card" className="h-5 w-auto mr-2" />
+                    Pay with Card
                     Pay with Card
                   </Button>
 
