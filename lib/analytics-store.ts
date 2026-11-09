@@ -1,15 +1,11 @@
-import { getStore } from "@netlify/blobs"
+import { createAdminClient } from "@/lib/supabase/admin"
 
-// Store names
-const VIEWS_STORE = "analytics-views"
-const EVENTS_STORE = "analytics-events"
-const CHECKOUTS_STORE = "analytics-checkouts"
-const REALTIME_STORE = "analytics-realtime"
-const VIEW_DEDUP_WINDOW_MS = 30 * 60 * 1000
-const EVENT_DEDUP_WINDOW_MS = 10 * 1000
+// Analytics storage backed by Supabase (replaces @netlify/blobs which only
+// works on Netlify). Uses the service-role client since tracking endpoints
+// run server-side and tables are not publicly writable.
 
-function todayKey(): string {
-  return new Date().toISOString().split("T")[0]
+function db() {
+  return createAdminClient()
 }
 
 // ---- Page Views ----
@@ -45,6 +41,9 @@ function isRecent(createdAt: string, windowMs: number): boolean {
   return Date.now() - ts <= windowMs
 }
 
+const VIEW_DEDUP_WINDOW_MS = 30 * 60 * 1000
+const EVENT_DEDUP_WINDOW_MS = 10 * 1000
+
 function sameVisitor(view: PageView, incoming: Omit<PageView, "id" | "created_at">): boolean {
   if (incoming.session_id && view.session_id && incoming.session_id === view.session_id) return true
   if (incoming.visitor_id && view.visitor_id && incoming.visitor_id === view.visitor_id) return true
@@ -53,94 +52,87 @@ function sameVisitor(view: PageView, incoming: Omit<PageView, "id" | "created_at
 }
 
 export async function addPageView(view: Omit<PageView, "id" | "created_at">): Promise<string> {
-  const store = getStore({ name: VIEWS_STORE, consistency: "strong" })
-  const day = todayKey()
-  const existing: PageView[] = (await store.get(day, { type: "json" })) || []
+  const supabase = db()
+  const cutoff = new Date(Date.now() - VIEW_DEDUP_WINDOW_MS).toISOString()
 
-  // Prevent duplicate page-view rows for repeated hits by the same visitor
-  // on the same page in a short window.
-  for (let i = existing.length - 1; i >= 0; i--) {
-    const current = existing[i]
-    if (
-      current.page_path === view.page_path &&
-      sameVisitor(current, view) &&
-      isRecent(current.created_at, VIEW_DEDUP_WINDOW_MS)
-    ) {
-      current.referrer = current.referrer || view.referrer
-      current.country = current.country || view.country
-      current.country_name = current.country_name || view.country_name
-      current.city = current.city || view.city
-      current.region = current.region || view.region
-      current.user_agent = current.user_agent || view.user_agent
-      current.device_type = current.device_type || view.device_type
-      current.browser = current.browser || view.browser
-      current.is_bot = current.is_bot || view.is_bot
-      if (!current.ip_address && view.ip_address) current.ip_address = view.ip_address
-      await store.setJSON(day, existing)
-      return current.id
-    }
+  // Dedup: same visitor + same page within the window -> merge into existing row
+  let q = supabase
+    .from("page_views")
+    .select("*")
+    .eq("page_path", view.page_path)
+    .gte("created_at", cutoff)
+    .order("created_at", { ascending: false })
+    .limit(20)
+
+  const { data: candidates } = await q
+  const match = (candidates || []).find((c: PageView) => sameVisitor(c, view))
+  if (match) {
+    await supabase
+      .from("page_views")
+      .update({
+        referrer: match.referrer || view.referrer,
+        country: match.country || view.country,
+        country_name: match.country_name || view.country_name,
+        city: match.city || view.city,
+        region: match.region || view.region,
+        user_agent: match.user_agent || view.user_agent,
+        device_type: match.device_type || view.device_type,
+        browser: match.browser || view.browser,
+        is_bot: match.is_bot || view.is_bot,
+        ip_address: match.ip_address || view.ip_address,
+      })
+      .eq("id", match.id)
+    return match.id
   }
 
-  const id = crypto.randomUUID()
-  const record: PageView = { ...view, id, created_at: new Date().toISOString() }
-  existing.push(record)
-  await store.setJSON(day, existing)
-  return id
+  const { data, error } = await supabase
+    .from("page_views")
+    .insert({ ...view, created_at: new Date().toISOString() })
+    .select("id")
+    .single()
+  if (error) throw error
+  return data.id
 }
 
 export async function updatePageView(sessionId: string, path: string, duration: number, scrollDepth: number): Promise<void> {
-  const store = getStore({ name: VIEWS_STORE, consistency: "strong" })
-  const day = todayKey()
-  const existing: PageView[] = (await store.get(day, { type: "json" })) || []
-  // Find the most recent view for this session + path
-  for (let i = existing.length - 1; i >= 0; i--) {
-    if (existing[i].session_id === sessionId && existing[i].page_path === path) {
-      existing[i].duration_seconds = duration
-      existing[i].scroll_depth = scrollDepth
-      break
-    }
+  const supabase = db()
+  const { data } = await supabase
+    .from("page_views")
+    .select("id")
+    .eq("session_id", sessionId)
+    .eq("page_path", path)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (data?.id) {
+    await supabase
+      .from("page_views")
+      .update({ duration_seconds: duration, scroll_depth: scrollDepth })
+      .eq("id", data.id)
   }
-  await store.setJSON(day, existing)
 }
 
 export async function getPageViews(days: number): Promise<PageView[]> {
-  const store = getStore(VIEWS_STORE)
-  const allViews: PageView[] = []
-  for (let i = 0; i < days; i++) {
-    const d = new Date()
-    d.setDate(d.getDate() - i)
-    const key = d.toISOString().split("T")[0]
-    try {
-      const dayViews: PageView[] | null = await store.get(key, { type: "json" })
-      if (dayViews && Array.isArray(dayViews)) allViews.push(...dayViews)
-    } catch {
-      // Day doesn't exist yet
-    }
-  }
-  return allViews.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  const supabase = db()
+  const since = new Date()
+  since.setDate(since.getDate() - days)
+  const { data } = await supabase
+    .from("page_views")
+    .select("*")
+    .gte("created_at", since.toISOString())
+    .order("created_at", { ascending: false })
+    .limit(50000)
+  return (data as PageView[]) || []
 }
 
 export async function getRecentPageViews(minutes: number): Promise<PageView[]> {
-  const store = getStore(VIEWS_STORE)
-  const cutoff = new Date(Date.now() - minutes * 60 * 1000)
-  // Only need today and possibly yesterday
-  const keys = [todayKey()]
-  const yesterday = new Date()
-  yesterday.setDate(yesterday.getDate() - 1)
-  keys.push(yesterday.toISOString().split("T")[0])
-
-  const allViews: PageView[] = []
-  for (const key of keys) {
-    try {
-      const dayViews: PageView[] | null = await store.get(key, { type: "json" })
-      if (dayViews && Array.isArray(dayViews)) {
-        allViews.push(...dayViews.filter(v => new Date(v.created_at) >= cutoff))
-      }
-    } catch {
-      // ignore
-    }
-  }
-  return allViews
+  const supabase = db()
+  const cutoff = new Date(Date.now() - minutes * 60 * 1000).toISOString()
+  const { data } = await supabase
+    .from("page_views")
+    .select("*")
+    .gte("created_at", cutoff)
+  return (data as PageView[]) || []
 }
 
 // ---- Analytics Events ----
@@ -165,39 +157,42 @@ export interface AnalyticsEvent {
 }
 
 export async function addEvent(event: Omit<AnalyticsEvent, "id" | "created_at">): Promise<void> {
-  const store = getStore({ name: EVENTS_STORE, consistency: "strong" })
-  const day = todayKey()
-  const existing: AnalyticsEvent[] = (await store.get(day, { type: "json" })) || []
+  const supabase = db()
+  const cutoff = new Date(Date.now() - EVENT_DEDUP_WINDOW_MS).toISOString()
 
-  const isDuplicate = existing.some((current) => (
-    current.event_type === event.event_type &&
-    current.event_target === event.event_target &&
-    current.page_path === event.page_path &&
-    ((event.session_id && current.session_id === event.session_id) ||
-      (event.ip_address && current.ip_address === event.ip_address)) &&
-    isRecent(current.created_at, EVENT_DEDUP_WINDOW_MS)
-  ))
-  if (isDuplicate) return
+  let q = supabase
+    .from("analytics_events")
+    .select("id")
+    .eq("event_type", event.event_type)
+    .eq("event_target", event.event_target)
+    .eq("page_path", event.page_path)
+    .gte("created_at", cutoff)
+    .limit(20)
+  if (event.session_id) q = q.eq("session_id", event.session_id)
+  else if (event.ip_address) q = q.eq("ip_address", event.ip_address)
 
-  existing.push({ ...event, id: crypto.randomUUID(), created_at: new Date().toISOString() })
-  await store.setJSON(day, existing)
+  const { data: dup } = await q
+  if (dup && dup.length > 0) return
+
+  const { error } = await supabase.from("analytics_events").insert({
+    ...event,
+    event_data: event.event_data || {},
+    created_at: new Date().toISOString(),
+  })
+  if (error) console.error("addEvent failed:", error.message)
 }
 
 export async function getEvents(days: number): Promise<AnalyticsEvent[]> {
-  const store = getStore(EVENTS_STORE)
-  const allEvents: AnalyticsEvent[] = []
-  for (let i = 0; i < days; i++) {
-    const d = new Date()
-    d.setDate(d.getDate() - i)
-    const key = d.toISOString().split("T")[0]
-    try {
-      const dayEvents: AnalyticsEvent[] | null = await store.get(key, { type: "json" })
-      if (dayEvents && Array.isArray(dayEvents)) allEvents.push(...dayEvents)
-    } catch {
-      // ignore
-    }
-  }
-  return allEvents.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  const supabase = db()
+  const since = new Date()
+  since.setDate(since.getDate() - days)
+  const { data } = await supabase
+    .from("analytics_events")
+    .select("*")
+    .gte("created_at", since.toISOString())
+    .order("created_at", { ascending: false })
+    .limit(50000)
+  return (data as AnalyticsEvent[]) || []
 }
 
 // ---- Abandoned Checkouts ----
@@ -211,16 +206,6 @@ export interface AbandonedCheckout {
   items: unknown[]
   subtotal: number
   step_reached: string
-  /**
-   * Why the checkout did not complete. Richer than step_reached because it
-   * answers "what happened?" instead of just "where did they stop?":
-   *   - `payment_failed`        → tried to pay (card/M-PESA) and got a failure
-   *   - `payment_abandoned`     → opened payment modal, never confirmed
-   *   - `closed_with_items`     → added items but never reached checkout
-   *   - `checkout_abandoned`    → on checkout page, closed before submitting
-   *   - `stopped_midway`        → filled some details, walked away
-   * Empty string means "unknown / not yet classified".
-   */
   reason: string
   device_type: string
   browser: string
@@ -230,12 +215,20 @@ export interface AbandonedCheckout {
 }
 
 export async function upsertCheckout(sessionId: string, data: Partial<AbandonedCheckout>): Promise<void> {
-  const store = getStore({ name: CHECKOUTS_STORE, consistency: "strong" })
-  const existing: AbandonedCheckout | null = await store.get(sessionId, { type: "json" })
-  if (existing) {
-    await store.setJSON(sessionId, { ...existing, ...data, updated_at: new Date().toISOString() })
+  const supabase = db()
+  const { data: existing } = await supabase
+    .from("abandoned_checkouts")
+    .select("id")
+    .eq("session_id", sessionId)
+    .maybeSingle()
+
+  if (existing?.id) {
+    await supabase
+      .from("abandoned_checkouts")
+      .update({ ...data, updated_at: new Date().toISOString() })
+      .eq("id", existing.id)
   } else {
-    await store.setJSON(sessionId, {
+    await supabase.from("abandoned_checkouts").insert({
       id: crypto.randomUUID(),
       session_id: sessionId,
       recovered: false,
@@ -247,54 +240,64 @@ export async function upsertCheckout(sessionId: string, data: Partial<AbandonedC
 }
 
 export async function recoverCheckout(sessionId: string): Promise<void> {
-  const store = getStore({ name: CHECKOUTS_STORE, consistency: "strong" })
-  const existing: AbandonedCheckout | null = await store.get(sessionId, { type: "json" })
-  if (existing) {
-    await store.setJSON(sessionId, { ...existing, recovered: true, updated_at: new Date().toISOString() })
-  }
+  const supabase = db()
+  await supabase
+    .from("abandoned_checkouts")
+    .update({ recovered: true, updated_at: new Date().toISOString() })
+    .eq("session_id", sessionId)
 }
 
 export async function getAbandonedCheckouts(days: number): Promise<AbandonedCheckout[]> {
-  const store = getStore(CHECKOUTS_STORE)
-  const cutoff = new Date()
-  cutoff.setDate(cutoff.getDate() - days)
-
-  const allCheckouts: AbandonedCheckout[] = []
-  const { blobs } = await store.list()
-  for (const blob of blobs) {
-    try {
-      const checkout: AbandonedCheckout | null = await store.get(blob.key, { type: "json" })
-      if (checkout && new Date(checkout.created_at) >= cutoff) {
-        allCheckouts.push(checkout)
-      }
-    } catch {
-      // ignore
-    }
-  }
-  return allCheckouts.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  const supabase = db()
+  const since = new Date()
+  since.setDate(since.getDate() - days)
+  const { data } = await supabase
+    .from("abandoned_checkouts")
+    .select("*")
+    .gte("created_at", since.toISOString())
+    .order("created_at", { ascending: false })
+    .limit(5000)
+  return (data as AbandonedCheckout[]) || []
 }
 
-// ---- Realtime Sessions ----
+// ---- Realtime Sessions (live users) ----
 
-export async function touchSession(sessionId: string): Promise<void> {
-  const store = getStore({ name: REALTIME_STORE, consistency: "strong" })
-  await store.setJSON(sessionId, { ts: Date.now() })
+export async function touchSession(sessionId: string, pagePath = ""): Promise<void> {
+  if (!sessionId) return
+  const supabase = db()
+  const now = new Date().toISOString()
+  const { data: existing } = await supabase
+    .from("analytics_sessions")
+    .select("session_id")
+    .eq("session_id", sessionId)
+    .maybeSingle()
+
+  if (existing) {
+    await supabase
+      .from("analytics_sessions")
+      .update({ last_seen: now, page_path: pagePath || undefined })
+      .eq("session_id", sessionId)
+  } else {
+    await supabase.from("analytics_sessions").insert({
+      session_id: sessionId,
+      last_seen: now,
+      page_path: pagePath || null,
+    })
+  }
+
+  // Opportunistic cleanup of stale sessions (>24h) - cheap, keeps table small
+  const stale = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+  supabase.from("analytics_sessions").delete().lt("last_seen", stale).then(() => {})
 }
 
 export async function getActiveSessions(minutes: number = 5): Promise<number> {
-  const store = getStore(REALTIME_STORE)
-  const cutoff = Date.now() - minutes * 60 * 1000
-  const { blobs } = await store.list()
-  let count = 0
-  for (const blob of blobs) {
-    try {
-      const data: { ts: number } | null = await store.get(blob.key, { type: "json" })
-      if (data && data.ts >= cutoff) count++
-    } catch {
-      // ignore
-    }
-  }
-  return count
+  const supabase = db()
+  const cutoff = new Date(Date.now() - minutes * 60 * 1000).toISOString()
+  const { count } = await supabase
+    .from("analytics_sessions")
+    .select("session_id", { count: "exact", head: true })
+    .gte("last_seen", cutoff)
+  return count || 0
 }
 
 // ---- Geo helpers ----
