@@ -64,12 +64,16 @@ export function LiveMap({ data, realTimeUsers }: LiveMapProps) {
           src="/world.svg"
           alt="World Map"
           className="w-full h-full object-contain"
-          style={{ maxHeight: "400px" }}
+          style={{ maxHeight: "400px", opacity: 0.8 }}
         />
         
         {/* Visitor markers overlay */}
         <div className="absolute inset-0 pointer-events-none">
-          {markers.map((marker, i) => {
+          {markers.length === 0 ? (
+            <div className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
+              No visitor data yet
+            </div>
+          ) : markers.map((marker, i) => {
             const size = Math.max(4, Math.min(20, marker.visitors * 3))
             const opacity = Math.min(1, 0.3 + marker.visitors * 0.1)
             
