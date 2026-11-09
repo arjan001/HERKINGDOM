@@ -18,7 +18,7 @@ import useSWR from "swr"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
-type OrderStatus = "pending" | "confirmed" | "dispatched" | "delivered" | "cancelled"
+type OrderStatus = "pending" | "confirmed" | "cancelled" | "failed" | "processing" | "shipped" | "delivered" | "refunded"
 
 interface GiftSelectionAddon {
   id: string
@@ -80,14 +80,17 @@ interface Order {
 }
 
 const statusConfig: Record<OrderStatus, { label: string; icon: typeof Clock; className: string }> = {
-  pending: { label: "Pending", icon: Clock, className: "bg-secondary text-foreground" },
-  confirmed: { label: "Confirmed", icon: CheckCircle, className: "bg-foreground text-background" },
-  dispatched: { label: "Dispatched", icon: Truck, className: "bg-foreground text-background" },
-  delivered: { label: "Delivered", icon: Package, className: "bg-secondary text-foreground" },
-  cancelled: { label: "Cancelled", icon: XCircle, className: "bg-secondary text-muted-foreground" },
+  pending: { label: "Pending", icon: Clock, className: "bg-yellow-100 text-yellow-700" },
+  confirmed: { label: "Confirmed", icon: CheckCircle, className: "bg-emerald-100 text-emerald-700" },
+  cancelled: { label: "Cancelled", icon: XCircle, className: "bg-red-100 text-red-700" },
+  failed: { label: "Failed", icon: XCircle, className: "bg-red-100 text-red-700" },
+  processing: { label: "Processing", icon: Clock, className: "bg-blue-100 text-blue-700" },
+  shipped: { label: "Shipped", icon: Truck, className: "bg-blue-100 text-blue-700" },
+  delivered: { label: "Delivered", icon: Package, className: "bg-emerald-100 text-emerald-700" },
+  refunded: { label: "Refunded", icon: XCircle, className: "bg-gray-100 text-gray-700" },
 }
 
-const SALE_STATUSES: OrderStatus[] = ["confirmed", "dispatched", "delivered"]
+const SALE_STATUSES: OrderStatus[] = ["confirmed", "processing", "shipped", "delivered"]
 
 export function AdminOrders() {
   const { data: orders = [], mutate } = useSWR<Order[]>("/api/admin/orders", fetcher)
@@ -253,6 +256,8 @@ export function AdminOrders() {
   const stats = {
     all: orders.length,
     pending: orders.filter((o) => o.status === "pending").length,
+    failed: orders.filter((o) => o.status === "failed").length,
+    cancelled: orders.filter((o) => o.status === "cancelled").length,
     sales: salesOrders.length,
     revenue: totalRevenue,
   }
@@ -272,7 +277,7 @@ export function AdminOrders() {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4">
           <div className="border border-border p-4 rounded-sm">
             <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground uppercase tracking-wider">Total Orders</span>
@@ -289,10 +294,24 @@ export function AdminOrders() {
           </div>
           <div className="border border-border p-4 rounded-sm">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground uppercase tracking-wider">Sales</span>
+              <span className="text-xs text-muted-foreground uppercase tracking-wider">Confirmed</span>
               <CheckCircle className="h-4 w-4 text-muted-foreground" />
             </div>
             <p className="text-2xl font-bold mt-1">{stats.sales}</p>
+          </div>
+          <div className="border border-border p-4 rounded-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground uppercase tracking-wider">Failed</span>
+              <XCircle className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <p className="text-2xl font-bold mt-1">{stats.failed}</p>
+          </div>
+          <div className="border border-border p-4 rounded-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground uppercase tracking-wider">Cancelled</span>
+              <XCircle className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <p className="text-2xl font-bold mt-1">{stats.cancelled}</p>
           </div>
           <div className="border border-border p-4 rounded-sm">
             <div className="flex items-center justify-between">
@@ -334,9 +353,12 @@ export function AdminOrders() {
                     <SelectItem value="all">All Status</SelectItem>
                     <SelectItem value="pending">Pending</SelectItem>
                     <SelectItem value="confirmed">Confirmed</SelectItem>
-                    <SelectItem value="dispatched">Dispatched</SelectItem>
-                    <SelectItem value="delivered">Delivered</SelectItem>
+                    <SelectItem value="failed">Failed</SelectItem>
                     <SelectItem value="cancelled">Cancelled</SelectItem>
+                    <SelectItem value="processing">Processing</SelectItem>
+                    <SelectItem value="shipped">Shipped</SelectItem>
+                    <SelectItem value="delivered">Delivered</SelectItem>
+                    <SelectItem value="refunded">Refunded</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -646,7 +668,7 @@ export function AdminOrders() {
               <div>
                 <p className="text-sm font-medium mb-2">Update Status</p>
                 <div className="flex flex-wrap gap-2">
-                  {(["pending", "confirmed", "dispatched", "delivered", "cancelled"] as OrderStatus[]).map((s) => (
+                  {(["pending", "confirmed", "cancelled", "failed", "processing", "shipped", "delivered", "refunded"] as OrderStatus[]).map((s) => (
                     <Button
                       key={s}
                       variant={selectedOrder.status === s ? "default" : "outline"}
