@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import Image from "next/image"
 import { Plus, Pencil, Trash2, Megaphone, Upload, X } from "lucide-react"
 import { AdminShell } from "./admin-shell"
@@ -101,6 +101,7 @@ export function AdminBanners() {
   const [editBanner, setEditBanner] = useState<BannerData | null>(null)
   const [bannerForm, setBannerForm] = useState({ title: "", subtitle: "", image: "", link: "", position: "hero" as string })
   const [bannerUploading, setBannerUploading] = useState(false)
+  const bannerFileInputRef = React.useRef<HTMLInputElement>(null)
 
   // Image upload helper
   const uploadImage = async (file: File): Promise<string> => {
@@ -132,6 +133,7 @@ export function AdminBanners() {
   const [editPopup, setEditPopup] = useState<PopupData | null>(null)
   const [popupForm, setPopupForm] = useState({ title: "", description: "", discountPercentage: "", discountLabel: "", image: "", link: "/shop", validUntil: "" })
   const [popupUploading, setPopupUploading] = useState(false)
+  const popupFileInputRef = useRef<HTMLInputElement>(null)
 
   // Banner CRUD
   const openBannerNew = () => { setEditBanner(null); setBannerForm({ title: "", subtitle: "", image: "", link: "", position: "hero" }); setBannerModal(true) }
@@ -356,8 +358,12 @@ export function AdminBanners() {
                     placeholder="Upload image or paste URL"
                     disabled={bannerUploading}
                   />
-                  <label className="cursor-pointer">
-                    <Input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                  <Input 
+                    type="file" 
+                    accept="image/*" 
+                    className="hidden" 
+                    ref={bannerFileInputRef}
+                    onChange={async (e) => {
                       const file = e.target.files?.[0]
                       if (!file) return
                       setBannerUploading(true)
@@ -369,11 +375,17 @@ export function AdminBanners() {
                       } finally {
                         setBannerUploading(false)
                       }
-                    }} />
-                    <Button variant="outline" size="icon" disabled={bannerUploading} type="button">
-                      {bannerUploading ? <div className="h-4 w-4 border-2 border-t-foreground rounded-full animate-spin" /> : <Upload className="h-4 w-4" />}
-                    </Button>
-                  </label>
+                    }} 
+                  />
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    disabled={bannerUploading} 
+                    type="button"
+                    onClick={() => bannerFileInputRef.current?.click()}
+                  >
+                    {bannerUploading ? <div className="h-4 w-4 border-2 border-t-foreground rounded-full animate-spin" /> : <Upload className="h-4 w-4" />}
+                  </Button>
                 </div>
                 {bannerForm.image && (
                   <div className="relative w-full h-28 rounded-sm overflow-hidden bg-secondary">
@@ -432,8 +444,12 @@ export function AdminBanners() {
                 <Label className="text-sm font-medium mb-1.5 block">Image</Label>
                 <div className="flex gap-2">
                   <Input value={popupForm.image} onChange={(e) => setPopupForm({ ...popupForm, image: e.target.value })} disabled={popupUploading} />
-                  <label className="cursor-pointer">
-                    <Input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                  <Input 
+                    type="file" 
+                    accept="image/*" 
+                    className="hidden" 
+                    ref={popupFileInputRef}
+                    onChange={async (e) => {
                       const file = e.target.files?.[0]
                       if (!file) return
                       setPopupUploading(true)
@@ -445,11 +461,17 @@ export function AdminBanners() {
                       } finally {
                         setPopupUploading(false)
                       }
-                    }} />
-                    <Button variant="outline" size="icon" disabled={popupUploading} type="button">
-                      {popupUploading ? <div className="h-4 w-4 border-2 border-t-foreground rounded-full animate-spin" /> : <Upload className="h-4 w-4" />}
-                    </Button>
-                  </label>
+                    }} 
+                  />
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    disabled={popupUploading} 
+                    type="button"
+                    onClick={() => popupFileInputRef.current?.click()}
+                  >
+                    {popupUploading ? <div className="h-4 w-4 border-2 border-t-foreground rounded-full animate-spin" /> : <Upload className="h-4 w-4" />}
+                  </Button>
                 </div>
                 {popupForm.image && (
                   <div className="relative w-full h-20 rounded-sm overflow-hidden bg-secondary mt-2">
